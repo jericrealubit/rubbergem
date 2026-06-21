@@ -66,11 +66,30 @@ export default function ProductionTablePage({
   // Reset log with warning verification
   const handleResetLog = () => {
     const isConfirmed = window.confirm(
-      "CRITICAL WARNING: Are you sure you want to completely erase the current shift production log? This action cannot be undone.",
+      "CRITICAL WARNING: Are you sure you want to completely erase the current shift production log, form configurations, and metadata? This action cannot be undone.",
     );
 
     if (isConfirmed) {
+      // 1. Wipe cycle entries history
       localStorage.removeItem("production_cycles");
+
+      // 2. Wipe persistent meta & shift records
+      localStorage.removeItem("terminal_press_number");
+      localStorage.removeItem("shift_panel_open");
+      localStorage.removeItem("shift_operator");
+      localStorage.removeItem("shift_group");
+      localStorage.removeItem("shift_mat_types");
+
+      // 3. Wipe any active working draft cache lines
+      localStorage.removeItem("ws_start_time");
+      localStorage.removeItem("ws_end_time");
+      localStorage.removeItem("ws_run_time");
+      localStorage.removeItem("ws_load_time");
+      localStorage.removeItem("ws_selected_squares");
+      localStorage.removeItem("ws_bubble_checkboxes");
+      localStorage.removeItem("ws_bubble_sizes");
+      localStorage.removeItem("ws_notes");
+
       setEntries([]);
     }
   };

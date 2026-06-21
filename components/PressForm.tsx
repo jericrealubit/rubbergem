@@ -25,108 +25,255 @@ import {
 } from "lucide-react";
 
 export default function ProductionForm() {
-  // Terminal Mode State (Press #1 or Press #2)
-  const [pressNumber, setPressNumber] = useState<string>("1");
-
-  // Collapsible block layout controllers
-  const [isShiftOpen, setIsShiftOpen] = useState<boolean>(true);
-
-  // Core component state bindings
-  const [startTime, setStartTime] = useState<string>("");
-  const [endTime, setEndTime] = useState<string>("");
-  const [currentDate, setCurrentDate] = useState<string>("");
-  const [runTime, setRunTime] = useState<number | "">(27);
-  const [loadTime, setLoadTime] = useState<number | "">("");
-
-  // Table Setup Mat Types state tracking (for tables 1, 2, 3, 4)
-  const [tableMatTypes, setTableMatTypes] = useState<Record<number, string>>(
-    {},
-  );
-
-  // Table - Short Molding positions tracker state (stores selected square for tables 1, 2, 3, 4)
-  const [selectedTableSquares, setSelectedTableSquares] = useState<
-    Record<number, string>
-  >({});
-
-  // Bubbles presence multiselect checkboxes state tracking (tableId mapped to sub-positions left/middle/right)
-  const [bubbleCheckboxes, setBubbleCheckboxes] = useState<
-    Record<number, { left: boolean; middle: boolean; right: boolean }>
-  >({
-    1: { left: false, middle: false, right: false },
-    2: { left: false, middle: false, right: false },
-    3: { left: false, middle: false, right: false },
-    4: { left: false, middle: false, right: false },
+  // --- LAYOUT & CONFIGURATION PERSISTENCE ---
+  const [pressNumber, setPressNumber] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("terminal_press_number") || "1";
+    }
+    return "1";
   });
 
-  // Bubble size selections state tracking (tableId mapped to 'Big' | 'Small')
-  const [bubbleSizes, setBubbleSizes] = useState<Record<number, string>>({});
+  const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const savedState = localStorage.getItem("shift_panel_open");
+      return savedState !== null ? savedState === "true" : true;
+    }
+    return true;
+  });
 
-  // Controlled bindings for summary preview metrics
-  const [operator, setOperator] = useState<string>("");
-  const [shift, setShift] = useState<string>("day");
+  // --- SHIFT INFORMATION DATA PERSISTENCE ---
+  const [operator, setOperator] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("shift_operator") || "";
+    }
+    return "";
+  });
+
+  const [shift, setShift] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("shift_group") || "day";
+    }
+    return "day";
+  });
+
+  const [tableMatTypes, setTableMatTypes] = useState<Record<number, string>>(
+    () => {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("shift_mat_types");
+        return saved ? JSON.parse(saved) : {};
+      }
+      return {};
+    },
+  );
+
+  // --- ACTIVE WORKSPACE VALUES PERSISTENCE ---
+  const [startTime, setStartTime] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ws_start_time") || "";
+    }
+    return "";
+  });
+
+  const [endTime, setEndTime] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ws_end_time") || "";
+    }
+    return "";
+  });
+
+  const [runTime, setRunTime] = useState<number | "">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ws_run_time");
+      return saved !== null ? (saved === "" ? "" : Number(saved)) : 27;
+    }
+    return 27;
+  });
+
+  const [loadTime, setLoadTime] = useState<number | "">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ws_load_time");
+      return saved !== null ? (saved === "" ? "" : Number(saved)) : "";
+    }
+    return "";
+  });
+
+  const [selectedTableSquares, setSelectedTableSquares] = useState<
+    Record<number, string>
+  >(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ws_selected_squares");
+      return saved ? JSON.parse(saved) : {};
+    }
+    return {};
+  });
+
+  const [bubbleCheckboxes, setBubbleCheckboxes] = useState<
+    Record<number, { left: boolean; middle: boolean; right: boolean }>
+  >(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ws_bubble_checkboxes");
+      return saved
+        ? JSON.parse(saved)
+        : {
+            1: { left: false, middle: false, right: false },
+            2: { left: false, middle: false, right: false },
+            3: { left: false, middle: false, right: false },
+            4: { left: false, middle: false, right: false },
+          };
+    }
+    return {
+      1: { left: false, middle: false, right: false },
+      2: { left: false, middle: false, right: false },
+      3: { left: false, middle: false, right: false },
+      4: { left: false, middle: false, right: false },
+    };
+  });
+
+  const [bubbleSizes, setBubbleSizes] = useState<Record<number, string>>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ws_bubble_sizes");
+      return saved ? JSON.parse(saved) : {};
+    }
+    return {};
+  });
+
+  const [notes, setNotes] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ws_notes") || "";
+    }
+    return "";
+  });
+
+  const [currentDate, setCurrentDate] = useState<string>("");
+
+  // --- AUTOMATED DISPATCH WATCHERS & POLL SYNCING ---
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setPressNumber(localStorage.getItem("terminal_press_number") || "1");
+      const savedState = localStorage.getItem("shift_panel_open");
+      setIsShiftOpen(savedState !== null ? savedState === "true" : true);
+      setOperator(localStorage.getItem("shift_operator") || "");
+      setShift(localStorage.getItem("shift_group") || "day");
+      const savedMats = localStorage.getItem("shift_mat_types");
+      setTableMatTypes(savedMats ? JSON.parse(savedMats) : {});
+
+      // Synchronize in case of external clearing events
+      setStartTime(localStorage.getItem("ws_start_time") || "");
+      setEndTime(localStorage.getItem("ws_end_time") || "");
+      const rTime = localStorage.getItem("ws_run_time");
+      setRunTime(rTime !== null ? (rTime === "" ? "" : Number(rTime)) : 27);
+      const lTime = localStorage.getItem("ws_load_time");
+      setLoadTime(lTime !== null ? (lTime === "" ? "" : Number(lTime)) : "");
+      const savedSquares = localStorage.getItem("ws_selected_squares");
+      setSelectedTableSquares(savedSquares ? JSON.parse(savedSquares) : {});
+      const savedBubbles = localStorage.getItem("ws_bubble_checkboxes");
+      setBubbleCheckboxes(
+        savedBubbles
+          ? JSON.parse(savedBubbles)
+          : {
+              1: { left: false, middle: false, right: false },
+              2: { left: false, middle: false, right: false },
+              3: { left: false, middle: false, right: false },
+              4: { left: false, middle: false, right: false },
+            },
+      );
+      const savedSizes = localStorage.getItem("ws_bubble_sizes");
+      setBubbleSizes(savedSizes ? JSON.parse(savedSizes) : {});
+      setNotes(localStorage.getItem("ws_notes") || "");
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    const interval = setInterval(handleStorageChange, 1000);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Sync state modifications to localStorage instantly
+  useEffect(() => {
+    localStorage.setItem("terminal_press_number", pressNumber);
+  }, [pressNumber]);
+  useEffect(() => {
+    localStorage.setItem("shift_panel_open", String(isShiftOpen));
+  }, [isShiftOpen]);
+  useEffect(() => {
+    localStorage.setItem("shift_operator", operator);
+  }, [operator]);
+  useEffect(() => {
+    localStorage.setItem("shift_group", shift);
+  }, [shift]);
+  useEffect(() => {
+    localStorage.setItem("shift_mat_types", JSON.stringify(tableMatTypes));
+  }, [tableMatTypes]);
+  useEffect(() => {
+    localStorage.setItem("ws_start_time", startTime);
+  }, [startTime]);
+  useEffect(() => {
+    localStorage.setItem("ws_end_time", endTime);
+  }, [endTime]);
+  useEffect(() => {
+    localStorage.setItem("ws_run_time", String(runTime));
+  }, [runTime]);
+  useEffect(() => {
+    localStorage.setItem("ws_load_time", String(loadTime));
+  }, [loadTime]);
+  useEffect(() => {
+    localStorage.setItem(
+      "ws_selected_squares",
+      JSON.stringify(selectedTableSquares),
+    );
+  }, [selectedTableSquares]);
+  useEffect(() => {
+    localStorage.setItem(
+      "ws_bubble_checkboxes",
+      JSON.stringify(bubbleCheckboxes),
+    );
+  }, [bubbleCheckboxes]);
+  useEffect(() => {
+    localStorage.setItem("ws_bubble_sizes", JSON.stringify(bubbleSizes));
+  }, [bubbleSizes]);
+  useEffect(() => {
+    localStorage.setItem("ws_notes", notes);
+  }, [notes]);
 
   useEffect(() => {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, "0");
     const day = String(today.getDate()).padStart(2, "0");
-    const formattedDate = `${year}-${month}-${day}`;
-
-    const frameId = requestAnimationFrame(() => {
-      setCurrentDate(formattedDate);
-    });
-
-    return () => cancelAnimationFrame(frameId);
+    setCurrentDate(`${year}-${month}-${day}`);
   }, []);
 
-  // Automatically calculate difference when startTime or endTime changes
+  // Automated midnight-crossover duration calculator
   useEffect(() => {
     if (startTime && endTime) {
       const [startHours, startMinutes] = startTime.split(":").map(Number);
       const [endHours, endMinutes] = endTime.split(":").map(Number);
-
       const startTotalMinutes = startHours * 60 + startMinutes;
       let endTotalMinutes = endHours * 60 + endMinutes;
 
-      if (endTotalMinutes < startTotalMinutes) {
-        endTotalMinutes += 24 * 60;
-      }
-
-      const diff = endTotalMinutes - startTotalMinutes;
-      setLoadTime(diff);
+      if (endTotalMinutes < startTotalMinutes) endTotalMinutes += 24 * 60;
+      setLoadTime(endTotalMinutes - startTotalMinutes);
     } else {
       setLoadTime("");
     }
   }, [startTime, endTime]);
 
-  const getSystemTime = () => {
-    const now = new Date();
-    return now.toTimeString().split(" ")[0].substring(0, 5);
-  };
-
   const handleTimestamp = (type: "start" | "end") => {
-    const currentTime = getSystemTime();
+    const currentTime = new Date().toTimeString().split(" ")[0].substring(0, 5);
     if (type === "start") setStartTime(currentTime);
     if (type === "end") setEndTime(currentTime);
   };
 
-  // Helper handler for updating individual table grids
   const handleSquareSelect = (tableId: number, positionId: string) => {
-    setSelectedTableSquares((prev) => ({
-      ...prev,
-      [tableId]: positionId,
-    }));
+    setSelectedTableSquares((prev) => ({ ...prev, [tableId]: positionId }));
   };
 
-  // Helper handler for updating table mat setup row selections
   const handleMatSetupSelect = (tableId: number, matType: string) => {
-    setTableMatTypes((prev) => ({
-      ...prev,
-      [tableId]: matType,
-    }));
+    setTableMatTypes((prev) => ({ ...prev, [tableId]: matType }));
   };
 
-  // Toggle handlers for Bubble positions (Left, Middle, Right)
   const handleBubbleCheckboxToggle = (
     tableId: number,
     position: "left" | "middle" | "right",
@@ -134,19 +281,12 @@ export default function ProductionForm() {
   ) => {
     setBubbleCheckboxes((prev) => ({
       ...prev,
-      [tableId]: {
-        ...prev[tableId],
-        [position]: checked,
-      },
+      [tableId]: { ...prev[tableId], [position]: checked },
     }));
   };
 
-  // Handler for Bubble Size radio selection updates
   const handleBubbleSizeSelect = (tableId: number, size: string) => {
-    setBubbleSizes((prev) => ({
-      ...prev,
-      [tableId]: size,
-    }));
+    setBubbleSizes((prev) => ({ ...prev, [tableId]: size }));
   };
 
   return (
@@ -176,6 +316,7 @@ export default function ProductionForm() {
         onSubmit={(e) => {
           e.preventDefault();
 
+          // 1. Package the current workspace data into a log entry
           const newCycleEntry = {
             id: Math.random().toString(36).substring(2, 9),
             pressNumber,
@@ -185,27 +326,58 @@ export default function ProductionForm() {
             startTime,
             endTime,
             runTime,
-            loadTime, // Save calculated duration difference explicitly
+            loadTime,
             tableMatTypes,
             selectedTableSquares,
             bubbleCheckboxes,
             bubbleSizes,
-            notes:
-              (document.getElementById("notes") as HTMLTextAreaElement)
-                ?.value || "",
+            notes,
             timestamp: Date.now(),
           };
 
+          // 2. Append to the production log history in localStorage
           const existingRecords = JSON.parse(
             localStorage.getItem("production_cycles") || "[]",
           );
-          existingRecords.unshift(newCycleEntry); // Add to the front of the list
+          existingRecords.unshift(newCycleEntry);
           localStorage.setItem(
             "production_cycles",
             JSON.stringify(existingRecords),
           );
 
-          alert(`Saved entry successfully!`);
+          // =========================================================
+          // 3. RESET SPECIFIC ACTIVE WORKSPACE STATES ON SUBMIT
+          // =========================================================
+          setStartTime("");
+          setEndTime("");
+          setRunTime(27); // Reset back to factory default standard run time
+          setLoadTime("");
+          setSelectedTableSquares({});
+          setBubbleCheckboxes({
+            1: { left: false, middle: false, right: false },
+            2: { left: false, middle: false, right: false },
+            3: { left: false, middle: false, right: false },
+            4: { left: false, middle: false, right: false },
+          });
+          setBubbleSizes({});
+          setNotes("");
+
+          // =========================================================
+          // 4. CLEAR WRITTEN CACHE FROM LOCALSTORAGE WORKSPACE KEYS
+          // =========================================================
+          localStorage.removeItem("ws_start_time");
+          localStorage.removeItem("ws_end_time");
+          localStorage.setItem("ws_run_time", "27");
+          localStorage.removeItem("ws_load_time");
+          localStorage.removeItem("ws_selected_squares");
+          localStorage.removeItem("ws_bubble_checkboxes");
+          localStorage.removeItem("ws_bubble_sizes");
+          localStorage.removeItem("ws_notes");
+
+          // Cleanly close the shift settings display pane accordian if preferred
+          setIsShiftOpen(false);
+
+          alert(`Saved entry successfully! Form workspace cleared.`);
         }}
         className="space-y-4"
       >
@@ -223,7 +395,7 @@ export default function ProductionForm() {
                   Shift Information
                 </span>
                 {!isShiftOpen && (
-                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1 animate-in fade-in duration-300">
+                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
                     {operator || "No Name"} •{" "}
                     {shift === "day" ? "Day Shift" : "Night Shift"} •{" "}
                     {currentDate || "---"}
@@ -239,7 +411,7 @@ export default function ProductionForm() {
           </button>
 
           {isShiftOpen && (
-            <CardContent className="p-4 pt-2 border-t border-neutral-100/60 animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
+            <CardContent className="p-4 pt-2 border-t border-neutral-100/60 space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="date">Shift Date</Label>
@@ -248,7 +420,7 @@ export default function ProductionForm() {
                     type="date"
                     value={currentDate}
                     readOnly
-                    className=" bg-neutral-50 cursor-not-allowed text-neutral-500 select-none"
+                    className="bg-neutral-50 cursor-not-allowed text-neutral-500 select-none"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -274,7 +446,7 @@ export default function ProductionForm() {
                 </div>
               </div>
 
-              {/* Table Setup (Mat type) Visual Matrix Sub-component */}
+              {/* Table Setup */}
               <div className="pt-2 border-t border-neutral-100 space-y-2">
                 <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider block">
                   Table Setup (Mat type)
@@ -301,19 +473,11 @@ export default function ProductionForm() {
                             />
                             <Label
                               htmlFor={`msetup-${tableId}-${type}`}
-                              className={`h-7 px-2 border rounded flex items-center justify-center gap-1.5 text-[11px] font-bold cursor-pointer transition-all select-none ${
-                                tableMatTypes[tableId] === type
-                                  ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                                  : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"
-                              }`}
+                              className={`h-7 px-2 border rounded flex items-center justify-center gap-1.5 text-[11px] font-bold cursor-pointer transition-all select-none ${tableMatTypes[tableId] === type ? "border-emerald-600 bg-emerald-600 text-white shadow-sm" : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"}`}
                             >
                               <span>{type}</span>
                               <div
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  tableMatTypes[tableId] === type
-                                    ? "bg-white"
-                                    : "bg-neutral-300"
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full ${tableMatTypes[tableId] === type ? "bg-white" : "bg-neutral-300"}`}
                               />
                             </Label>
                           </div>
@@ -327,7 +491,7 @@ export default function ProductionForm() {
           )}
         </Card>
 
-        {/* Timestamps & Durations Section */}
+        {/* Timestamps & Durations */}
         <Card className="shadow-sm border-neutral-200/60">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
@@ -360,7 +524,6 @@ export default function ProductionForm() {
                 </Button>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="runTime">Run Time (min)</Label>
@@ -390,7 +553,7 @@ export default function ProductionForm() {
           </CardContent>
         </Card>
 
-        {/* Tables - Short Molding Visual Grid Selector */}
+        {/* Tables - Short Molding */}
         <Card className="shadow-sm border-neutral-200/60">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
@@ -405,13 +568,12 @@ export default function ProductionForm() {
                   <span className="text-2xl font-bold text-neutral-800 pt-1 select-none">
                     {tableNum}
                   </span>
-
                   <RadioGroup
                     value={selectedTableSquares[tableNum] || ""}
                     onValueChange={(val) => handleSquareSelect(tableNum, val)}
                     className="grid grid-cols-3 gap-1.5 relative w-[100px] h-[100px]"
                   >
-                    {/* Top-Left Square */}
+                    {/* Top Left */}
                     <div className="absolute top-0 left-0">
                       <RadioGroupItem
                         value="top-left"
@@ -420,19 +582,14 @@ export default function ProductionForm() {
                       />
                       <Label
                         htmlFor={`t${tableNum}-tl`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${
-                          selectedTableSquares[tableNum] === "top-left"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm font-bold"
-                            : "border-neutral-900 hover:bg-neutral-100"
-                        }`}
+                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-left" ? "scale-100" : "scale-0"}`}
                         />
                       </Label>
                     </div>
-
-                    {/* Top-Right Square */}
+                    {/* Top Right */}
                     <div className="absolute top-0 right-0">
                       <RadioGroupItem
                         value="top-right"
@@ -441,19 +598,14 @@ export default function ProductionForm() {
                       />
                       <Label
                         htmlFor={`t${tableNum}-tr`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${
-                          selectedTableSquares[tableNum] === "top-right"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm font-bold"
-                            : "border-neutral-900 hover:bg-neutral-100"
-                        }`}
+                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-right" ? "scale-100" : "scale-0"}`}
                         />
                       </Label>
                     </div>
-
-                    {/* Center Square */}
+                    {/* Center */}
                     <div className="absolute top-[36px] left-[36px]">
                       <RadioGroupItem
                         value="center"
@@ -462,19 +614,14 @@ export default function ProductionForm() {
                       />
                       <Label
                         htmlFor={`t${tableNum}-cc`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${
-                          selectedTableSquares[tableNum] === "center"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm font-bold"
-                            : "border-neutral-900 hover:bg-neutral-100"
-                        }`}
+                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "center" ? "scale-100" : "scale-0"}`}
                         />
                       </Label>
                     </div>
-
-                    {/* Bottom-Left Square */}
+                    {/* Bottom Left */}
                     <div className="absolute bottom-0 left-0">
                       <RadioGroupItem
                         value="bottom-left"
@@ -483,19 +630,14 @@ export default function ProductionForm() {
                       />
                       <Label
                         htmlFor={`t${tableNum}-bl`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${
-                          selectedTableSquares[tableNum] === "bottom-left"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm font-bold"
-                            : "border-neutral-900 hover:bg-neutral-100"
-                        }`}
+                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-left" ? "scale-100" : "scale-0"}`}
                         />
                       </Label>
                     </div>
-
-                    {/* Bottom-Right Square */}
+                    {/* Bottom Right */}
                     <div className="absolute bottom-0 right-0">
                       <RadioGroupItem
                         value="bottom-right"
@@ -504,11 +646,7 @@ export default function ProductionForm() {
                       />
                       <Label
                         htmlFor={`t${tableNum}-br`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${
-                          selectedTableSquares[tableNum] === "bottom-right"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm font-bold"
-                            : "border-neutral-900 hover:bg-neutral-100"
-                        }`}
+                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-right" ? "scale-100" : "scale-0"}`}
@@ -522,7 +660,7 @@ export default function ProductionForm() {
           </CardContent>
         </Card>
 
-        {/* Bubbles Card Section with 3 Checkboxes (L, M, R) */}
+        {/* Bubbles Checkbox Layout Header & Matrix */}
         <Card className="shadow-sm border-neutral-200/60">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
@@ -530,7 +668,6 @@ export default function ProductionForm() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-1 space-y-3.5">
-            {/* Grid Layout Headers */}
             <div className="grid grid-cols-12 gap-2 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider pb-1 border-b border-neutral-100">
               <div className="col-span-1 text-left">Table</div>
               <div className="col-span-5 grid grid-cols-3 gap-1">
@@ -540,47 +677,40 @@ export default function ProductionForm() {
               </div>
               <div className="col-span-6">Size</div>
             </div>
-
-            {/* Matrix entry Rows */}
             {[1, 2, 3, 4].map((tableId) => (
               <div
                 key={tableId}
                 className="grid grid-cols-12 gap-2 items-center text-center"
               >
-                {/* Index label column */}
                 <div className="col-span-1 text-left text-sm font-bold text-neutral-700">
                   {tableId}
                 </div>
-
-                {/* 3 Checkboxes (Left, Middle, Right) */}
                 <div className="col-span-5 grid grid-cols-3 gap-1 justify-items-center">
                   <Checkbox
                     id={`bubble-check-${tableId}-L`}
-                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
                     checked={bubbleCheckboxes[tableId].left}
-                    onCheckedChange={(checked) =>
-                      handleBubbleCheckboxToggle(tableId, "left", !!checked)
+                    onCheckedChange={(c) =>
+                      handleBubbleCheckboxToggle(tableId, "left", !!c)
                     }
                   />
                   <Checkbox
                     id={`bubble-check-${tableId}-M`}
-                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
                     checked={bubbleCheckboxes[tableId].middle}
-                    onCheckedChange={(checked) =>
-                      handleBubbleCheckboxToggle(tableId, "middle", !!checked)
+                    onCheckedChange={(c) =>
+                      handleBubbleCheckboxToggle(tableId, "middle", !!c)
                     }
                   />
                   <Checkbox
                     id={`bubble-check-${tableId}-R`}
-                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
                     checked={bubbleCheckboxes[tableId].right}
-                    onCheckedChange={(checked) =>
-                      handleBubbleCheckboxToggle(tableId, "right", !!checked)
+                    onCheckedChange={(c) =>
+                      handleBubbleCheckboxToggle(tableId, "right", !!c)
                     }
                   />
                 </div>
-
-                {/* Radio button size selector segment */}
                 <div className="col-span-6 flex justify-center">
                   <RadioGroup
                     value={bubbleSizes[tableId] || ""}
@@ -589,7 +719,6 @@ export default function ProductionForm() {
                     }
                     className="flex items-center gap-2 w-full justify-between"
                   >
-                    {/* Big size option */}
                     <div className="flex-1 flex items-center justify-center">
                       <RadioGroupItem
                         value="Big"
@@ -598,11 +727,7 @@ export default function ProductionForm() {
                       />
                       <Label
                         htmlFor={`size-${tableId}-big`}
-                        className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all select-none ${
-                          bubbleSizes[tableId] === "Big"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700"
-                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100 text-neutral-600"
-                        }`}
+                        className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all ${bubbleSizes[tableId] === "Big" ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50/50 text-neutral-600"}`}
                       >
                         <span>Big</span>
                         <div
@@ -610,8 +735,6 @@ export default function ProductionForm() {
                         />
                       </Label>
                     </div>
-
-                    {/* Small size option */}
                     <div className="flex-1 flex items-center justify-center">
                       <RadioGroupItem
                         value="Small"
@@ -620,11 +743,7 @@ export default function ProductionForm() {
                       />
                       <Label
                         htmlFor={`size-${tableId}-small`}
-                        className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all select-none ${
-                          bubbleSizes[tableId] === "Small"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700"
-                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100 text-neutral-600"
-                        }`}
+                        className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all ${bubbleSizes[tableId] === "Small" ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50/50 text-neutral-600"}`}
                       >
                         <span>Small</span>
                         <div
@@ -645,13 +764,14 @@ export default function ProductionForm() {
             <Label htmlFor="notes">Mechanical Faults / Cycle Notes</Label>
             <Textarea
               id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g., Upper right vacuum pad missed placement..."
               className="resize-none min-h-[70px]"
             />
           </CardContent>
         </Card>
 
-        {/* Global Submit Trigger */}
         <Button
           type="submit"
           className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 font-bold tracking-wide uppercase text-sm shadow-md"
