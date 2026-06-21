@@ -1,12 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export", // Required for Cloudflare Pages Static HTML Exports
+  output: "export", // Required for Cloudflare Pages static hosting
   images: {
-    unoptimized: true, // Required for static exports
+    unoptimized: true,
   },
-  // If the build environment knows it is targeting a subpath, apply it; otherwise, default to root '/' ...
-  basePath: process.env.NODE_ENV === "production" ? "/rubbergem" : "",
+  // Remove assetPrefix entirely, leave only basePath
+  basePath: "/rubbergem",
 };
 
 export default nextConfig;
