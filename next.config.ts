@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true, // Required for static exports
   },
-  // If the build environment knows it is targeting a subpath, apply it; otherwise, default to root '/'
+  // If the build environment knows it is targeting a subpath, apply it; otherwise, default to root '/' ...
   basePath: process.env.NODE_ENV === "production" ? "/rubbergem" : "",
 };
 
