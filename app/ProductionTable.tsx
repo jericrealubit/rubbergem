@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft,
   Printer,
+  Trash2,
   User,
   Cpu,
   Clock,
@@ -62,6 +63,18 @@ export default function ProductionTablePage({
     window.print();
   };
 
+  // Reset log with warning verification
+  const handleResetLog = () => {
+    const isConfirmed = window.confirm(
+      "CRITICAL WARNING: Are you sure you want to completely erase the current shift production log? This action cannot be undone.",
+    );
+
+    if (isConfirmed) {
+      localStorage.removeItem("production_cycles");
+      setEntries([]);
+    }
+  };
+
   const latestEntry = entries[0] || null;
 
   // Strict 15-row design structure
@@ -71,19 +84,16 @@ export default function ProductionTablePage({
     (_, i) => entries[i] || null,
   );
 
-  // Calculations
+  // Summary Metrics Calculations
   const activeEntriesCount = entries.length;
   const totalMatsProduced = activeEntriesCount * 4;
 
   let faultyMatsProduced = 0;
   entries.forEach((entry) => {
-    // Check each of the 4 tables in the cycle row individually
     for (let id = 1; id <= 4; id++) {
       const hasShortMold = !!entry.selectedTableSquares?.[id];
       const b = entry.bubbleCheckboxes?.[id];
       const hasBubbles = !!(b?.left || b?.middle || b?.right);
-
-      // Adjusted condition: max 1 reject count total per specific table per cycle
       if (hasShortMold || hasBubbles) {
         faultyMatsProduced++;
       }
@@ -151,12 +161,21 @@ export default function ProductionTablePage({
         >
           <ArrowLeft className="w-4 h-4" /> Back to Entry Form
         </Button>
-        <Button
-          onClick={handlePrintPDF}
-          className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-9 text-xs font-bold shadow-sm"
-        >
-          <Printer className="w-4 h-4" /> Print Landscape PDF (1 Page)
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleResetLog}
+            variant="destructive"
+            className="bg-red-600 hover:bg-red-700 gap-2 h-9 text-xs font-bold shadow-sm text-white"
+          >
+            <Trash2 className="w-4 h-4" /> Reset Shift Log
+          </Button>
+          <Button
+            onClick={handlePrintPDF}
+            className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-9 text-xs font-bold shadow-sm"
+          >
+            <Printer className="w-4 h-4" /> Print Landscape PDF (1 Page)
+          </Button>
+        </div>
       </div>
 
       {/* Main Document Content Area */}

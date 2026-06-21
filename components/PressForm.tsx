@@ -240,15 +240,15 @@ export default function ProductionForm() {
 
           {isShiftOpen && (
             <CardContent className="p-4 pt-2 border-t border-neutral-100/60 animate-in fade-in slide-in-from-top-2 duration-200 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5 col-span-2">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
                   <Label htmlFor="date">Shift Date</Label>
                   <Input
                     id="date"
                     type="date"
                     value={currentDate}
                     readOnly
-                    className="h-11 bg-neutral-50 cursor-not-allowed text-neutral-500 select-none"
+                    className=" bg-neutral-50 cursor-not-allowed text-neutral-500 select-none"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -256,7 +256,6 @@ export default function ProductionForm() {
                   <Input
                     id="operator"
                     placeholder="First Name"
-                    className="h-11"
                     value={operator}
                     onChange={(e) => setOperator(e.target.value)}
                   />
@@ -264,7 +263,7 @@ export default function ProductionForm() {
                 <div className="space-y-1.5">
                   <Label htmlFor="shift">Shift Group</Label>
                   <Select value={shift} onValueChange={setShift}>
-                    <SelectTrigger id="shift" className="h-11">
+                    <SelectTrigger id="shift">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
