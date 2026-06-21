@@ -539,12 +539,36 @@ export default function ProductionForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="loadTime">Load/Unload (min)</Label>
+                <Label
+                  htmlFor="loadTime"
+                  className="flex items-center justify-between"
+                >
+                  <span>Load/Unload (min)</span>
+                  {loadTime === "" ? (
+                    <span className="text-[10px] font-bold text-neutral-400">
+                      REQUIRED
+                    </span>
+                  ) : Number(loadTime) < 10 ? (
+                    <span className="text-[10px] font-bold text-destructive animate-pulse">
+                      MIN 10 MIN REQUIRED
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-emerald-600">
+                      VALID
+                    </span>
+                  )}
+                </Label>
                 <Input
                   type="number"
                   id="loadTime"
                   placeholder="Calculated..."
-                  className="h-11 bg-neutral-50 font-medium text-neutral-800"
+                  className={`h-11 font-medium transition-colors ${
+                    loadTime === ""
+                      ? "bg-neutral-50 border-neutral-200 text-neutral-400"
+                      : Number(loadTime) < 10
+                        ? "bg-red-50 border-red-300 text-red-900 focus-visible:ring-red-500"
+                        : "bg-emerald-50/30 border-emerald-200 text-neutral-800"
+                  }`}
                   value={loadTime}
                   readOnly
                 />
@@ -772,11 +796,17 @@ export default function ProductionForm() {
           </CardContent>
         </Card>
 
+        {/* Global Submit Trigger */}
         <Button
           type="submit"
-          className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 font-bold tracking-wide uppercase text-sm shadow-md"
+          disabled={loadTime === "" || Number(loadTime) < 10}
+          className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
         >
-          Submit Cycle Entry
+          {loadTime === ""
+            ? "Enter Timestamps to Submit"
+            : Number(loadTime) < 10
+              ? "Load Time Must Be ≥ 10 Min"
+              : "Submit Cycle Entry"}
         </Button>
       </form>
     </div>
