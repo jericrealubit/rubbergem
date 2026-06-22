@@ -4,7 +4,12 @@
 A fast-entry mobile web terminal and manufacturing audit logging solution built with Next.js, React, Tailwind CSS, and shadcn/ui. This system provides press operators with an optimized mobile viewport to quickly enter cycle logs, calculate durations, and generate strict single-page print/PDF audit sheets in landscape orientation.
 
 ---
+Live: https://waai.au/rubbergem
+---
 
+<img width="50%" height="50%" alt="image" src="https://github.com/user-attachments/assets/1c17b4e4-5a39-41c9-ab72-1ecd815845e5" />
+
+---
 ## 🚀 Technical Stack
 
 - **Framework:** Next.js (App Router Architecture)
@@ -13,7 +18,7 @@ A fast-entry mobile web terminal and manufacturing audit logging solution built 
 - **Icons:** Lucide React
 - **UI Components:** Built following shadcn/ui structural primitives (Card, Button, Label, Input, Select, Checkbox, RadioGroup)
 
----
+
 
 ## 🛠️ Main Application Features
 
