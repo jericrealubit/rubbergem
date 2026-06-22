@@ -41,9 +41,6 @@ export default function Home() {
             RubberGem Production System
           </span>
         </div>
-        <div className="text-xs bg-emerald-800 border border-emerald-600/40 px-2.5 py-1 rounded-full font-semibold opacity-90">
-          Terminal Mode
-        </div>
       </header>
 
       {/* Slide-out Burger Menu Navigation Drawer */}

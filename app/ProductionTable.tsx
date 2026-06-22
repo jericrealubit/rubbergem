@@ -187,7 +187,7 @@ export default function ProductionTablePage({
           onClick={onBack}
           className="gap-2 h-9 text-neutral-600 text-xs"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Entry Form
+          <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         <div className="flex items-center gap-2">
           <Button
@@ -201,7 +201,7 @@ export default function ProductionTablePage({
             onClick={handlePrintPDF}
             className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-9 text-xs font-bold shadow-sm"
           >
-            <Printer className="w-4 h-4" /> Print Landscape PDF (1 Page)
+            <Printer className="w-4 h-4" /> Print PDF
           </Button>
         </div>
       </div>

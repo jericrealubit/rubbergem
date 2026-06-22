@@ -81,6 +81,9 @@ export default function ProductionForm() {
     return "";
   });
 
+  // The End Time button should be disabled if startTime is not yet set
+  const isEndTimeDisabled = !startTime;
+
   const [runTime, setRunTime] = useState<number | "">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("ws_run_time");
@@ -292,24 +295,34 @@ export default function ProductionForm() {
   return (
     <div className="w-full max-w-md mx-auto p-3 space-y-4 pb-12">
       {/* Header Info Banner with Press Dropdown Selection */}
-      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm space-y-2">
-        <div className="flex items-center justify-between gap-4">
+      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm space-y-3">
+        {/* Row 1: Full-width Title */}
+        <div>
           <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
             Press #{pressNumber} Production
           </h1>
-          <Select value={pressNumber} onValueChange={setPressNumber}>
-            <SelectTrigger className="w-[120px] h-9 bg-emerald-900/60 border-emerald-700/50 text-white font-medium focus:ring-emerald-500">
-              <SelectValue placeholder="Select Press" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Press #1</SelectItem>
-              <SelectItem value="2">Press #2</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
-        <p className="text-xs text-emerald-200 text-left">
-          Mobile Fast-Entry Terminal
-        </p>
+
+        {/* Row 2: 2-Column Split */}
+        <div className="grid grid-cols-2 items-center gap-4">
+          {/* Column 1: Subtitle */}
+          <p className="text-xs text-emerald-200 text-left leading-none">
+            Mobile Fast-Entry Terminal
+          </p>
+
+          {/* Column 2: Select Dropdown (aligned right) */}
+          <div className="flex justify-end">
+            <Select value={pressNumber} onValueChange={setPressNumber}>
+              <SelectTrigger className="w-[120px] h-9 bg-emerald-900/60 border-emerald-700/50 text-white font-medium focus:ring-emerald-500">
+                <SelectValue placeholder="Select Press" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Press #1</SelectItem>
+                <SelectItem value="2">Press #2</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       <form
@@ -516,6 +529,7 @@ export default function ProductionForm() {
                 <Label>End Time</Label>
                 <Button
                   type="button"
+                  disabled={isEndTimeDisabled}
                   variant={endTime ? "secondary" : "outline"}
                   className={`w-full h-12 font-bold tracking-wide border-dashed border-2 ${!endTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
                   onClick={() => handleTimestamp("end")}
@@ -543,7 +557,7 @@ export default function ProductionForm() {
                   htmlFor="loadTime"
                   className="flex items-center justify-between"
                 >
-                  <span>Load/Unload (min)</span>
+                  <span>Load/Unload</span>
                   {loadTime === "" ? (
                     <span className="text-[10px]  text-neutral-400">
                       REQUIRED
