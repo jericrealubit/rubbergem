@@ -107,6 +107,15 @@ export default function ProductionTablePage({
   const activeEntriesCount = entries.length;
   const totalMatsProduced = activeEntriesCount * 4;
 
+  // Compute the absolute sum of all entries' load times dynamically
+  const accumulatedLoadTime = entries.reduce((total, entry) => {
+    const time =
+      typeof entry.loadTime === "number"
+        ? entry.loadTime
+        : parseFloat(entry.loadTime) || 0;
+    return total + time;
+  }, 0);
+
   let faultyMatsProduced = 0;
   entries.forEach((entry) => {
     for (let id = 1; id <= 4; id++) {
@@ -265,7 +274,7 @@ export default function ProductionTablePage({
                   Accumulated Load Time
                 </span>
                 <span className="font-bold text-neutral-950 text-xs">
-                  {latestEntry?.loadTime ? `${latestEntry.loadTime}m` : "—"}
+                  {accumulatedLoadTime > 0 ? `${accumulatedLoadTime}m` : "0m"}
                 </span>
               </div>
             </div>

@@ -451,7 +451,7 @@ export default function ProductionForm() {
                 <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider block">
                   Table Setup (Mat type)
                 </span>
-                <div className="space-y-2 bg-neutral-50 p-2.5 rounded-lg border border-neutral-200/60">
+                <div className="min-w-[340px] flex flex-col gap-3">
                   {[1, 2, 3, 4].map((tableId) => (
                     <div key={tableId} className="flex items-center gap-3">
                       <span className="text-sm font-bold text-neutral-600 w-4">
@@ -545,7 +545,7 @@ export default function ProductionForm() {
                 >
                   <span>Load/Unload (min)</span>
                   {loadTime === "" ? (
-                    <span className="text-[10px] font-bold text-neutral-400">
+                    <span className="text-[10px]  text-neutral-400">
                       REQUIRED
                     </span>
                   ) : Number(loadTime) < 10 ? (
