@@ -318,7 +318,7 @@ export default function ProductionTablePage({
                 <th className="p-2 border-r border-neutral-200 text-center">
                   Bubbles Matrix (1-4)
                 </th>
-                <th className="p-2 w-48">Fault Notes / Structural Remarks</th>
+                <th className="p-2 w-48">Fault Notes / Remarks</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 text-[11px]">
