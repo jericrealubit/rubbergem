@@ -56,6 +56,14 @@ export default function ProductionForm() {
     return "day";
   });
 
+  const [runTime, setRunTime] = useState<number | "">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("shift_run_time");
+      return saved !== null && saved !== "" ? Number(saved) : "";
+    }
+    return "";
+  });
+
   const [tableMatTypes, setTableMatTypes] = useState<Record<number, string>>(
     () => {
       if (typeof window !== "undefined") {
@@ -83,14 +91,6 @@ export default function ProductionForm() {
 
   // The End Time button should be disabled if startTime is not yet set
   const isEndTimeDisabled = !startTime;
-
-  const [runTime, setRunTime] = useState<number | "">(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("ws_run_time");
-      return saved !== null ? (saved === "" ? "" : Number(saved)) : 27;
-    }
-    return 27;
-  });
 
   const [loadTime, setLoadTime] = useState<number | "">(() => {
     if (typeof window !== "undefined") {
@@ -157,14 +157,16 @@ export default function ProductionForm() {
       setIsShiftOpen(savedState !== null ? savedState === "true" : true);
       setOperator(localStorage.getItem("shift_operator") || "");
       setShift(localStorage.getItem("shift_group") || "day");
+
+      const rTime = localStorage.getItem("shift_run_time");
+      setRunTime(rTime !== null ? (rTime === "" ? "" : Number(rTime)) : "");
+
       const savedMats = localStorage.getItem("shift_mat_types");
       setTableMatTypes(savedMats ? JSON.parse(savedMats) : {});
 
-      // Synchronize in case of external clearing events
+      // Synchronize active workspace components
       setStartTime(localStorage.getItem("ws_start_time") || "");
       setEndTime(localStorage.getItem("ws_end_time") || "");
-      const rTime = localStorage.getItem("ws_run_time");
-      setRunTime(rTime !== null ? (rTime === "" ? "" : Number(rTime)) : 27);
       const lTime = localStorage.getItem("ws_load_time");
       setLoadTime(lTime !== null ? (lTime === "" ? "" : Number(lTime)) : "");
       const savedSquares = localStorage.getItem("ws_selected_squares");
@@ -207,6 +209,9 @@ export default function ProductionForm() {
     localStorage.setItem("shift_group", shift);
   }, [shift]);
   useEffect(() => {
+    localStorage.setItem("shift_run_time", String(runTime));
+  }, [runTime]);
+  useEffect(() => {
     localStorage.setItem("shift_mat_types", JSON.stringify(tableMatTypes));
   }, [tableMatTypes]);
   useEffect(() => {
@@ -215,9 +220,6 @@ export default function ProductionForm() {
   useEffect(() => {
     localStorage.setItem("ws_end_time", endTime);
   }, [endTime]);
-  useEffect(() => {
-    localStorage.setItem("ws_run_time", String(runTime));
-  }, [runTime]);
   useEffect(() => {
     localStorage.setItem("ws_load_time", String(loadTime));
   }, [loadTime]);
@@ -363,7 +365,6 @@ export default function ProductionForm() {
           // =========================================================
           setStartTime("");
           setEndTime("");
-          setRunTime(27); // Reset back to factory default standard run time
           setLoadTime("");
           setSelectedTableSquares({});
           setBubbleCheckboxes({
@@ -380,14 +381,14 @@ export default function ProductionForm() {
           // =========================================================
           localStorage.removeItem("ws_start_time");
           localStorage.removeItem("ws_end_time");
-          localStorage.setItem("ws_run_time", "27");
           localStorage.removeItem("ws_load_time");
           localStorage.removeItem("ws_selected_squares");
           localStorage.removeItem("ws_bubble_checkboxes");
           localStorage.removeItem("ws_bubble_sizes");
           localStorage.removeItem("ws_notes");
 
-          // Cleanly close the shift settings display pane accordian if preferred
+          // Cleanly close the shift settings display pane accordion and write immediately to cache to stop background synchronizer race conditions
+          localStorage.setItem("shift_panel_open", "false");
           setIsShiftOpen(false);
 
           alert(`Saved entry successfully! Form workspace cleared.`);
@@ -410,8 +411,8 @@ export default function ProductionForm() {
                 {!isShiftOpen && (
                   <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
                     {operator || "No Name"} •{" "}
-                    {shift === "day" ? "Day Shift" : "Night Shift"} •{" "}
-                    {currentDate || "---"}
+                    {shift === "day" ? "Day" : "Night"} • Run:{" "}
+                    {runTime || "---"}m • {currentDate || "---"}
                   </p>
                 )}
               </div>
@@ -425,7 +426,8 @@ export default function ProductionForm() {
 
           {isShiftOpen && (
             <CardContent className="p-4 pt-2 border-t border-neutral-100/60 space-y-4">
-              <div className="grid grid-cols-3 gap-3">
+              {/* Balanced 2-Column Grid for Metadata Configuration */}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="date">Shift Date</Label>
                   <Input
@@ -456,6 +458,18 @@ export default function ProductionForm() {
                       <SelectItem value="night">Night Shift</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="runTime">Run Time (min)</Label>
+                  <Input
+                    type="number"
+                    id="runTime"
+                    placeholder="Minutes"
+                    value={runTime}
+                    onChange={(e) =>
+                      setRunTime(e.target.value ? Number(e.target.value) : "")
+                    }
+                  />
                 </div>
               </div>
 
@@ -538,55 +552,38 @@ export default function ProductionForm() {
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="runTime">Run Time (min)</Label>
-                <Input
-                  type="number"
-                  id="runTime"
-                  placeholder="e.g. 27"
-                  className="h-11"
-                  value={runTime}
-                  onChange={(e) =>
-                    setRunTime(e.target.value ? Number(e.target.value) : "")
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="loadTime"
-                  className="flex items-center justify-between"
-                >
-                  <span>Load/Unload</span>
-                  {loadTime === "" ? (
-                    <span className="text-[10px]  text-neutral-400">
-                      REQUIRED
-                    </span>
-                  ) : Number(loadTime) < 1 ? (
-                    <span className="text-[10px] font-bold text-destructive animate-pulse">
-                      MIN 1 MIN REQUIRED
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold text-emerald-600">
-                      VALID
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  type="number"
-                  id="loadTime"
-                  placeholder="Calculated..."
-                  className={`h-11 font-medium transition-colors ${
-                    loadTime === ""
-                      ? "bg-neutral-50 border-neutral-200 text-neutral-400"
-                      : Number(loadTime) < 1
-                        ? "bg-red-50 border-red-300 text-red-900 focus-visible:ring-red-500"
-                        : "bg-emerald-50/30 border-emerald-200 text-neutral-800"
-                  }`}
-                  value={loadTime}
-                  readOnly
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="loadTime"
+                className="flex items-center justify-between"
+              >
+                <span>Load/Unload Duration</span>
+                {loadTime === "" ? (
+                  <span className="text-[10px] text-neutral-400">REQUIRED</span>
+                ) : Number(loadTime) < 1 ? (
+                  <span className="text-[10px] font-bold text-destructive animate-pulse">
+                    MIN 1 MIN REQUIRED
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-emerald-600">
+                    VALID
+                  </span>
+                )}
+              </Label>
+              <Input
+                type="number"
+                id="loadTime"
+                placeholder="Calculated automatically..."
+                className={`h-11 font-medium transition-colors ${
+                  loadTime === ""
+                    ? "bg-neutral-50 border-neutral-200 text-neutral-400"
+                    : Number(loadTime) < 1
+                      ? "bg-red-50 border-red-300 text-red-900 focus-visible:ring-red-500"
+                      : "bg-emerald-50/30 border-emerald-200 text-neutral-800"
+                }`}
+                value={loadTime}
+                readOnly
+              />
             </div>
           </CardContent>
         </Card>

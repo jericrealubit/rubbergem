@@ -26,35 +26,28 @@ import {
 
 export default function ProductionForm() {
   // --- LAYOUT & CONFIGURATION PERSISTENCE ---
-  const [pressNumber, setPressNumber] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("terminal_press_number") || "1";
-    }
-    return "1";
-  });
+  // --- Initial clean defaults ---
+  const [pressNumber, setPressNumber] = useState<string>("1");
+  const [isShiftOpen, setIsShiftOpen] = useState<boolean>(true);
+  const [operator, setOperator] = useState<string>("");
+  const [shift, setShift] = useState<string>("day");
 
-  const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
+  // --- Safe client-side local hydration ---
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedState = localStorage.getItem("shift_panel_open");
-      return savedState !== null ? savedState === "true" : true;
-    }
-    return true;
-  });
+      const savedPress = localStorage.getItem("terminal_press_number");
+      if (savedPress) setPressNumber(savedPress);
 
-  // --- SHIFT INFORMATION DATA PERSISTENCE ---
-  const [operator, setOperator] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("shift_operator") || "";
-    }
-    return "";
-  });
+      const savedShiftState = localStorage.getItem("shift_panel_open");
+      if (savedShiftState !== null) setIsShiftOpen(savedShiftState === "true");
 
-  const [shift, setShift] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("shift_group") || "day";
+      const savedOperator = localStorage.getItem("shift_operator");
+      if (savedOperator) setOperator(savedOperator);
+
+      const savedGroup = localStorage.getItem("shift_group");
+      if (savedGroup) setShift(savedGroup);
     }
-    return "day";
-  });
+  }, []);
 
   const [tableMatTypes, setTableMatTypes] = useState<Record<number, string>>(
     () => {
@@ -87,9 +80,9 @@ export default function ProductionForm() {
   const [runTime, setRunTime] = useState<number | "">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("ws_run_time");
-      return saved !== null ? (saved === "" ? "" : Number(saved)) : 27;
+      return saved !== null ? (saved === "" ? "" : Number(saved)) : 25;
     }
-    return 27;
+    return 25;
   });
 
   const [loadTime, setLoadTime] = useState<number | "">(() => {
@@ -164,7 +157,7 @@ export default function ProductionForm() {
       setStartTime(localStorage.getItem("ws_start_time") || "");
       setEndTime(localStorage.getItem("ws_end_time") || "");
       const rTime = localStorage.getItem("ws_run_time");
-      setRunTime(rTime !== null ? (rTime === "" ? "" : Number(rTime)) : 27);
+      setRunTime(rTime !== null ? (rTime === "" ? "" : Number(rTime)) : 25);
       const lTime = localStorage.getItem("ws_load_time");
       setLoadTime(lTime !== null ? (lTime === "" ? "" : Number(lTime)) : "");
       const savedSquares = localStorage.getItem("ws_selected_squares");
@@ -239,6 +232,9 @@ export default function ProductionForm() {
   useEffect(() => {
     localStorage.setItem("ws_notes", notes);
   }, [notes]);
+  useEffect(() => {
+    localStorage.setItem("ws_run_time", String(runTime));
+  }, [runTime]);
 
   useEffect(() => {
     const today = new Date();
@@ -363,7 +359,7 @@ export default function ProductionForm() {
           // =========================================================
           setStartTime("");
           setEndTime("");
-          setRunTime(27); // Reset back to factory default standard run time
+          setRunTime(25); // Reset back to factory default standard run time
           setLoadTime("");
           setSelectedTableSquares({});
           setBubbleCheckboxes({
@@ -380,7 +376,7 @@ export default function ProductionForm() {
           // =========================================================
           localStorage.removeItem("ws_start_time");
           localStorage.removeItem("ws_end_time");
-          localStorage.setItem("ws_run_time", "27");
+          //localStorage.setItem("ws_run_time", "25");
           localStorage.removeItem("ws_load_time");
           localStorage.removeItem("ws_selected_squares");
           localStorage.removeItem("ws_bubble_checkboxes");
@@ -544,7 +540,7 @@ export default function ProductionForm() {
                 <Input
                   type="number"
                   id="runTime"
-                  placeholder="e.g. 27"
+                  placeholder="e.g. 25"
                   className="h-11"
                   value={runTime}
                   onChange={(e) =>
