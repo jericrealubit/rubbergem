@@ -9,7 +9,7 @@ import {
   Settings,
   ShieldAlert,
 } from "lucide-react";
-import ProductionForm from "@/components/PressForm1";
+import ProductionForm from "@/components/PressForm";
 import ProductionTablePage from "./ProductionTable";
 
 export default function Home() {
