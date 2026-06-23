@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Deep Emerald Background matching the RubberGem theme banner -->
+  <rect width="32" height="32" rx="7" fill="#022c22" />
+  
+  <!-- Geometric Emerald Gem Facets -->
+  <path d="M16 5L26 12L16 27L6 12L16 5Z" fill="#10b981" />
+  <path d="M16 5L21 12L16 27L11 12L16 5Z" fill="#34d399" />
+  
+  <!-- Industrial Horizontal Grid Line split -->
+  <line x1="6" y1="12" x2="26" y2="12" stroke="#022c22" stroke-width="1.5" />
+</svg>
