@@ -354,22 +354,25 @@ export default function ProductionTablePage({
 
         {/* 15-Row Shift Cycle Data Grid */}
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left border-collapse print-compact">
+          {/* Setting min-w-[700px] on the table enforces a predictable scroll container on mobile viewports */}
+          <table className="w-full text-left border-collapse print-compact min-w-[700px]">
             <thead>
               <tr className="bg-neutral-100 border-b border-neutral-200 text-neutral-600 text-[10px] uppercase tracking-wider font-bold">
-                <th className="p-2 border-r border-neutral-200 text-center w-10">
+                <th className="p-2 border-r border-neutral-200 text-center w-[45px] min-w-[45px]">
                   Cycle
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-36">
+                <th className="p-2 border-r border-neutral-200 text-center w-[140px] min-w-[140px]">
                   Times (S/E / Load)
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center min-w-[8rem] whitespace-normal break-words px-3">
+                <th className="p-2 border-r border-neutral-200 text-center min-w-[160px] whitespace-normal break-words px-3">
                   Short Mold Locations (1-4)
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center min-w-[8rem] whitespace-normal break-words px-3">
+                <th className="p-2 border-r border-neutral-200 text-center min-w-[150px] whitespace-normal break-words px-3">
                   Bubbles Matrix (1-4)
                 </th>
-                <th className="p-2 w-full text-left">Fault Notes / Remarks</th>
+                <th className="p-2 min-w-[200px] text-left">
+                  Fault Notes / Remarks
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 text-[11px]">
@@ -380,19 +383,19 @@ export default function ProductionTablePage({
                       key={`filler-${index}`}
                       className="min-h-[25px] bg-white"
                     >
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-300 font-mono font-bold bg-neutral-50/30">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-300 font-mono font-bold bg-neutral-50/30 w-[45px] min-w-[45px]">
                         {index + 1}
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[140px] min-w-[140px]">
                         —
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[12rem] whitespace-normal break-words">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[160px] whitespace-normal break-words">
                         -
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[12rem] whitespace-normal break-words">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[150px] whitespace-normal break-words">
                         -
                       </td>
-                      <td className="p-1 text-neutral-200 italic whitespace-normal break-words">
+                      <td className="p-1 text-neutral-200 italic min-w-[200px] whitespace-normal break-words">
                         -
                       </td>
                     </tr>
@@ -436,10 +439,10 @@ export default function ProductionTablePage({
                     key={entry.id}
                     className="min-h-[25px] hover:bg-neutral-50/50 text-neutral-800 font-medium"
                   >
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono font-bold bg-neutral-50 text-neutral-500">
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono font-bold bg-neutral-50 text-neutral-500 w-[45px] min-w-[45px]">
                       {index + 1}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 font-mono text-center text-[10px]">
+                    <td className="p-1 border-r border-neutral-200 font-mono text-center text-[10px] w-[140px] min-w-[140px] whitespace-nowrap">
                       <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
                         {entry.startTime || "--:--"}
                       </span>
@@ -451,14 +454,14 @@ export default function ProductionTablePage({
                         ({entry.loadTime || 0}m)
                       </span>
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[12rem] whitespace-normal break-words">
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[160px] whitespace-normal break-words">
                       {formatShortMolds()}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[12rem] whitespace-normal break-words">
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[150px] whitespace-normal break-words">
                       {formatBubbles()}
                     </td>
                     <td
-                      className="p-1 text-neutral-500 font-normal text-[10px] whitespace-normal break-words text-left"
+                      className="p-1 text-neutral-500 font-normal text-[10px] min-w-[200px] whitespace-normal break-words text-left"
                       title={entry.notes}
                     >
                       {entry.notes || (
