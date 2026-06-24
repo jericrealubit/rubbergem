@@ -128,6 +128,33 @@ export default function ProductionTablePage({
     }
   });
 
+  // Dynamic calculation for individual tool line stats (Good vs Reject counts)
+  const getTableStats = (id: number) => {
+    let good = 0;
+    let reject = 0;
+
+    entries.forEach((entry) => {
+      // Only record stats if this specific table held an active product type configuration in the entry frame
+      if (entry.tableMatTypes?.[id]) {
+        const hasShortMold = !!entry.selectedTableSquares?.[id];
+        const b = entry.bubbleCheckboxes?.[id];
+        const hasBubbles = !!(b?.left || b?.middle || b?.right);
+
+        if (hasShortMold || hasBubbles) {
+          reject++;
+        } else {
+          good++;
+        }
+      }
+    });
+
+    return {
+      matType: latestEntry?.tableMatTypes?.[id] || "—",
+      good,
+      reject,
+    };
+  };
+
   return (
     <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 space-y-3">
       {/* Strict Single Page Print Sheet Styles */}
@@ -199,7 +226,7 @@ export default function ProductionTablePage({
           </Button>
           <Button
             onClick={handlePrintPDF}
-            className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-9 text-xs font-bold shadow-sm"
+            className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-9 text-xs font-bold shadow-sm text-white"
           >
             <Printer className="w-4 h-4" /> Print PDF
           </Button>
@@ -226,8 +253,8 @@ export default function ProductionTablePage({
         </CardHeader>
 
         {/* Global Shift Parameters Meta-Header Section */}
-        <div className="bg-neutral-50 border-b border-neutral-200 p-2.5 space-y-2 meta-grid-compact">
-          <div className="grid grid-cols-4 gap-2 text-xs text-neutral-700">
+        <div className="bg-neutral-50 border-b border-neutral-200 p-2.5 space-y-2.5 meta-grid-compact">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-neutral-700">
             <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
               <User className="w-4 h-4 text-emerald-700 shrink-0" />
               <div>
@@ -280,23 +307,47 @@ export default function ProductionTablePage({
             </div>
           </div>
 
-          {/* Table Setup Banner Block */}
-          <div className="bg-white p-1.5 rounded border border-neutral-200 flex items-center gap-3 text-xs meta-item-compact">
-            <div className="flex items-center gap-1.5 text-emerald-800 shrink-0 border-r border-neutral-200 pr-3">
+          {/* Table Setup Metrics Block - Improved with Good and Reject quantities */}
+          <div className="bg-white p-2 rounded border border-neutral-200 flex flex-col md:flex-row md:items-center gap-2.5 text-xs meta-item-compact">
+            <div className="flex items-center gap-1.5 text-emerald-800 shrink-0 md:border-r border-neutral-200 md:pr-3">
               <Settings2 className="w-3.5 h-3.5" />
               <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
-                Table Setup Mat Type:
+                Table Line Output Yields:
               </span>
             </div>
-            <div className="flex items-center gap-4 font-mono font-bold text-neutral-800 text-[11px]">
-              {[1, 2, 3, 4].map((id) => (
-                <div key={id} className="text-xs">
-                  T{id}:{" "}
-                  <span className="text-emerald-700">
-                    {latestEntry?.tableMatTypes?.[id] || "—"}
-                  </span>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1 w-full">
+              {[1, 2, 3, 4].map((id) => {
+                const stats = getTableStats(id);
+                return (
+                  <div
+                    key={id}
+                    className="bg-neutral-50/50 border border-neutral-200/70 rounded-md p-1.5 flex items-center justify-between gap-2"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-neutral-400 uppercase leading-none mb-1">
+                        Table {id}
+                      </span>
+                      <span className="text-[11px] font-mono font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/80">
+                        {stats.matType}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end text-[10px] font-bold gap-0.5 shrink-0">
+                      <span className="text-emerald-700 bg-emerald-100/30 px-1.5 py-0.5 rounded font-mono">
+                        G: {stats.good}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded font-mono ${
+                          stats.reject > 0
+                            ? "text-red-600 bg-red-100/30"
+                            : "text-neutral-400 bg-neutral-100"
+                        }`}
+                      >
+                        R: {stats.reject}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -458,7 +509,9 @@ export default function ProductionTablePage({
             </div>
           </div>
           <div
-            className={`text-lg font-black font-mono ${faultyMatsProduced > 0 ? "text-red-600" : "text-neutral-400"}`}
+            className={`text-lg font-black font-mono ${
+              faultyMatsProduced > 0 ? "text-red-600" : "text-neutral-400"
+            }`}
           >
             {faultyMatsProduced}
           </div>
