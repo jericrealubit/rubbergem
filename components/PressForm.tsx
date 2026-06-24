@@ -89,6 +89,10 @@ export default function ProductionForm() {
     return "";
   });
 
+  // Manual input switches for lunch/break runtime overrides
+  const [isManualStart, setIsManualStart] = useState<boolean>(false);
+  const [isManualEnd, setIsManualEnd] = useState<boolean>(false);
+
   // The End Time button should be disabled if startTime is not yet set
   const isEndTimeDisabled = !startTime;
 
@@ -366,6 +370,8 @@ export default function ProductionForm() {
           setStartTime("");
           setEndTime("");
           setLoadTime("");
+          setIsManualStart(false);
+          setIsManualEnd(false);
           setSelectedTableSquares({});
           setBubbleCheckboxes({
             1: { left: false, middle: false, right: false },
@@ -528,30 +534,90 @@ export default function ProductionForm() {
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-4">
             <div className="grid grid-cols-2 gap-3">
+              {/* Start Time Field */}
               <div className="space-y-1.5">
-                <Label>Start Time</Label>
-                <Button
-                  type="button"
-                  variant={startTime ? "secondary" : "outline"}
-                  className={`w-full h-12 font-bold tracking-wide border-dashed border-2 ${!startTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
-                  onClick={() => handleTimestamp("start")}
-                >
-                  {startTime || "TAP TO START"}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <Label>Start Time</Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!startTime && !isManualStart) {
+                        const currentTime = new Date()
+                          .toTimeString()
+                          .split(" ")[0]
+                          .substring(0, 5);
+                        setStartTime(currentTime);
+                      }
+                      setIsManualStart(!isManualStart);
+                    }}
+                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors uppercase tracking-wider"
+                  >
+                    {isManualStart ? "● Tap Mode" : "✎ Manual"}
+                  </button>
+                </div>
+                {isManualStart ? (
+                  <Input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="h-12 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
+                  />
+                ) : (
+                  <Button
+                    type="button"
+                    variant={startTime ? "secondary" : "outline"}
+                    className={`w-full h-12 font-bold tracking-wide border-dashed border-2 ${!startTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
+                    onClick={() => handleTimestamp("start")}
+                  >
+                    {startTime || "TAP TO START"}
+                  </Button>
+                )}
               </div>
+
+              {/* End Time Field */}
               <div className="space-y-1.5">
-                <Label>End Time</Label>
-                <Button
-                  type="button"
-                  disabled={isEndTimeDisabled}
-                  variant={endTime ? "secondary" : "outline"}
-                  className={`w-full h-12 font-bold tracking-wide border-dashed border-2 ${!endTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
-                  onClick={() => handleTimestamp("end")}
-                >
-                  {endTime || "TAP TO END"}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <Label>End Time</Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!endTime && !isManualEnd) {
+                        const currentTime = new Date()
+                          .toTimeString()
+                          .split(" ")[0]
+                          .substring(0, 5);
+                        setEndTime(currentTime);
+                      }
+                      setIsManualEnd(!isManualEnd);
+                    }}
+                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors uppercase tracking-wider"
+                    disabled={isEndTimeDisabled}
+                  >
+                    {isManualEnd ? "● Tap Mode" : "✎ Manual"}
+                  </button>
+                </div>
+                {isManualEnd ? (
+                  <Input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="h-12 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
+                    disabled={isEndTimeDisabled}
+                  />
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={isEndTimeDisabled}
+                    variant={endTime ? "secondary" : "outline"}
+                    className={`w-full h-12 font-bold tracking-wide border-dashed border-2 ${!endTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
+                    onClick={() => handleTimestamp("end")}
+                  >
+                    {endTime || "TAP TO END"}
+                  </Button>
+                )}
               </div>
             </div>
+
             <div className="space-y-1.5">
               <Label
                 htmlFor="loadTime"
