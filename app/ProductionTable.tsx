@@ -365,10 +365,10 @@ export default function ProductionTablePage({
                   Times (S/E / Load)
                 </th>
                 <th className="p-2 border-r border-neutral-200 text-center min-w-[160px] whitespace-normal break-words px-3">
-                  Short Mold Locations (1-4)
+                  Short Mold Locations
                 </th>
                 <th className="p-2 border-r border-neutral-200 text-center min-w-[150px] whitespace-normal break-words px-3">
-                  Bubbles Matrix (1-4)
+                  Bubbles Matrix
                 </th>
                 <th className="p-2 min-w-[200px] text-left">
                   Fault Notes / Remarks
