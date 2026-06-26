@@ -770,7 +770,7 @@ export default function ProductionForm() {
           </CardHeader>
           <CardContent className="p-4 pt-1 space-y-3.5">
             <div className="grid grid-cols-12 gap-2 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider pb-1 border-b border-neutral-100">
-              <div className="col-span-1 text-left">Table</div>
+              <div className="col-span-1 text-left">#</div>
               <div className="col-span-5 grid grid-cols-3 gap-1">
                 <span>L</span>
                 <span>M</span>
