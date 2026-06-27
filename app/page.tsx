@@ -6,17 +6,21 @@ import {
   X,
   FileText,
   ClipboardList,
-  Settings,
+  HelpCircle,
   ShieldAlert,
 } from "lucide-react";
 import ProductionForm from "@/components/PressForm";
 import ProductionTablePage from "./ProductionTable";
+import AboutPage from "./AboutPage";
+
+// Define the expanded view type union
+type ViewType = "form" | "table" | "about";
 
 export default function Home() {
-  const [currentView, setCurrentView] = useState<"form" | "table">("form");
+  const [currentView, setCurrentView] = useState<ViewType>("form");
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
-  const navigateTo = (view: "form" | "table") => {
+  const navigateTo = (view: ViewType) => {
     setCurrentView(view);
     setIsMenuOpen(false);
   };
@@ -56,6 +60,7 @@ export default function Home() {
             </p>
           </div>
           <nav className="space-y-1.5">
+            {/* Press Entry Form Route */}
             <button
               onClick={() => navigateTo("form")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -68,6 +73,7 @@ export default function Home() {
               <span>Press Entry Form</span>
             </button>
 
+            {/* Production Log Table Route */}
             <button
               onClick={() => navigateTo("table")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -78,6 +84,19 @@ export default function Home() {
             >
               <FileText className="w-4 h-4 shrink-0" />
               <span>Production Log Table</span>
+            </button>
+
+            {/* About System Route */}
+            <button
+              onClick={() => navigateTo("about")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "about"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+              }`}
+            >
+              <HelpCircle className="w-4 h-4 shrink-0" />
+              <span>About System</span>
             </button>
           </nav>
         </div>
@@ -102,11 +121,13 @@ export default function Home() {
 
       {/* Main Container View Router Frame */}
       <main className="flex-1 w-full p-2 sm:p-4">
-        {currentView === "form" ? (
-          <ProductionForm />
-        ) : (
+        {currentView === "form" && <ProductionForm />}
+
+        {currentView === "table" && (
           <ProductionTablePage onBack={() => setCurrentView("form")} />
         )}
+
+        {currentView === "about" && <AboutPage />}
       </main>
     </div>
   );
