@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   Settings2,
+  RotateCcw,
 } from "lucide-react";
 
 export default function ProductionForm() {
@@ -296,6 +297,21 @@ export default function ProductionForm() {
 
   const handleBubbleSizeSelect = (tableId: number, size: string) => {
     setBubbleSizes((prev) => ({ ...prev, [tableId]: size }));
+  };
+
+  // Local Section Resets
+  const handleResetShortMolding = () => {
+    setSelectedTableSquares({});
+  };
+
+  const handleResetBubbles = () => {
+    setBubbleCheckboxes({
+      1: { left: false, middle: false, right: false },
+      2: { left: false, middle: false, right: false },
+      3: { left: false, middle: false, right: false },
+      4: { left: false, middle: false, right: false },
+    });
+    setBubbleSizes({});
   };
 
   return (
@@ -656,11 +672,21 @@ export default function ProductionForm() {
 
         {/* Tables - Short Molding */}
         <Card className="shadow-sm border-neutral-200/60">
-          <CardHeader className="p-4 pb-2">
+          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Tables -
               Short Molding
             </CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResetShortMolding}
+              className="h-7 px-2 text-[11px] font-medium text-neutral-500 hover:text-red-600 hover:bg-red-50 border-neutral-200 hover:border-red-200 transition-colors gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset Matrix
+            </Button>
           </CardHeader>
           <CardContent className="p-4 pt-2">
             <div className="grid grid-cols-2 gap-x-6 gap-y-8">
@@ -763,10 +789,20 @@ export default function ProductionForm() {
 
         {/* Bubbles Checkbox Layout Header & Matrix */}
         <Card className="shadow-sm border-neutral-200/60">
-          <CardHeader className="p-4 pb-2">
+          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-emerald-700" /> Bubbles
             </CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResetBubbles}
+              className="h-7 px-2 text-[11px] font-medium text-neutral-500 hover:text-red-600 hover:bg-red-50 border-neutral-200 hover:border-red-200 transition-colors gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset Grid
+            </Button>
           </CardHeader>
           <CardContent className="p-4 pt-1 space-y-3.5">
             <div className="grid grid-cols-12 gap-2 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider pb-1 border-b border-neutral-100">
