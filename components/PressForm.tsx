@@ -42,6 +42,9 @@ export default function ProductionForm() {
     return true;
   });
 
+  // Collapsible state for Bubbles section - false by default
+  const [isBubblesOpen, setIsBubblesOpen] = useState<boolean>(false);
+
   // --- SHIFT INFORMATION DATA PERSISTENCE ---
   const [operator, setOperator] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -409,9 +412,10 @@ export default function ProductionForm() {
           localStorage.removeItem("ws_bubble_sizes");
           localStorage.removeItem("ws_notes");
 
-          // Cleanly close the shift settings display pane accordion and write immediately to cache to stop background synchronizer race conditions
+          // Cleanly close the panels and write immediately to cache
           localStorage.setItem("shift_panel_open", "false");
           setIsShiftOpen(false);
+          setIsBubblesOpen(false);
 
           alert(`Saved entry successfully! Form workspace cleared.`);
         }}
@@ -787,112 +791,140 @@ export default function ProductionForm() {
           </CardContent>
         </Card>
 
-        {/* Bubbles Checkbox Layout Header & Matrix */}
-        <Card className="shadow-sm border-neutral-200/60">
-          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-emerald-700" /> Bubbles
-            </CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleResetBubbles}
-              className="h-7 px-2 text-[11px] font-medium text-neutral-500 hover:text-red-600 hover:bg-red-50 border-neutral-200 hover:border-red-200 transition-colors gap-1"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Reset Grid
-            </Button>
-          </CardHeader>
-          <CardContent className="p-4 pt-1 space-y-3.5">
-            <div className="grid grid-cols-12 gap-2 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider pb-1 border-b border-neutral-100">
-              <div className="col-span-1 text-left">#</div>
-              <div className="col-span-5 grid grid-cols-3 gap-1">
-                <span>L</span>
-                <span>M</span>
-                <span>R</span>
+        {/* Collapsible Bubbles Card (Closed by Default) */}
+        <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
+          <button
+            type="button"
+            onClick={() => setIsBubblesOpen(!isBubblesOpen)}
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-neutral-50/50 transition-colors focus:outline-none"
+          >
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-emerald-700 shrink-0" />
+              <div>
+                <span className="text-sm font-semibold uppercase text-emerald-900 tracking-wide block">
+                  Bubbles Matrix
+                </span>
+                {!isBubblesOpen && (
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Click to view layout options & defects
+                  </p>
+                )}
               </div>
-              <div className="col-span-6">Size</div>
             </div>
-            {[1, 2, 3, 4].map((tableId) => (
-              <div
-                key={tableId}
-                className="grid grid-cols-12 gap-2 items-center text-center"
+
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetBubbles}
+                className="h-7 px-2 text-[11px] font-medium text-neutral-500 hover:text-red-600 hover:bg-red-50 border-neutral-200 hover:border-red-200 transition-colors gap-1"
               >
-                <div className="col-span-1 text-left text-sm font-bold text-neutral-700">
-                  {tableId}
+                <RotateCcw className="w-3 h-3" />
+                Reset Grid
+              </Button>
+              {isBubblesOpen ? (
+                <ChevronUp className="w-5 h-5 text-neutral-400 shrink-0" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-neutral-400 shrink-0" />
+              )}
+            </div>
+          </button>
+
+          {isBubblesOpen && (
+            <CardContent className="p-4 pt-2 border-t border-neutral-100 space-y-3.5">
+              <div className="grid grid-cols-12 gap-2 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider pb-1 border-b border-neutral-100">
+                <div className="col-span-1 text-left">#</div>
+                <div className="col-span-5 grid grid-cols-3 gap-1">
+                  <span>L</span>
+                  <span>M</span>
+                  <span>R</span>
                 </div>
-                <div className="col-span-5 grid grid-cols-3 gap-1 justify-items-center">
-                  <Checkbox
-                    id={`bubble-check-${tableId}-L`}
-                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
-                    checked={bubbleCheckboxes[tableId].left}
-                    onCheckedChange={(c) =>
-                      handleBubbleCheckboxToggle(tableId, "left", !!c)
-                    }
-                  />
-                  <Checkbox
-                    id={`bubble-check-${tableId}-M`}
-                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
-                    checked={bubbleCheckboxes[tableId].middle}
-                    onCheckedChange={(c) =>
-                      handleBubbleCheckboxToggle(tableId, "middle", !!c)
-                    }
-                  />
-                  <Checkbox
-                    id={`bubble-check-${tableId}-R`}
-                    className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
-                    checked={bubbleCheckboxes[tableId].right}
-                    onCheckedChange={(c) =>
-                      handleBubbleCheckboxToggle(tableId, "right", !!c)
-                    }
-                  />
-                </div>
-                <div className="col-span-6 flex justify-center">
-                  <RadioGroup
-                    value={bubbleSizes[tableId] || ""}
-                    onValueChange={(val) =>
-                      handleBubbleSizeSelect(tableId, val)
-                    }
-                    className="flex items-center gap-2 w-full justify-between"
-                  >
-                    <div className="flex-1 flex items-center justify-center">
-                      <RadioGroupItem
-                        value="Big"
-                        id={`size-${tableId}-big`}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor={`size-${tableId}-big`}
-                        className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all ${bubbleSizes[tableId] === "Big" ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50/50 text-neutral-600"}`}
-                      >
-                        <span>Big</span>
-                        <div
-                          className={`w-1 h-1 rounded-full ${bubbleSizes[tableId] === "Big" ? "bg-emerald-600" : "bg-neutral-300"}`}
-                        />
-                      </Label>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center">
-                      <RadioGroupItem
-                        value="Small"
-                        id={`size-${tableId}-small`}
-                        className="sr-only"
-                      />
-                      <Label
-                        htmlFor={`size-${tableId}-small`}
-                        className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all ${bubbleSizes[tableId] === "Small" ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50/50 text-neutral-600"}`}
-                      >
-                        <span>Small</span>
-                        <div
-                          className={`w-1 h-1 rounded-full ${bubbleSizes[tableId] === "Small" ? "bg-emerald-600" : "bg-neutral-300"}`}
-                        />
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+                <div className="col-span-6">Size</div>
               </div>
-            ))}
-          </CardContent>
+              {[1, 2, 3, 4].map((tableId) => (
+                <div
+                  key={tableId}
+                  className="grid grid-cols-12 gap-2 items-center text-center"
+                >
+                  <div className="col-span-1 text-left text-sm font-bold text-neutral-700">
+                    {tableId}
+                  </div>
+                  <div className="col-span-5 grid grid-cols-3 gap-1 justify-items-center">
+                    <Checkbox
+                      id={`bubble-check-${tableId}-L`}
+                      className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
+                      checked={bubbleCheckboxes[tableId].left}
+                      onCheckedChange={(c) =>
+                        handleBubbleCheckboxToggle(tableId, "left", !!c)
+                      }
+                    />
+                    <Checkbox
+                      id={`bubble-check-${tableId}-M`}
+                      className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
+                      checked={bubbleCheckboxes[tableId].middle}
+                      onCheckedChange={(c) =>
+                        handleBubbleCheckboxToggle(tableId, "middle", !!c)
+                      }
+                    />
+                    <Checkbox
+                      id={`bubble-check-${tableId}-R`}
+                      className="w-4 h-4 border-neutral-400 data-[state=checked]:bg-emerald-600"
+                      checked={bubbleCheckboxes[tableId].right}
+                      onCheckedChange={(c) =>
+                        handleBubbleCheckboxToggle(tableId, "right", !!c)
+                      }
+                    />
+                  </div>
+                  <div className="col-span-6 flex justify-center">
+                    <RadioGroup
+                      value={bubbleSizes[tableId] || ""}
+                      onValueChange={(val) =>
+                        handleBubbleSizeSelect(tableId, val)
+                      }
+                      className="flex items-center gap-2 w-full justify-between"
+                    >
+                      <div className="flex-1 flex items-center justify-center">
+                        <RadioGroupItem
+                          value="Big"
+                          id={`size-${tableId}-big`}
+                          className="sr-only"
+                        />
+                        <Label
+                          htmlFor={`size-${tableId}-big`}
+                          className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all ${bubbleSizes[tableId] === "Big" ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50/50 text-neutral-600"}`}
+                        >
+                          <span>Big</span>
+                          <div
+                            className={`w-1 h-1 rounded-full ${bubbleSizes[tableId] === "Big" ? "bg-emerald-600" : "bg-neutral-300"}`}
+                          />
+                        </Label>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center">
+                        <RadioGroupItem
+                          value="Small"
+                          id={`size-${tableId}-small`}
+                          className="sr-only"
+                        />
+                        <Label
+                          htmlFor={`size-${tableId}-small`}
+                          className={`h-7 w-full border rounded flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer transition-all ${bubbleSizes[tableId] === "Small" ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50/50 text-neutral-600"}`}
+                        >
+                          <span>Small</span>
+                          <div
+                            className={`w-1 h-1 rounded-full ${bubbleSizes[tableId] === "Small" ? "bg-emerald-600" : "bg-neutral-300"}`}
+                          />
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          )}
         </Card>
 
         {/* Freeform Machine Notes */}
