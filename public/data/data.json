@@ -1,0 +1,823 @@
+[
+  {
+    "date": "2026-06-24",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry (Night)",
+    "target_run_time_minutes": 25.5,
+    "accumulated_load_time_minutes": 235,
+    "total_mats_produced": 32,
+    "faulty_mats_produced": 5,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 7, "reject": 1 },
+      "table_2": { "type": "CF", "good": 5, "reject": 3 },
+      "table_3": { "type": "DD", "good": 8, "reject": 0 },
+      "table_4": { "type": "DD", "good": 7, "reject": 1 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "21:20 21:48 (28m)",
+        "short_mold_locations": ["T1: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4 2 big bubble at the buttom. Prick pass. T1 and T3 failed to pickup on unload. Manual unload/load."
+      },
+      {
+        "cycle_number": 2,
+        "times": "20:30 20:53 (23m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4 in auto and already picking up the but but sudenly stop. Need manual. Big bubble under mat. Prick and pass."
+      },
+      {
+        "cycle_number": 3,
+        "times": "19:47 20:05 (18m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 4,
+        "times": "18:57 19:21 (24m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Back: not going into auto. manual load/unload."
+      },
+      {
+        "cycle_number": 5,
+        "times": "18:08 18:30 (22m)",
+        "short_mold_locations": ["T2: bottom-left", "T4: bottom-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T3 failed to pickup on unload. Manual T3 T4"
+      },
+      {
+        "cycle_number": 6,
+        "times": "17:04 17:42 (38m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T3 cause machine shutdown. Jackon said wrong program. Manual loading."
+      },
+      {
+        "cycle_number": 7,
+        "times": "16:03 16:37 (34m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T1 failed to pickup on uload. Manual loading. Teach harry."
+      },
+      {
+        "cycle_number": 8,
+        "times": "14:48 15:36 (48m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T1 not picking up on uload. Call jackson. Notice T1 out sensor not on. Manual loading."
+      }
+    ]
+  },
+  {
+    "date": "2026-06-25",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry/liam (Night)",
+    "target_run_time_minutes": 27.0,
+    "accumulated_load_time_minutes": 182,
+    "total_mats_produced": 36,
+    "faulty_mats_produced": 6,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 8, "reject": 1 },
+      "table_2": { "type": "CF", "good": 7, "reject": 2 },
+      "table_3": { "type": "DD", "good": 7, "reject": 2 },
+      "table_4": { "type": "DD", "good": 8, "reject": 1 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "20:38 21:05 (27m)",
+        "short_mold_locations": ["T1: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Shutdown"
+      },
+      {
+        "cycle_number": 2,
+        "times": "19:48 20:12 (24m)",
+        "short_mold_locations": ["T2: bottom-right", "T3: bottom-left", "T4: bottom-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 3,
+        "times": "18:54 19:20 (26m)",
+        "short_mold_locations": ["T3: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Back: manual loading"
+      },
+      {
+        "cycle_number": 4,
+        "times": "18:08 18:26 (18m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T3 failed to pickup on unload. Manual"
+      },
+      {
+        "cycle_number": 5,
+        "times": "17:27 17:41 (14m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 6,
+        "times": "16:47 17:01 (14m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 7,
+        "times": "16:04 16:19 (15m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 8,
+        "times": "15:15 15:36 (21m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 9,
+        "times": "14:25 14:48 (23m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4 2small bubbles under. Pass"
+      }
+    ]
+  },
+  {
+    "date": "2026-06-30",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry (Night)",
+    "target_run_time_minutes": 27.0,
+    "accumulated_load_time_minutes": 183,
+    "total_mats_produced": 36,
+    "faulty_mats_produced": 6,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 7, "reject": 2 },
+      "table_2": { "type": "CF", "good": 8, "reject": 1 },
+      "table_3": { "type": "DD", "good": 9, "reject": 0 },
+      "table_4": { "type": "DD", "good": 6, "reject": 3 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "21:32 22:04 (32m)",
+        "short_mold_locations": ["T2: center", "T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4 grade b. Shutdown"
+      },
+      {
+        "cycle_number": 2,
+        "times": "20:43 21:02 (19m)",
+        "short_mold_locations": ["T1: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Back: robot manual after change of vacuum pad. Bale drop to conveyor sensor $19=$ broken. T2 failed to pickup on unload. Manual robot."
+      },
+      {
+        "cycle_number": 3,
+        "times": "19:56 20:15 (19m)",
+        "short_mold_locations": ["-"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 4,
+        "times": "18:52 19:28 (36m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T1 and T2 manual loading due to bad bales. Back: converyor abnormal. All 6 pallets go to disc loading. Need to remove with forklift. Most of the time manual loading at the back."
+      },
+      {
+        "cycle_number": 5,
+        "times": "18:06 18:23 (17m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Poor quality bales in front and back. Manual loading. 1 recject bale found in front."
+      },
+      {
+        "cycle_number": 6,
+        "times": "17:22 17:38 (16m)",
+        "short_mold_locations": ["None"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 7,
+        "times": "16:40 16:54 (14m)",
+        "short_mold_locations": ["T1: top-right", "T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Back: lower-left vacuum failed to pickup on load. Manual loading."
+      },
+      {
+        "cycle_number": 8,
+        "times": "15:56 16:11 (15m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Back: lower-left vacuum failed pickup on load. 1 small bubble under."
+      },
+      {
+        "cycle_number": 9,
+        "times": "15:12 15:27 (15m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Back: lower-left vacuum failed on load. Manual loading."
+      }
+    ]
+  },
+  {
+    "date": "2026-07-01",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry (Night)",
+    "target_run_time_minutes": 27.5,
+    "accumulated_load_time_minutes": 236,
+    "total_mats_produced": 52,
+    "faulty_mats_produced": 14,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 13, "reject": 0 },
+      "table_2": { "type": "CF", "good": 7, "reject": 6 },
+      "table_3": { "type": "DD", "good": 10, "reject": 3 },
+      "table_4": { "type": "DD", "good": 8, "reject": 5 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "23:44 00:16 (32m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Shutdown"
+      },
+      {
+        "cycle_number": 2,
+        "times": "23:00 23:17 (17m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Lastload."
+      },
+      {
+        "cycle_number": 3,
+        "times": "22:14 22:32 (18m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 4,
+        "times": "21:30 21:46 (16m)",
+        "short_mold_locations": ["T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 5,
+        "times": "20:40 21:01 (21m)",
+        "short_mold_locations": ["T2: center", "T4: top-right"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Jeric came from break."
+      },
+      {
+        "cycle_number": 6,
+        "times": "19:58 20:13 (15m)",
+        "short_mold_locations": ["T2: center", "T3: top-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 7,
+        "times": "19:17 19:31 (14m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 8,
+        "times": "18:33 18:49 (16m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 9,
+        "times": "17:50 18:05 (15m)",
+        "short_mold_locations": ["T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 10,
+        "times": "17:06 17:20 (14m)",
+        "short_mold_locations": ["T2: center", "T4: top-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 11,
+        "times": "16:22 16:38 (16m)",
+        "short_mold_locations": ["T3: bottom-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Front: top-left vacuum failed pickup."
+      },
+      {
+        "cycle_number": 12,
+        "times": "15:30 15:52 (22m)",
+        "short_mold_locations": ["T2: center", "T3: top-left", "T4: top-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Front: upper-left vacuum failed to pickup on load."
+      },
+      {
+        "cycle_number": 13,
+        "times": "14:41 15:01 (20m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Day shift load. Night shift unload. Not sure will count to day shift or night shift."
+      }
+    ]
+  },
+  {
+    "date": "2026-07-02",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry (Night)",
+    "target_run_time_minutes": 27.5,
+    "accumulated_load_time_minutes": 268,
+    "total_mats_produced": 44,
+    "faulty_mats_produced": 23,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 4, "reject": 7 },
+      "table_2": { "type": "CF", "good": 5, "reject": 6 },
+      "table_3": { "type": "DD", "good": 9, "reject": 2 },
+      "table_4": { "type": "DD", "good": 3, "reject": 8 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "23:10 23:41 (31m)",
+        "short_mold_locations": ["-"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Shutdown"
+      },
+      {
+        "cycle_number": 2,
+        "times": "22:15 22:42 (27m)",
+        "short_mold_locations": ["-"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4 still have incomplete mold. Try last time to clean. Tired. Jackon ssid it is passed."
+      },
+      {
+        "cycle_number": 3,
+        "times": "21:30 21:49 (19m)",
+        "short_mold_locations": ["T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T2 failed to pickup on unload. Manual. T4 still have incomplete mold. For cleaning."
+      },
+      {
+        "cycle_number": 4,
+        "times": "20:30 21:03 (33m)",
+        "short_mold_locations": ["T1: center", "T2: center", "T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4 still have some incomplete mold. I did clean again."
+      },
+      {
+        "cycle_number": 5,
+        "times": "19:19 20:01 (42m)",
+        "short_mold_locations": ["T1: center", "T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "After fix. Manual unloading."
+      },
+      {
+        "cycle_number": 6,
+        "times": "18:17 18:52 (35m)",
+        "short_mold_locations": ["T3: top-right", "T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4 and T2 table dirty, that cause incomplete molding. tried cleaning with steel brush and a negative screw. Did not notice the hook chain is dirty. Cause to break. Call jackson."
+      },
+      {
+        "cycle_number": 7,
+        "times": "17:34 17:50 (16m)",
+        "short_mold_locations": ["T1: center", "T2: center", "T4: center"],
+        "bubbles_matrix": ["="],
+        "fault_notes_remarks": "T2 failed is passed. -1 to failed count."
+      },
+      {
+        "cycle_number": 8,
+        "times": "16:52 17:07 (15m)",
+        "short_mold_locations": ["T1: center", "T2: center", "T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 9,
+        "times": "16:10 16:24 (14m)",
+        "short_mold_locations": ["T1: center", "T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 10,
+        "times": "15:26 15:43 (17m)",
+        "short_mold_locations": ["T1: center", "T2: center", "T3: bottom-left", "T4: top-right"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 11,
+        "times": "14:40 14:59 (19m)",
+        "short_mold_locations": ["T1: center", "T2: center", "T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      }
+    ]
+  },
+  {
+    "date": "2026-07-03",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry (Night)",
+    "target_run_time_minutes": 27.5,
+    "accumulated_load_time_minutes": 262,
+    "total_mats_produced": 32,
+    "faulty_mats_produced": 7,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 5, "reject": 3 },
+      "table_2": { "type": "CF", "good": 8, "reject": 0 },
+      "table_3": { "type": "DD", "good": 5, "reject": 3 },
+      "table_4": { "type": "DD", "good": 7, "reject": 1 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "21:10 22:27 (77m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Shutdown. Clean underground"
+      },
+      {
+        "cycle_number": 2,
+        "times": "20:02 20:42 (40m)",
+        "short_mold_locations": ["T1: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Front: conveyor not working. Manual load and unload."
+      },
+      {
+        "cycle_number": 3,
+        "times": "19:18 19:34 (16m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 4,
+        "times": "18:27 18:49 (22m)",
+        "short_mold_locations": ["T3: top-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 5,
+        "times": "17:39 17:59 (20m)",
+        "short_mold_locations": ["T3: bottom-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 6,
+        "times": "16:50 17:11 (21m)",
+        "short_mold_locations": ["T1: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 7,
+        "times": "16:05 16:22 (17m)",
+        "short_mold_locations": ["T4: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 8,
+        "times": "14:49 15:38 (49m)",
+        "short_mold_locations": ["T1: center", "T3: top-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Back: conveyor not working. Need to manual loading."
+      }
+    ]
+  },
+  {
+    "date": "2026-07-06",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry (Day)",
+    "target_run_time_minutes": 27.0,
+    "accumulated_load_time_minutes": 218,
+    "total_mats_produced": 32,
+    "faulty_mats_produced": 12,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 4, "reject": 4 },
+      "table_2": { "type": "CF", "good": 2, "reject": 6 },
+      "table_3": { "type": "DD", "good": 7, "reject": 1 },
+      "table_4": { "type": "DD", "good": 7, "reject": 1 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "14:13 14:40 (27m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4: table move out on slow. Need to manual."
+      },
+      {
+        "cycle_number": 2,
+        "times": "13:29 13:47 (18m)",
+        "short_mold_locations": ["T1: center", "T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 3,
+        "times": "12:28 13:03 (35m)",
+        "short_mold_locations": ["T1: bottom-left", "T2: bottom-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T3: on slow out. Need to manual in-out. Manual unloading/loading."
+      },
+      {
+        "cycle_number": 4,
+        "times": "10:48 12:01 (73m)",
+        "short_mold_locations": ["T2: center", "T3: center", "T4: top-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T3: 3in sensor not-on on unload. Call jackson. Table bumper have rubber that cause 3in off. Manual load/unload. Front: table lift sensor not on. Cannot move out. Call jackson again. Call Sparky."
+      },
+      {
+        "cycle_number": 5,
+        "times": "10:04 10:20 (16m)",
+        "short_mold_locations": ["T1: center", "T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 6,
+        "times": "09:21 09:36 (15m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 7,
+        "times": "08:34 08:53 (19m)",
+        "short_mold_locations": ["T1: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Front table out sensor not detected 2x"
+      },
+      {
+        "cycle_number": 8,
+        "times": "07:52 08:07 (15m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "6:09am. Waiting for temp to go 145. 3rd and 4th table temp not reaching."
+      }
+    ]
+  },
+  {
+    "date": "2026-07-07",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry (Day)",
+    "target_run_time_minutes": 27.0,
+    "accumulated_load_time_minutes": 253,
+    "total_mats_produced": 32,
+    "faulty_mats_produced": 7,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 6, "reject": 2 },
+      "table_2": { "type": "CF", "good": 5, "reject": 3 },
+      "table_3": { "type": "DD", "good": 7, "reject": 1 },
+      "table_4": { "type": "DD", "good": 7, "reject": 1 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "14:11 14:34 (23m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": ["None"],
+        "fault_notes_remarks": "Back: conveyor trip. Call sparky. T4: table out stop at [slow]."
+      },
+      {
+        "cycle_number": 2,
+        "times": "12:44 13:44 (60m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T4: table out stop at [slow]. Do manual in/out ok. Front tobot not homing. Call jackson."
+      },
+      {
+        "cycle_number": 3,
+        "times": "12:00 12:18 (18m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": ["None"],
+        "fault_notes_remarks": ""
+      },
+      {
+        "cycle_number": 4,
+        "times": "10:44 11:23 (39m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Front: bad bales. Manual loading."
+      },
+      {
+        "cycle_number": 5,
+        "times": "10:00 10:16 (16m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T1: failed to pickup on unload. Manual."
+      },
+      {
+        "cycle_number": 6,
+        "times": "09:13 09:32 (19m)",
+        "short_mold_locations": ["T1: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Front: 1 vacuum trip. Call jackson/sparky."
+      },
+      {
+        "cycle_number": 7,
+        "times": "08:07 08:48 (41m)",
+        "short_mold_locations": ["T1: center", "T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Final holding time goes to negative but press does not open. Call jackson. Do manual unloading/loading."
+      },
+      {
+        "cycle_number": 8,
+        "times": "07:02 07:39 (37m)",
+        "short_mold_locations": ["T3: top-left", "T4: bottom-right"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": ""
+      }
+    ]
+  },
+  {
+    "date": "2026-07-08",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry/patrick (Day)",
+    "target_run_time_minutes": 27.0,
+    "accumulated_load_time_minutes": 196,
+    "total_mats_produced": 36,
+    "faulty_mats_produced": 10,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 9, "reject": 0 },
+      "table_2": { "type": "CF", "good": 5, "reject": 4 },
+      "table_3": { "type": "DD", "good": 6, "reject": 3 },
+      "table_4": { "type": "DD", "good": 6, "reject": 3 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "14:24 14:38 (14m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 2,
+        "times": "13:34 13:56 (22m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T1: failed to pickup on unload. Manual."
+      },
+      {
+        "cycle_number": 3,
+        "times": "12:51 13:07 (16m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 4,
+        "times": "11:48 12:22 (34m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "Bales problem. Motor trip. Manual loading."
+      },
+      {
+        "cycle_number": 5,
+        "times": "10:58 11:16 (18m)",
+        "short_mold_locations": ["T2: center", "T3: top-left", "T4: top-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 6,
+        "times": "10:05 10:28 (23m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 7,
+        "times": "09:20 09:34 (14m)",
+        "short_mold_locations": ["T2: center", "T3: top-left", "T4: top-left"],
+        "bubbles_matrix": ["-"],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 8,
+        "times": "08:30 08:50 (20m)",
+        "short_mold_locations": ["T4: bottom-right"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 9,
+        "times": "07:24 07:59 (35m)",
+        "short_mold_locations": ["T3: bottom-left"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "T3: after unload, robot stop working. Need to manual."
+      }
+    ]
+  },
+  {
+    "date": "2026-07-09",
+    "machine_press": "Press #1",
+    "operator_shift": "Jeric/harry/patrickh (Day)",
+    "target_run_time_minutes": 27.0,
+    "accumulated_load_time_minutes": 183,
+    "total_mats_produced": 40,
+    "faulty_mats_produced": 2,
+    "table_line_output_yields": {
+      "table_1": { "type": "CD", "good": 10, "reject": 0 },
+      "table_2": { "type": "CF", "good": 8, "reject": 2 },
+      "table_3": { "type": "DD", "good": 10, "reject": 0 },
+      "table_4": { "type": "DD", "good": 10, "reject": 0 }
+    },
+    "cycles": [
+      {
+        "cycle_number": 1,
+        "times": "13:55 14:15 (20m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 2,
+        "times": "13:08 13:27 (19m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 3,
+        "times": "12:20 12:40 (20m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 4,
+        "times": "11:36 11:52 (16m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 5,
+        "times": "10:48 11:07 (19m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 6,
+        "times": "10:01 10:20 (19m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 7,
+        "times": "09:16 09:33 (17m)",
+        "short_mold_locations": ["T2: center"],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 8,
+        "times": "08:30 08:49 (19m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 9,
+        "times": "07:46 08:02 (16m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      },
+      {
+        "cycle_number": 10,
+        "times": "07:02 07:20 (18m)",
+        "short_mold_locations": [],
+        "bubbles_matrix": [],
+        "fault_notes_remarks": "None"
+      }
+    ]
+  }
+]

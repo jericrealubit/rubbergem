@@ -6,15 +6,17 @@ import {
   X,
   FileText,
   ClipboardList,
+  History,
   HelpCircle,
   ShieldAlert,
 } from "lucide-react";
 import ProductionForm from "@/components/PressForm";
 import ProductionTablePage from "./ProductionTable";
+import ProductionHistory from "@/components/ProductionHistory";
 import AboutPage from "./AboutPage";
 
 // Define the expanded view type union
-type ViewType = "form" | "table" | "about";
+type ViewType = "form" | "table" | "history" | "about";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("form");
@@ -86,6 +88,19 @@ export default function Home() {
               <span>Production Log Table</span>
             </button>
 
+            {/* Production History Route */}
+            <button
+              onClick={() => navigateTo("history")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "history"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+              }`}
+            >
+              <History className="w-4 h-4 shrink-0" />
+              <span>Production History</span>
+            </button>
+
             {/* About System Route */}
             <button
               onClick={() => navigateTo("about")}
@@ -126,6 +141,8 @@ export default function Home() {
         {currentView === "table" && (
           <ProductionTablePage onBack={() => setCurrentView("form")} />
         )}
+
+        {currentView === "history" && <ProductionHistory />}
 
         {currentView === "about" && <AboutPage />}
       </main>
