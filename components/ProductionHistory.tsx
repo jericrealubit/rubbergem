@@ -60,7 +60,7 @@ export default function ProductionHistory() {
   useEffect(() => {
     setIsMounted(true);
 
-    fetch("/data/data.json")
+    fetch("/rubbergem/data/data.json")
       .then((res) => {
         if (!res.ok)
           throw new Error("Failed to load production source records.");
