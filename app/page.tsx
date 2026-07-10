@@ -75,7 +75,7 @@ export default function Home() {
               <span>Press Entry Form</span>
             </button>
 
-            {/* Production Log Table Route */}
+            {/* Press Live Log Table Route */}
             <button
               onClick={() => navigateTo("table")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -85,10 +85,10 @@ export default function Home() {
               }`}
             >
               <FileText className="w-4 h-4 shrink-0" />
-              <span>Production Log Table</span>
+              <span>Press Live Log Table</span>
             </button>
 
-            {/* Production History Route */}
+            {/* Press Production History Route */}
             <button
               onClick={() => navigateTo("history")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -98,7 +98,7 @@ export default function Home() {
               }`}
             >
               <History className="w-4 h-4 shrink-0" />
-              <span>Production History</span>
+              <span>Press Production History</span>
             </button>
 
             {/* About System Route */}

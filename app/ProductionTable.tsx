@@ -240,7 +240,7 @@ export default function ProductionTablePage({
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-base font-bold tracking-wider uppercase">
-                Production Sheet Log
+                Press Live Log Table
               </CardTitle>
               <p className="text-[10px] text-emerald-300">
                 Shift Execution & Defect Matrix
