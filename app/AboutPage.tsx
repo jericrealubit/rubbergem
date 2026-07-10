@@ -31,7 +31,7 @@ export default function AboutPage() {
             <Sparkles className="w-3.5 h-3.5" /> Core Infrastructure
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            RubberGem Production System
+            Rubber Production System
           </h1>
           <p className="text-emerald-100 text-sm sm:text-base max-w-xl leading-relaxed font-medium">
             A high-performance, mobile-optimized terminal and single-page audit

@@ -44,7 +44,7 @@ export default function Home() {
             )}
           </button>
           <span className="font-bold tracking-wide uppercase text-sm md:text-base">
-            RubberGem Production System
+            Rubber Production System
           </span>
         </div>
       </header>

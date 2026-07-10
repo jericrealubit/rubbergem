@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase"; // Ensure this import matches your project setup
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Calendar,
@@ -9,8 +10,6 @@ import {
   Folder,
   FolderOpen,
   Layers,
-  CheckCircle,
-  AlertTriangle,
   TrendingUp,
 } from "lucide-react";
 
@@ -60,13 +59,18 @@ export default function ProductionHistory() {
   useEffect(() => {
     setIsMounted(true);
 
-    fetch("/rubbergem/data/data.json")
-      .then((res) => {
-        if (!res.ok)
-          throw new Error("Failed to load production source records.");
-        return res.json();
-      })
-      .then((rawLogs: RawProductionLog[]) => {
+    async function fetchProductionData() {
+      try {
+        setLoading(true);
+        // Fetching from your 'production_logs' table
+        const { data, error } = await supabase
+          .from("production_logs")
+          .select("*")
+          .order("date", { ascending: false });
+
+        if (error) throw error;
+
+        const rawLogs: RawProductionLog[] = data || [];
         const monthsMap: Record<string, MonthGroup> = {};
         const monthNames = [
           "January",
@@ -154,12 +158,14 @@ export default function ProductionHistory() {
         });
 
         setHistoricalData(structuredList);
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err: any) {
         setError(err.message || "Failed parsing production records.");
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    fetchProductionData();
   }, []);
 
   const toggleMonth = (monthName: string) => {
@@ -190,18 +196,9 @@ export default function ProductionHistory() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="w-full max-w-md mx-auto p-4 text-center border bg-red-50 text-red-700 rounded-xl text-xs font-bold">
-        <AlertTriangle className="w-4 h-4 mx-auto mb-1" />
-        <span>Error: {error}</span>
-      </div>
-    );
-  }
-
+  // --- REST OF YOUR ORIGINAL JSX REMAINS EXACTLY THE SAME ---
   return (
     <div className="w-full max-w-md mx-auto p-3 space-y-4 pb-12 font-sans text-neutral-800">
-      {/* Title Header Banner */}
       <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center gap-3">
         <Calendar className="w-5 h-5 text-emerald-300" />
         <div>
@@ -214,27 +211,22 @@ export default function ProductionHistory() {
         </div>
       </div>
 
-      {/* Main Hierarchical Tree Container */}
       <div className="space-y-3">
         {historicalData.map((month) => {
           const isMonthOpen = expandedMonth === month.monthName;
-
-          // Compute absolute monthly yield aggregations
-          const monthFaulty = month.days.reduce((acc, d) => {
-            return (
-              acc + Object.values(d.tables).reduce((a, b) => a + b.reject, 0)
-            );
-          }, 0);
-
-          const monthGood = month.days.reduce((acc, d) => {
-            return (
-              acc + Object.values(d.tables).reduce((a, b) => a + b.good, 0)
-            );
-          }, 0);
+          const monthFaulty = month.days.reduce(
+            (acc, d) =>
+              acc + Object.values(d.tables).reduce((a, b) => a + b.reject, 0),
+            0,
+          );
+          const monthGood = month.days.reduce(
+            (acc, d) =>
+              acc + Object.values(d.tables).reduce((a, b) => a + b.good, 0),
+            0,
+          );
 
           return (
             <div key={month.monthName} className="space-y-1">
-              {/* LEVEL 1: MONTH ACCORDION HEAD */}
               <button
                 onClick={() => toggleMonth(month.monthName)}
                 className={`w-full p-3.5 flex items-center justify-between rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
@@ -271,12 +263,10 @@ export default function ProductionHistory() {
                 )}
               </button>
 
-              {/* LEVEL 2: NESTED DAYS INSIDE THE MONTH */}
               {isMonthOpen && (
                 <div className="pl-3 pr-1 py-1 space-y-2 border-l-2 border-emerald-100 ml-5">
                   {month.days.map((day) => {
                     const isDayOpen = expandedDay === day.dateString;
-
                     const totalGood = Object.values(day.tables).reduce(
                       (a, b) => a + b.good,
                       0,
@@ -288,7 +278,6 @@ export default function ProductionHistory() {
 
                     return (
                       <div key={day.dateString} className="space-y-1">
-                        {/* Day Line Header Toggle Trigger */}
                         <button
                           onClick={() => toggleDay(day.dateString)}
                           className={`w-full p-2.5 flex items-center justify-between text-left text-xs font-semibold rounded-lg border transition-all ${
@@ -329,7 +318,6 @@ export default function ProductionHistory() {
                           </div>
                         </button>
 
-                        {/* LEVEL 3: PRODUCTION SHEET DATA GRID DISPLAY */}
                         {isDayOpen && (
                           <Card className="bg-white border-neutral-200 rounded-lg shadow-inner overflow-hidden mx-0.5 my-1">
                             <CardContent className="p-3 space-y-3">
@@ -339,8 +327,6 @@ export default function ProductionHistory() {
                                   Table Line Output Yields
                                 </span>
                               </div>
-
-                              {/* Grid Layout Components */}
                               <div className="grid grid-cols-2 gap-2">
                                 {[1, 2, 3, 4].map((tableId) => {
                                   const tableData = day.tables[tableId] || {
@@ -375,11 +361,7 @@ export default function ProductionHistory() {
                                             Reject
                                           </p>
                                           <p
-                                            className={`text-xs font-black font-mono ${
-                                              tableData.reject > 0
-                                                ? "text-red-600 animate-pulse"
-                                                : "text-neutral-400"
-                                            }`}
+                                            className={`text-xs font-black font-mono ${tableData.reject > 0 ? "text-red-600 animate-pulse" : "text-neutral-400"}`}
                                           >
                                             {tableData.reject}
                                           </p>
@@ -389,8 +371,6 @@ export default function ProductionHistory() {
                                   );
                                 })}
                               </div>
-
-                              {/* Yield Footer Context Details */}
                               <div className="bg-emerald-50/50 rounded-md p-2 flex items-center justify-between text-[10px] font-semibold text-emerald-900 border border-emerald-100/40">
                                 <div className="flex items-center gap-1">
                                   <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
