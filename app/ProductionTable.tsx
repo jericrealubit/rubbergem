@@ -29,7 +29,7 @@ interface CycleEntry {
   endTime: string;
   runTime: number | "";
   loadTime: number | "";
-  tableMatTypes: Record<number, string>;
+  tableMatTypes?: Record<number, string>;
   selectedTableSquares: Record<number, string>;
   bubbleCheckboxes: Record<
     number,
@@ -108,6 +108,7 @@ export default function ProductionTablePage({
               : "--:--",
             runTime: 0,
             loadTime: Math.round((row.load_duration_seconds || 0) / 60),
+            tableMatTypes: {},
             selectedTableSquares: parsedSquares,
             bubbleCheckboxes: row.bubble_json?.checks || {
               1: { left: false, middle: false, right: false },
