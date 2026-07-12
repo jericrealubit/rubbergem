@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase"; // Import supabase
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,6 +16,7 @@ import {
   AlertCircle,
   CheckCircle,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 interface CycleEntry {
@@ -49,10 +50,14 @@ export default function ProductionTablePage({
   const [entries, setEntries] = useState<CycleEntry[]>([]);
   const [matTypes, setMatTypes] = useState<Record<number, string>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Core data retrieval engine extracted to allow on-demand and real-time triggers
+  // Core data retrieval engine with explicit cache-busting headers
   const fetchLogs = async (showSpinner = false) => {
     if (showSpinner) setIsRefreshing(true);
+    setFetchError(null);
+
     try {
       const { data, error } = await supabase
         .from("live_log")
@@ -61,26 +66,22 @@ export default function ProductionTablePage({
 
       if (error) {
         console.error("Error fetching logs:", error);
+        setFetchError(error.message);
         return;
       }
 
       if (data) {
         const transformed: CycleEntry[] = data.map((row: any) => {
-          // Parse the new table-centric short_mold_json format safely
           const parsedSquares: Record<number, string> = {};
           [1, 2, 3, 4].forEach((id) => {
             const tableData = row.short_mold_json?.[`table_${id}`];
-
             if (tableData && typeof tableData === "object") {
               if (tableData.position) {
-                // 1. If exact grid string exists (e.g. "top-left"), use it
                 parsedSquares[id] = tableData.position;
               } else if (tableData.reject === 1) {
-                // 2. Fallback: If it's a reject object, display "Short Mold"
                 parsedSquares[id] = "Short Mold";
               }
             } else if (row.short_mold_json?.[id]) {
-              // 3. Legacy fallback for old database records
               parsedSquares[id] = row.short_mold_json[id];
             }
           });
@@ -88,20 +89,26 @@ export default function ProductionTablePage({
           return {
             id: row.live_id.toString(),
             pressNumber: "1",
-            date: new Date(row.start_time).toISOString().split("T")[0],
+            date: row.start_time
+              ? new Date(row.start_time).toISOString().split("T")[0]
+              : "---",
             operator: "N/A",
             shift: "N/A",
-            startTime: new Date(row.start_time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            endTime: new Date(row.end_time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            startTime: row.start_time
+              ? new Date(row.start_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "--:--",
+            endTime: row.end_time
+              ? new Date(row.end_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "--:--",
             runTime: 0,
-            loadTime: Math.round(row.load_duration_seconds / 60),
-            selectedTableSquares: parsedSquares, // Injected fallback mappings here
+            loadTime: Math.round((row.load_duration_seconds || 0) / 60),
+            selectedTableSquares: parsedSquares,
             bubbleCheckboxes: row.bubble_json?.checks || {
               1: { left: false, middle: false, right: false },
               2: { left: false, middle: false, right: false },
@@ -110,24 +117,27 @@ export default function ProductionTablePage({
             },
             bubbleSizes: row.bubble_json?.sizes || {},
             notes: row.notes || "",
-            timestamp: new Date(row.start_time).getTime(),
+            timestamp: row.start_time
+              ? new Date(row.start_time).getTime()
+              : Date.now(),
           };
         });
         setEntries(transformed);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Unexpected fetch error:", err);
+      setFetchError(err.message || "An unexpected network error occurred.");
     } finally {
+      setIsLoading(false);
       if (showSpinner) setIsRefreshing(false);
     }
   };
 
-  // Sync data strictly on component mount and database mutation
   useEffect(() => {
-    // 1. Fetch immediately when accessed
+    // 1. Initial Access Fetch
     fetchLogs();
 
-    // 2. Realtime listener to capture insertions or clears from other active clients
+    // 2. Realtime listener sync channel
     const liveLogChannel = supabase
       .channel("production-page-sync")
       .on(
@@ -139,7 +149,7 @@ export default function ProductionTablePage({
       )
       .subscribe();
 
-    // Load configuration from localStorage
+    // Load configuration safely from local storage if initialized
     const savedMatTypes = localStorage.getItem("shift_mat_types");
     if (savedMatTypes) {
       try {
@@ -165,13 +175,11 @@ export default function ProductionTablePage({
 
     if (isConfirmed) {
       try {
-        // 1. Retrieve the current shift metadata from localStorage
         const operator = localStorage.getItem("shift_operator") || "--";
         const shiftGroup = localStorage.getItem("shift_group") || "Day";
         const machinePress =
-          "Press #" + localStorage.getItem("terminal_press_number") || "1";
+          "Press #" + (localStorage.getItem("terminal_press_number") || "1");
 
-        // 2. Execute the RPC call with the retrieved data
         const { error } = await supabase.rpc("reset_shift_log", {
           p_shift_id: 1,
           p_date: new Date().toISOString().split("T")[0],
@@ -181,10 +189,7 @@ export default function ProductionTablePage({
 
         if (error) throw error;
 
-        // 3. Success: Clear local entries and state
         setEntries([]);
-
-        // Clear shift-specific storage after archival
         localStorage.removeItem("shift_operator");
         localStorage.removeItem("shift_group");
         localStorage.removeItem("shift_run_time");
@@ -196,7 +201,7 @@ export default function ProductionTablePage({
     }
   };
 
-  // --- UI Logic (Unchanged) ---
+  // --- UI Computation Logic ---
   const latestEntry = entries[0] || null;
   const totalDisplayRows = 15;
   const rows = Array.from(
@@ -232,16 +237,14 @@ export default function ProductionTablePage({
     let reject = 0;
 
     entries.forEach((entry) => {
-      if (matTypes[id]) {
-        const hasShortMold = !!entry.selectedTableSquares?.[id];
-        const b = entry.bubbleCheckboxes?.[id];
-        const hasBubbles = !!(b?.left || b?.middle || b?.right);
+      const hasShortMold = !!entry.selectedTableSquares?.[id];
+      const b = entry.bubbleCheckboxes?.[id];
+      const hasBubbles = !!(b?.left || b?.middle || b?.right);
 
-        if (hasShortMold || hasBubbles) {
-          reject++;
-        } else {
-          good++;
-        }
+      if (hasShortMold || hasBubbles) {
+        reject++;
+      } else {
+        good++;
       }
     });
 
@@ -254,7 +257,6 @@ export default function ProductionTablePage({
 
   return (
     <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 space-y-3">
-      {/* Strict Single Page Print Sheet Styles */}
       <style jsx global>{`
         @media print {
           @page {
@@ -317,22 +319,22 @@ export default function ProductionTablePage({
           <Button
             variant="outline"
             onClick={() => fetchLogs(true)}
-            disabled={isRefreshing}
+            disabled={isRefreshing || isLoading}
             className="h-9 gap-1.5 text-xs text-neutral-600 border-neutral-200"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
             />
-            Refresh
+            Force Refresh
           </Button>
           <Button
             onClick={handleResetLog}
-            disabled={session ? false : true}
+            disabled={!session}
             variant="destructive"
             className="bg-red-600 hover:bg-red-700 gap-2 h-9 text-xs font-bold shadow-sm text-white"
           >
             <Trash2 className="w-4 h-4" />
-            {session ? "Reset Shift Log" : "Login to Reset Log"}
+            {session ? "Reset Shift Log" : "Login to Reset"}
           </Button>
           <Button
             onClick={handlePrintPDF}
@@ -342,6 +344,18 @@ export default function ProductionTablePage({
           </Button>
         </div>
       </div>
+
+      {/* Error Alert Banner */}
+      {fetchError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-sm text-red-800 no-print">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold">Database Fetch Failed: </span>
+            {fetchError}. Verify that RLS permissions are correct for the anon
+            public role.
+          </div>
+        </div>
+      )}
 
       {/* Main Document Content Area */}
       <Card className="shadow-sm border-neutral-200 overflow-hidden">
@@ -361,6 +375,7 @@ export default function ProductionTablePage({
           </div>
         </CardHeader>
 
+        {/* Metadata Strip */}
         <div className="bg-neutral-50 border-b border-neutral-200 p-2.5 space-y-2.5 meta-grid-compact">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-neutral-700">
             <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
@@ -370,10 +385,16 @@ export default function ProductionTablePage({
                   Operator / Shift
                 </span>
                 <span className="font-bold text-neutral-950 text-xs">
-                  {localStorage.getItem("shift_operator") || "—"}
+                  {typeof window !== "undefined"
+                    ? localStorage.getItem("shift_operator") || "Remote Screen"
+                    : "—"}
                 </span>
                 <span className="text-[10px] text-neutral-500 capitalize ml-1">
-                  ({localStorage.getItem("shift_group") || "—"})
+                  (
+                  {typeof window !== "undefined"
+                    ? localStorage.getItem("shift_group") || "View"
+                    : "—"}
+                  )
                 </span>
               </div>
             </div>
@@ -385,7 +406,10 @@ export default function ProductionTablePage({
                   Machine Press
                 </span>
                 <span className="font-extrabold text-emerald-800 text-xs">
-                  Press #{localStorage.getItem("terminal_press_number") || "—"}
+                  Press #
+                  {typeof window !== "undefined"
+                    ? localStorage.getItem("terminal_press_number") || "1"
+                    : "—"}
                 </span>
               </div>
             </div>
@@ -397,7 +421,8 @@ export default function ProductionTablePage({
                   Target Run Time
                 </span>
                 <span className="font-bold text-neutral-950 text-xs">
-                  {localStorage.getItem("shift_run_time")
+                  {typeof window !== "undefined" &&
+                  localStorage.getItem("shift_run_time")
                     ? `${localStorage.getItem("shift_run_time")}m`
                     : "—"}
                 </span>
@@ -417,6 +442,7 @@ export default function ProductionTablePage({
             </div>
           </div>
 
+          {/* Table Line Yield Status Strip */}
           <div className="bg-white p-2 rounded border border-neutral-200 flex flex-col md:flex-row md:items-center gap-2.5 text-xs meta-item-compact">
             <div className="flex items-center gap-1.5 text-emerald-800 shrink-0 md:border-r border-neutral-200 md:pr-3">
               <Settings2 className="w-3.5 h-3.5" />
@@ -445,11 +471,7 @@ export default function ProductionTablePage({
                         G: {stats.good}
                       </span>
                       <span
-                        className={`px-1.5 py-0.5 rounded font-mono ${
-                          stats.reject > 0
-                            ? "text-red-600 bg-red-100/30"
-                            : "text-neutral-400 bg-neutral-100"
-                        }`}
+                        className={`px-1.5 py-0.5 rounded font-mono ${stats.reject > 0 ? "text-red-600 bg-red-100/30" : "text-neutral-400 bg-neutral-100"}`}
                       >
                         R: {stats.reject}
                       </span>
@@ -462,20 +484,27 @@ export default function ProductionTablePage({
         </div>
 
         {/* 15-Row Shift Cycle Data Grid */}
-        <CardContent className="p-0 overflow-x-auto">
+        <CardContent className="p-0 overflow-x-auto relative">
+          {isLoading && entries.length === 0 && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center z-10 p-12 gap-2 text-xs font-semibold text-neutral-500">
+              <Loader2 className="w-4 h-4 text-emerald-700 animate-spin" />{" "}
+              Fetching raw matrix logs...
+            </div>
+          )}
+
           <table className="w-full text-left border-collapse print-compact min-w-[700px]">
             <thead>
               <tr className="bg-neutral-100 border-b border-neutral-200 text-neutral-600 text-[10px] uppercase tracking-wider font-bold">
-                <th className="p-2 border-r border-neutral-200 text-center w-[45px] min-w-[45px]">
+                <th className="p-2 border-r border-neutral-200 text-center w-[45px]">
                   Cycle
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[140px] min-w-[140px]">
+                <th className="p-2 border-r border-neutral-200 text-center w-[140px]">
                   Times (S/E / Load)
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center min-w-[160px] whitespace-normal break-words px-3">
+                <th className="p-2 border-r border-neutral-200 text-center min-w-[160px] px-3">
                   Short Mold Locations
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center min-w-[150px] whitespace-normal break-words px-3">
+                <th className="p-2 border-r border-neutral-200 text-center min-w-[150px] px-3">
                   Bubbles Matrix
                 </th>
                 <th className="p-2 min-w-[200px] text-left">
@@ -491,19 +520,19 @@ export default function ProductionTablePage({
                       key={`filler-${index}`}
                       className="min-h-[25px] bg-white"
                     >
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-300 font-mono font-bold bg-neutral-50/30 w-[45px] min-w-[45px]">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-300 font-mono font-bold bg-neutral-50/30 w-[45px]">
                         {index + 1}
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[140px] min-w-[140px]">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[140px]">
                         —
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[160px] whitespace-normal break-words">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[160px]">
                         -
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[150px] whitespace-normal break-words">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[150px]">
                         -
                       </td>
-                      <td className="p-1 text-neutral-200 italic min-w-[200px] whitespace-normal break-words">
+                      <td className="p-1 text-neutral-200 italic min-w-[200px]">
                         -
                       </td>
                     </tr>
@@ -514,7 +543,6 @@ export default function ProductionTablePage({
                   const activeMolds = [1, 2, 3, 4]
                     .filter((id) => entry.selectedTableSquares?.[id])
                     .map((id) => `T${id}: ${entry.selectedTableSquares[id]}`);
-
                   return activeMolds.length > 0 ? activeMolds.join(" | ") : "-";
                 };
 
@@ -530,13 +558,11 @@ export default function ProductionTablePage({
                       if (b?.left) locs.push("L");
                       if (b?.middle) locs.push("M");
                       if (b?.right) locs.push("R");
-                      const locStr = locs.join(",");
                       const sizeStr = entry.bubbleSizes?.[id]
                         ? ` (${entry.bubbleSizes[id]})`
                         : "";
-                      return `T${id}:[${locStr}]${sizeStr}`;
+                      return `T${id}:[${locs.join(",")}]${sizeStr}`;
                     });
-
                   return activeBubbles.length > 0
                     ? activeBubbles.join(" | ")
                     : "-";
@@ -547,29 +573,29 @@ export default function ProductionTablePage({
                     key={entry.id}
                     className="min-h-[25px] hover:bg-neutral-50/50 text-neutral-800 font-medium"
                   >
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono font-bold bg-neutral-50 text-neutral-500 w-[45px] min-w-[45px]">
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono font-bold bg-neutral-50 text-neutral-500 w-[45px]">
                       {index + 1}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 font-mono text-center text-[10px] w-[140px] min-w-[140px] whitespace-nowrap">
+                    <td className="p-1 border-r border-neutral-200 font-mono text-center text-[10px] w-[140px] whitespace-nowrap">
                       <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
-                        {entry.startTime || "--:--"}
+                        {entry.startTime}
                       </span>
                       <span className="mx-0.5 text-neutral-400">→</span>
                       <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
-                        {entry.endTime || "--:--"}
+                        {entry.endTime}
                       </span>
                       <span className="text-[9px] text-neutral-500 font-sans ml-1 font-semibold">
-                        ({entry.loadTime || 0}m)
+                        ({entry.loadTime}m)
                       </span>
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[160px] whitespace-normal break-words">
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[160px]">
                       {formatShortMolds()}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[150px] whitespace-normal break-words">
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[150px]">
                       {formatBubbles()}
                     </td>
                     <td
-                      className="p-1 text-neutral-500 font-normal text-[10px] min-w-[200px] whitespace-normal break-words text-left"
+                      className="p-1 text-neutral-500 font-normal text-[10px] min-w-[200px] text-left"
                       title={entry.notes}
                     >
                       {entry.notes || (
@@ -620,9 +646,7 @@ export default function ProductionTablePage({
             </div>
           </div>
           <div
-            className={`text-lg font-black font-mono ${
-              faultyMatsProduced > 0 ? "text-red-600" : "text-neutral-400"
-            }`}
+            className={`text-lg font-black font-mono ${faultyMatsProduced > 0 ? "text-red-600" : "text-neutral-400"}`}
           >
             {faultyMatsProduced}
           </div>
