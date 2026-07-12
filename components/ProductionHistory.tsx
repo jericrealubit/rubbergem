@@ -51,10 +51,8 @@ export default function ProductionHistory() {
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
-  const [expandedMonth, setExpandedMonth] = useState<string | null>(
-    "July 2026",
-  );
-  const [expandedDay, setExpandedDay] = useState<string | null>("2026-07-09");
+  const [expandedMonth, setExpandedMonth] = useState<string | null>("");
+  const [expandedDay, setExpandedDay] = useState<string | null>("");
 
   useEffect(() => {
     setIsMounted(true);

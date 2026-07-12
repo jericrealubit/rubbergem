@@ -1,5 +1,6 @@
 "use client";
 
+import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -25,7 +26,9 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-export default function ProductionForm() {
+export default function ProductionForm({ session }: { session: any }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // --- LAYOUT & CONFIGURATION PERSISTENCE ---
   const [pressNumber, setPressNumber] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -351,8 +354,51 @@ export default function ProductionForm() {
       </div>
 
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
+          setIsSubmitting(true);
+
+          try {
+            // Create valid ISO timestamps combining current date + input time
+            const startTimestamp = new Date(
+              `${currentDate}T${startTime}:00Z`,
+            ).toISOString();
+            const endTimestamp = new Date(
+              `${currentDate}T${endTime}:00Z`,
+            ).toISOString();
+
+            // Prepare payload
+            const payload = {
+              // shift_id: 1, // REQUIRED: Replace with your actual shift identification logic
+              // cycle_number: 1, // REQUIRED: You may need to fetch the count of existing logs for this shift
+              start_time: startTimestamp,
+              end_time: endTimestamp,
+              load_duration_seconds: Number(loadTime) * 60, // Convert minutes to seconds
+              load_unload_duration_seconds: 0, // Update if you have this specific field
+              short_mold_json: selectedTableSquares,
+              bubble_json: { checks: bubbleCheckboxes, sizes: bubbleSizes },
+              notes: notes,
+              updated_at: new Date().toISOString(),
+            };
+
+            // Insert into Supabase
+            const { error } = await supabase.from("live_log").insert([payload]);
+
+            if (error) throw error;
+
+            // SUCCESS: Clear your local states (same as your original logic)
+            setStartTime("");
+            setEndTime("");
+            setLoadTime("");
+            // ... (rest of your existing reset logic)
+
+            alert("Cycle entry submitted to database!");
+          } catch (err) {
+            console.error("Error submitting to database:", err);
+            alert("Failed to submit entry. Please check your connection.");
+          } finally {
+            setIsSubmitting(false);
+          }
 
           // 1. Package the current workspace data into a log entry
           const newCycleEntry = {
@@ -944,14 +990,16 @@ export default function ProductionForm() {
         {/* Global Submit Trigger */}
         <Button
           type="submit"
-          disabled={loadTime === "" || Number(loadTime) < 1}
+          disabled={session ? loadTime === "" || Number(loadTime) < 1 : true}
           className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
         >
-          {loadTime === ""
-            ? "Enter Timestamps to Submit"
-            : Number(loadTime) < 1
-              ? "Load Time Must Be ≥ 1 Min"
-              : "Submit Cycle Entry"}
+          {session
+            ? loadTime === ""
+              ? "Enter Timestamps to Submit"
+              : Number(loadTime) < 1
+                ? "Load Time Must Be ≥ 1 Min"
+                : "Submit Cycle Entry"
+            : "Login to submit cycle"}
         </Button>
       </form>
     </div>

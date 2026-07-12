@@ -1,6 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase"; // Ensure this path is correct
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Menu,
   X,
@@ -8,19 +16,57 @@ import {
   ClipboardList,
   History,
   HelpCircle,
-  ShieldAlert,
 } from "lucide-react";
 import ProductionForm from "@/components/PressForm";
 import ProductionTablePage from "./ProductionTable";
 import ProductionHistory from "@/components/ProductionHistory";
 import AboutPage from "./AboutPage";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // Define the expanded view type union
 type ViewType = "form" | "table" | "history" | "about";
 
 export default function Home() {
+  const [session, setSession] = useState<any>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
   const [currentView, setCurrentView] = useState<ViewType>("form");
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  // 1. Listen for Auth changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 2. Auth Handlers
+  const handleLogin = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) alert(error.message);
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   const navigateTo = (view: ViewType) => {
     setCurrentView(view);
@@ -116,13 +162,53 @@ export default function Home() {
           </nav>
         </div>
 
-        {/* Menu Footer Block */}
-        <div className="p-4 border-t border-neutral-800 space-y-2 text-center text-[11px] text-neutral-500 font-medium">
-          <div className="flex items-center justify-center gap-1.5">
-            <ShieldAlert className="w-3.5 h-3.5 text-neutral-600" />
-            <span>Local Instance Client</span>
-          </div>
-          <p>© 2026 RubberGem Ltd.</p>
+        <div className="p-4 border-t border-neutral-800 space-y-2">
+          {session ? (
+            <div className="text-center space-y-2">
+              <p className="text-[10px] text-emerald-500 font-bold truncate">
+                {session.user.email}
+              </p>
+              <Button
+                onClick={handleLogout}
+                variant="destructive"
+                className="w-full h-8 text-xs"
+              >
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-emerald-700 hover:bg-emerald-600">
+                  Login to System
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[300px]">
+                <DialogHeader>
+                  <DialogTitle>Operator Login</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <Input
+                    placeholder="Email"
+                    type="email"
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Password"
+                    type="password"
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Button
+                    onClick={handleLogin}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading ? "Signing in..." : "Sign In"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
@@ -136,10 +222,13 @@ export default function Home() {
 
       {/* Main Container View Router Frame */}
       <main className="flex-1 w-full p-2 sm:p-4">
-        {currentView === "form" && <ProductionForm />}
+        {currentView === "form" && <ProductionForm session={session} />}
 
         {currentView === "table" && (
-          <ProductionTablePage onBack={() => setCurrentView("form")} />
+          <ProductionTablePage
+            onBack={() => setCurrentView("form")}
+            session={session}
+          />
         )}
 
         {currentView === "history" && <ProductionHistory />}

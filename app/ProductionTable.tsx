@@ -39,8 +39,10 @@ interface CycleEntry {
 
 export default function ProductionTablePage({
   onBack,
+  session, // 1. Add session here
 }: {
   onBack?: () => void;
+  session: any; // 2. Define the type here
 }) {
   const [entries, setEntries] = useState<CycleEntry[]>([]);
 
@@ -219,10 +221,12 @@ export default function ProductionTablePage({
         <div className="flex items-center gap-2">
           <Button
             onClick={handleResetLog}
+            disabled={session ? false : true}
             variant="destructive"
             className="bg-red-600 hover:bg-red-700 gap-2 h-9 text-xs font-bold shadow-sm text-white"
           >
-            <Trash2 className="w-4 h-4" /> Reset Shift Log
+            <Trash2 className="w-4 h-4" />
+            {session ? "Reset Shift Log" : "Login to Reset Log"}
           </Button>
           <Button
             onClick={handlePrintPDF}
