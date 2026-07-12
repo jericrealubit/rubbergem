@@ -15,6 +15,7 @@ import {
   Settings2,
   AlertCircle,
   CheckCircle,
+  RefreshCw,
 } from "lucide-react";
 
 interface CycleEntry {
@@ -47,10 +48,12 @@ export default function ProductionTablePage({
 }) {
   const [entries, setEntries] = useState<CycleEntry[]>([]);
   const [matTypes, setMatTypes] = useState<Record<number, string>>({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch data from Supabase instead of localStorage
-  useEffect(() => {
-    const fetchLogs = async () => {
+  // Core data retrieval engine extracted to allow on-demand and real-time triggers
+  const fetchLogs = async (showSpinner = false) => {
+    if (showSpinner) setIsRefreshing(true);
+    try {
       const { data, error } = await supabase
         .from("live_log")
         .select("*")
@@ -112,9 +115,29 @@ export default function ProductionTablePage({
         });
         setEntries(transformed);
       }
-    };
+    } catch (err) {
+      console.error("Unexpected fetch error:", err);
+    } finally {
+      if (showSpinner) setIsRefreshing(false);
+    }
+  };
 
+  // Sync data strictly on component mount and database mutation
+  useEffect(() => {
+    // 1. Fetch immediately when accessed
     fetchLogs();
+
+    // 2. Realtime listener to capture insertions or clears from other active clients
+    const liveLogChannel = supabase
+      .channel("production-page-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_log" },
+        () => {
+          fetchLogs();
+        },
+      )
+      .subscribe();
 
     // Load configuration from localStorage
     const savedMatTypes = localStorage.getItem("shift_mat_types");
@@ -125,6 +148,10 @@ export default function ProductionTablePage({
         console.error("Failed to parse mat types", e);
       }
     }
+
+    return () => {
+      supabase.removeChannel(liveLogChannel);
+    };
   }, []);
 
   const handlePrintPDF = () => {
@@ -287,6 +314,17 @@ export default function ProductionTablePage({
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => fetchLogs(true)}
+            disabled={isRefreshing}
+            className="h-9 gap-1.5 text-xs text-neutral-600 border-neutral-200"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
           <Button
             onClick={handleResetLog}
             disabled={session ? false : true}
