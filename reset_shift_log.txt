@@ -1,0 +1,105 @@
+DECLARE
+  v_cycles_json JSONB;
+  v_table_yields JSONB;
+  v_total_goods BIGINT := 0;
+  v_total_rejects BIGINT := 0;
+  v_cycle_count INT := 0;
+  v_date DATE;
+BEGIN
+  -- Build cycles JSON --
+  SELECT COALESCE(jsonb_agg(
+           jsonb_build_object(
+             'cycle_number', cycle_number,
+             'start_time', to_char(start_time AT TIME ZONE 'UTC', 'HH24:MI'),
+             'end_time', to_char(end_time AT TIME ZONE 'UTC', 'HH24:MI'),
+             'run_duration_seconds', COALESCE((extract(epoch from (end_time - start_time)))::int, NULL),
+             'load_duration_seconds', load_duration_seconds,
+             'short_mold_json', short_mold_json,
+             'bubble_json', bubble_json,
+             'notes', notes
+           ) ORDER BY cycle_number
+         ), '[]'::jsonb)
+  INTO v_cycles_json
+  FROM public.live_log
+  WHERE shift_id = p_shift_id;
+
+  IF v_cycles_json IS NULL THEN
+    v_cycles_json := '[]'::jsonb;
+  END IF;
+
+  v_cycle_count := COALESCE(jsonb_array_length(v_cycles_json), 0);
+
+  -- Aggregate table yields
+  WITH all_tables AS (
+    SELECT (kv.key) AS table_key,
+           (kv.value ->> 'good')::INT AS good,
+           (kv.value ->> 'reject')::INT AS reject,
+           (kv.value ->> 'type') AS type,
+           ll.updated_at
+    FROM public.live_log ll
+    CROSS JOIN LATERAL jsonb_each(ll.short_mold_json) kv
+    WHERE ll.shift_id = p_shift_id
+      AND ll.short_mold_json IS NOT NULL
+  ),
+  summed AS (
+    SELECT table_key,
+           SUM(COALESCE(good,0)) AS total_good,
+           SUM(COALESCE(reject,0)) AS total_reject,
+           (ARRAY_AGG(type ORDER BY updated_at DESC))[1] AS last_type
+    FROM all_tables
+    GROUP BY table_key
+  )
+  SELECT COALESCE(jsonb_object_agg(
+           table_key,
+           jsonb_build_object('good', total_good, 'reject', total_reject, 'type', last_type)
+         ), '{}'::jsonb)
+  INTO v_table_yields
+  FROM summed;
+
+  IF v_table_yields IS NULL THEN
+    v_table_yields := '{}'::jsonb;
+  END IF;
+
+  -- Compute totals
+  SELECT COALESCE(SUM((value->>'good')::BIGINT), 0),
+         COALESCE(SUM((value->>'reject')::BIGINT), 0)
+  INTO v_total_goods, v_total_rejects
+  FROM jsonb_each(v_table_yields) AS t(key, value);
+
+  IF v_total_goods = 0 AND v_cycle_count > 0 THEN
+    v_total_goods := v_cycle_count * 4;
+  END IF;
+
+  -- Determine date: earliest start_time, or p_date, or today
+  SELECT (MIN(start_time)::date) FROM public.live_log WHERE shift_id = p_shift_id INTO v_date;
+  v_date := COALESCE(v_date, p_date, now()::date);
+
+  -- Insert into production_logs (append-only)
+  INSERT INTO public.production_logs (
+    date,
+    machine_press,
+    operator_shift,
+    table_line_output_yields,
+    cycles,
+    created_at,
+    total_mats_produced,
+    faulty_mats_produced
+  )
+  VALUES (
+    v_date,
+    COALESCE(p_machine_press, ''),
+    COALESCE(p_operator_shift, ''),
+    v_table_yields,
+    v_cycles_json,
+    now(),
+    v_total_goods::INT,
+    v_total_rejects::INT
+  )
+  RETURNING id INTO production_log_id;
+
+  -- Clear live_log rows for the shift
+  DELETE FROM public.live_log WHERE shift_id = p_shift_id;
+
+  moved_cycles := v_cycle_count;
+  RETURN NEXT;
+END;

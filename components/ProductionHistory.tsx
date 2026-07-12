@@ -274,8 +274,10 @@ export default function ProductionHistory() {
                       0,
                     );
 
+                    const keyForDay = `${day.dateString}-${day.shift}`;
+
                     return (
-                      <div key={day.dateString} className="space-y-1">
+                      <div key={keyForDay} className="space-y-1">
                         <button
                           onClick={() => toggleDay(day.dateString)}
                           className={`w-full p-2.5 flex items-center justify-between text-left text-xs font-semibold rounded-lg border transition-all ${

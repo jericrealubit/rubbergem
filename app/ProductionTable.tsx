@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase"; // Import supabase
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,24 +40,89 @@ interface CycleEntry {
 
 export default function ProductionTablePage({
   onBack,
-  session, // 1. Add session here
+  session,
 }: {
   onBack?: () => void;
-  session: any; // 2. Define the type here
+  session: any;
 }) {
   const [entries, setEntries] = useState<CycleEntry[]>([]);
+  const [matTypes, setMatTypes] = useState<Record<number, string>>({});
 
+  // Fetch data from Supabase instead of localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("production_cycles");
-    if (saved) {
+    const fetchLogs = async () => {
+      const { data, error } = await supabase
+        .from("live_log")
+        .select("*")
+        .order("start_time", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching logs:", error);
+        return;
+      }
+
+      if (data) {
+        const transformed: CycleEntry[] = data.map((row: any) => {
+          // Parse the new table-centric short_mold_json format safely
+          const parsedSquares: Record<number, string> = {};
+          [1, 2, 3, 4].forEach((id) => {
+            const tableData = row.short_mold_json?.[`table_${id}`];
+
+            if (tableData && typeof tableData === "object") {
+              if (tableData.position) {
+                // 1. If exact grid string exists (e.g. "top-left"), use it
+                parsedSquares[id] = tableData.position;
+              } else if (tableData.reject === 1) {
+                // 2. Fallback: If it's a reject object, display "Short Mold"
+                parsedSquares[id] = "Short Mold";
+              }
+            } else if (row.short_mold_json?.[id]) {
+              // 3. Legacy fallback for old database records
+              parsedSquares[id] = row.short_mold_json[id];
+            }
+          });
+
+          return {
+            id: row.live_id.toString(),
+            pressNumber: "1",
+            date: new Date(row.start_time).toISOString().split("T")[0],
+            operator: "N/A",
+            shift: "N/A",
+            startTime: new Date(row.start_time).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            endTime: new Date(row.end_time).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            runTime: 0,
+            loadTime: Math.round(row.load_duration_seconds / 60),
+            selectedTableSquares: parsedSquares, // Injected fallback mappings here
+            bubbleCheckboxes: row.bubble_json?.checks || {
+              1: { left: false, middle: false, right: false },
+              2: { left: false, middle: false, right: false },
+              3: { left: false, middle: false, right: false },
+              4: { left: false, middle: false, right: false },
+            },
+            bubbleSizes: row.bubble_json?.sizes || {},
+            notes: row.notes || "",
+            timestamp: new Date(row.start_time).getTime(),
+          };
+        });
+        setEntries(transformed);
+      }
+    };
+
+    fetchLogs();
+
+    // Load configuration from localStorage
+    const savedMatTypes = localStorage.getItem("shift_mat_types");
+    if (savedMatTypes) {
       try {
-        const parsed = JSON.parse(saved);
-        parsed.sort(
-          (a: CycleEntry, b: CycleEntry) => b.timestamp - a.timestamp,
-        );
-        setEntries(parsed);
+        setMatTypes(JSON.parse(savedMatTypes));
       } catch (e) {
-        console.error("Error parsing saved entries", e);
+        console.error("Failed to parse mat types", e);
       }
     }
   }, []);
@@ -65,56 +131,60 @@ export default function ProductionTablePage({
     window.print();
   };
 
-  // Reset log with warning verification
-  const handleResetLog = () => {
+  const handleResetLog = async () => {
     const isConfirmed = window.confirm(
-      "CRITICAL WARNING: Are you sure you want to completely erase the current shift production log, form configurations, and metadata? This action cannot be undone.",
+      "CRITICAL: This will archive the current shift to history and wipe the live log. Continue?",
     );
 
     if (isConfirmed) {
-      // 1. Wipe cycle entries history
-      localStorage.removeItem("production_cycles");
+      try {
+        // 1. Retrieve the current shift metadata from localStorage
+        const operator = localStorage.getItem("shift_operator") || "--";
+        const shiftGroup = localStorage.getItem("shift_group") || "Day";
+        const machinePress =
+          "Press #" + localStorage.getItem("terminal_press_number") || "1";
 
-      // 2. Wipe persistent meta & shift records
-      localStorage.removeItem("terminal_press_number");
-      localStorage.removeItem("shift_panel_open");
-      localStorage.removeItem("shift_operator");
-      localStorage.removeItem("shift_group");
-      localStorage.removeItem("shift_mat_types");
+        // 2. Execute the RPC call with the retrieved data
+        const { error } = await supabase.rpc("reset_shift_log", {
+          p_shift_id: 1,
+          p_date: new Date().toISOString().split("T")[0],
+          p_machine_press: machinePress,
+          p_operator_shift: `${operator} (${shiftGroup})`,
+        });
 
-      // 3. Wipe any active working draft cache lines
-      localStorage.removeItem("ws_start_time");
-      localStorage.removeItem("ws_end_time");
-      localStorage.removeItem("ws_run_time");
-      localStorage.removeItem("ws_load_time");
-      localStorage.removeItem("ws_selected_squares");
-      localStorage.removeItem("ws_bubble_checkboxes");
-      localStorage.removeItem("ws_bubble_sizes");
-      localStorage.removeItem("ws_notes");
+        if (error) throw error;
 
-      setEntries([]);
+        // 3. Success: Clear local entries and state
+        setEntries([]);
+
+        // Clear shift-specific storage after archival
+        localStorage.removeItem("shift_operator");
+        localStorage.removeItem("shift_group");
+        localStorage.removeItem("shift_run_time");
+
+        alert("Shift archived and log cleared successfully.");
+      } catch (err: any) {
+        alert("Failed to reset shift: " + err.message);
+      }
     }
   };
 
+  // --- UI Logic (Unchanged) ---
   const latestEntry = entries[0] || null;
-
-  // Strict 15-row design structure
   const totalDisplayRows = 15;
   const rows = Array.from(
     { length: totalDisplayRows },
     (_, i) => entries[i] || null,
   );
 
-  // Summary Metrics Calculations
   const activeEntriesCount = entries.length;
   const totalMatsProduced = activeEntriesCount * 4;
 
-  // Compute the absolute sum of all entries' load times dynamically
   const accumulatedLoadTime = entries.reduce((total, entry) => {
     const time =
       typeof entry.loadTime === "number"
         ? entry.loadTime
-        : parseFloat(entry.loadTime) || 0;
+        : parseFloat(entry.loadTime as any) || 0;
     return total + time;
   }, 0);
 
@@ -130,14 +200,12 @@ export default function ProductionTablePage({
     }
   });
 
-  // Dynamic calculation for individual tool line stats (Good vs Reject counts)
   const getTableStats = (id: number) => {
     let good = 0;
     let reject = 0;
 
     entries.forEach((entry) => {
-      // Only record stats if this specific table held an active product type configuration in the entry frame
-      if (entry.tableMatTypes?.[id]) {
+      if (matTypes[id]) {
         const hasShortMold = !!entry.selectedTableSquares?.[id];
         const b = entry.bubbleCheckboxes?.[id];
         const hasBubbles = !!(b?.left || b?.middle || b?.right);
@@ -151,7 +219,7 @@ export default function ProductionTablePage({
     });
 
     return {
-      matType: latestEntry?.tableMatTypes?.[id] || "—",
+      matType: matTypes[id] || "—",
       good,
       reject,
     };
@@ -239,7 +307,6 @@ export default function ProductionTablePage({
 
       {/* Main Document Content Area */}
       <Card className="shadow-sm border-neutral-200 overflow-hidden">
-        {/* Core Sheet Title Banner */}
         <CardHeader className="bg-emerald-950 text-white p-3 header-compact">
           <div className="flex justify-between items-center">
             <div>
@@ -256,7 +323,6 @@ export default function ProductionTablePage({
           </div>
         </CardHeader>
 
-        {/* Global Shift Parameters Meta-Header Section */}
         <div className="bg-neutral-50 border-b border-neutral-200 p-2.5 space-y-2.5 meta-grid-compact">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-neutral-700">
             <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
@@ -266,10 +332,10 @@ export default function ProductionTablePage({
                   Operator / Shift
                 </span>
                 <span className="font-bold text-neutral-950 text-xs">
-                  {latestEntry?.operator || "—"}
+                  {localStorage.getItem("shift_operator") || "—"}
                 </span>
                 <span className="text-[10px] text-neutral-500 capitalize ml-1">
-                  ({latestEntry?.shift || "—"})
+                  ({localStorage.getItem("shift_group") || "—"})
                 </span>
               </div>
             </div>
@@ -281,7 +347,7 @@ export default function ProductionTablePage({
                   Machine Press
                 </span>
                 <span className="font-extrabold text-emerald-800 text-xs">
-                  Press #{latestEntry?.pressNumber || "—"}
+                  Press #{localStorage.getItem("terminal_press_number") || "—"}
                 </span>
               </div>
             </div>
@@ -293,7 +359,9 @@ export default function ProductionTablePage({
                   Target Run Time
                 </span>
                 <span className="font-bold text-neutral-950 text-xs">
-                  {latestEntry?.runTime ? `${latestEntry.runTime}m` : "—"}
+                  {localStorage.getItem("shift_run_time")
+                    ? `${localStorage.getItem("shift_run_time")}m`
+                    : "—"}
                 </span>
               </div>
             </div>
@@ -311,7 +379,6 @@ export default function ProductionTablePage({
             </div>
           </div>
 
-          {/* Table Setup Metrics Block - Improved with Good and Reject quantities */}
           <div className="bg-white p-2 rounded border border-neutral-200 flex flex-col md:flex-row md:items-center gap-2.5 text-xs meta-item-compact">
             <div className="flex items-center gap-1.5 text-emerald-800 shrink-0 md:border-r border-neutral-200 md:pr-3">
               <Settings2 className="w-3.5 h-3.5" />
@@ -358,7 +425,6 @@ export default function ProductionTablePage({
 
         {/* 15-Row Shift Cycle Data Grid */}
         <CardContent className="p-0 overflow-x-auto">
-          {/* Setting min-w-[700px] on the table enforces a predictable scroll container on mobile viewports */}
           <table className="w-full text-left border-collapse print-compact min-w-[700px]">
             <thead>
               <tr className="bg-neutral-100 border-b border-neutral-200 text-neutral-600 text-[10px] uppercase tracking-wider font-bold">
@@ -480,7 +546,7 @@ export default function ProductionTablePage({
         </CardContent>
       </Card>
 
-      {/* Low-profile Production Summary Footer Cards */}
+      {/* Production Summary Footer Cards */}
       <div className="grid grid-cols-2 gap-3 pt-0.5">
         <div className="bg-white border border-neutral-200 rounded-xl p-2.5 flex items-center justify-between shadow-sm footer-compact">
           <div className="flex items-center gap-2">

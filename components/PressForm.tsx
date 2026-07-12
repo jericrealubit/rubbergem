@@ -379,13 +379,41 @@ export default function ProductionForm({ session }: { session: any }) {
               `${currentDate}T${endTime}:00Z`,
             ).toISOString();
 
+            // ---------------------------------------------------------
+            // NEW: Format short_mold_json to match SQL Yield logic
+            // ---------------------------------------------------------
+            const formattedYieldJson: Record<string, any> = {};
+
+            [1, 2, 3, 4].forEach((tableId) => {
+              const matType = tableMatTypes[tableId] || "Unknown";
+              const shortMoldPos = selectedTableSquares[tableId];
+
+              // Check if table produced a defect in this cycle
+              const hasShortMold = !!shortMoldPos;
+              const hasBubble =
+                bubbleCheckboxes[tableId]?.left ||
+                bubbleCheckboxes[tableId]?.middle ||
+                bubbleCheckboxes[tableId]?.right;
+
+              const isReject = hasShortMold || hasBubble;
+
+              formattedYieldJson[`table_${tableId}`] = {
+                good: isReject ? 0 : 1,
+                reject: isReject ? 1 : 0,
+                type: matType,
+                position: shortMoldPos || null, // Preserves location (e.g. "top-left") for UI
+              };
+            });
+            // ---------------------------------------------------------
+
             // 2. Prepare payload (excluding live_id as it auto-increments)
             const payload = {
+              shift_id: 1, // Placeholder for now
               cycle_number: nextCycleNumber, // Required
               start_time: startTimestamp,
               end_time: endTimestamp,
               load_duration_seconds: Number(loadTime) * 60,
-              short_mold_json: selectedTableSquares,
+              short_mold_json: formattedYieldJson,
               bubble_json: { checks: bubbleCheckboxes, sizes: bubbleSizes },
               notes: notes,
               updated_at: new Date().toISOString(),
