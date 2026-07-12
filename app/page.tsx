@@ -144,7 +144,7 @@ export default function Home() {
               }`}
             >
               <History className="w-4 h-4 shrink-0" />
-              <span>Press Production History</span>
+              <span>Press History</span>
             </button>
 
             {/* About System Route */}

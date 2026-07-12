@@ -24,6 +24,7 @@ import {
   ChevronUp,
   Settings2,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 
 export default function ProductionForm({ session }: { session: any }) {
@@ -359,6 +360,17 @@ export default function ProductionForm({ session }: { session: any }) {
           setIsSubmitting(true);
 
           try {
+            // 1. Fetch the latest cycle number from the database
+            const { data: latestEntry, error: fetchError } = await supabase
+              .from("live_log")
+              .select("cycle_number")
+              .order("cycle_number", { ascending: false })
+              .limit(1)
+              .single();
+
+            // If table is empty, start at 1, otherwise increment the last found number
+            const nextCycleNumber = (latestEntry?.cycle_number || 0) + 1;
+
             // Create valid ISO timestamps combining current date + input time
             const startTimestamp = new Date(
               `${currentDate}T${startTime}:00Z`,
@@ -367,103 +379,93 @@ export default function ProductionForm({ session }: { session: any }) {
               `${currentDate}T${endTime}:00Z`,
             ).toISOString();
 
-            // Prepare payload
+            // 2. Prepare payload (excluding live_id as it auto-increments)
             const payload = {
-              // shift_id: 1, // REQUIRED: Replace with your actual shift identification logic
-              // cycle_number: 1, // REQUIRED: You may need to fetch the count of existing logs for this shift
+              cycle_number: nextCycleNumber, // Required
               start_time: startTimestamp,
               end_time: endTimestamp,
-              load_duration_seconds: Number(loadTime) * 60, // Convert minutes to seconds
-              load_unload_duration_seconds: 0, // Update if you have this specific field
+              load_duration_seconds: Number(loadTime) * 60,
               short_mold_json: selectedTableSquares,
               bubble_json: { checks: bubbleCheckboxes, sizes: bubbleSizes },
               notes: notes,
               updated_at: new Date().toISOString(),
             };
 
-            // Insert into Supabase
+            // 3. Insert into Supabase
             const { error } = await supabase.from("live_log").insert([payload]);
 
             if (error) throw error;
 
-            // SUCCESS: Clear your local states (same as your original logic)
+            // ... rest of your success logic
+
+            // 1. Package the current workspace data into a log entry
+            const newCycleEntry = {
+              id: Math.random().toString(36).substring(2, 9),
+              pressNumber,
+              date: currentDate,
+              operator,
+              shift,
+              startTime,
+              endTime,
+              runTime,
+              loadTime,
+              tableMatTypes,
+              selectedTableSquares,
+              bubbleCheckboxes,
+              bubbleSizes,
+              notes,
+              timestamp: Date.now(),
+            };
+
+            // 2. Append to the production log history in localStorage
+            const existingRecords = JSON.parse(
+              localStorage.getItem("production_cycles") || "[]",
+            );
+            existingRecords.unshift(newCycleEntry);
+            localStorage.setItem(
+              "production_cycles",
+              JSON.stringify(existingRecords),
+            );
+
+            // =========================================================
+            // 3. RESET SPECIFIC ACTIVE WORKSPACE STATES ON SUBMIT
+            // =========================================================
             setStartTime("");
             setEndTime("");
             setLoadTime("");
-            // ... (rest of your existing reset logic)
+            setIsManualStart(false);
+            setIsManualEnd(false);
+            setSelectedTableSquares({});
+            setBubbleCheckboxes({
+              1: { left: false, middle: false, right: false },
+              2: { left: false, middle: false, right: false },
+              3: { left: false, middle: false, right: false },
+              4: { left: false, middle: false, right: false },
+            });
+            setBubbleSizes({});
+            setNotes("");
 
-            alert("Cycle entry submitted to database!");
-          } catch (err) {
-            console.error("Error submitting to database:", err);
-            alert("Failed to submit entry. Please check your connection.");
-          } finally {
+            // =========================================================
+            // 4. CLEAR WRITTEN CACHE FROM LOCALSTORAGE WORKSPACE KEYS
+            // =========================================================
+            localStorage.removeItem("ws_start_time");
+            localStorage.removeItem("ws_end_time");
+            localStorage.removeItem("ws_load_time");
+            localStorage.removeItem("ws_selected_squares");
+            localStorage.removeItem("ws_bubble_checkboxes");
+            localStorage.removeItem("ws_bubble_sizes");
+            localStorage.removeItem("ws_notes");
+
+            // Cleanly close the panels and write immediately to cache
+            localStorage.setItem("shift_panel_open", "false");
+            setIsShiftOpen(false);
+            setIsBubblesOpen(false);
             setIsSubmitting(false);
+            alert(`Saved entry successfully! Form workspace cleared.`);
+          } catch (err) {
+            console.error("Error submitting:", err);
+            alert("Failed to submit entry.");
           }
-
-          // 1. Package the current workspace data into a log entry
-          const newCycleEntry = {
-            id: Math.random().toString(36).substring(2, 9),
-            pressNumber,
-            date: currentDate,
-            operator,
-            shift,
-            startTime,
-            endTime,
-            runTime,
-            loadTime,
-            tableMatTypes,
-            selectedTableSquares,
-            bubbleCheckboxes,
-            bubbleSizes,
-            notes,
-            timestamp: Date.now(),
-          };
-
-          // 2. Append to the production log history in localStorage
-          const existingRecords = JSON.parse(
-            localStorage.getItem("production_cycles") || "[]",
-          );
-          existingRecords.unshift(newCycleEntry);
-          localStorage.setItem(
-            "production_cycles",
-            JSON.stringify(existingRecords),
-          );
-
-          // =========================================================
-          // 3. RESET SPECIFIC ACTIVE WORKSPACE STATES ON SUBMIT
-          // =========================================================
-          setStartTime("");
-          setEndTime("");
-          setLoadTime("");
-          setIsManualStart(false);
-          setIsManualEnd(false);
-          setSelectedTableSquares({});
-          setBubbleCheckboxes({
-            1: { left: false, middle: false, right: false },
-            2: { left: false, middle: false, right: false },
-            3: { left: false, middle: false, right: false },
-            4: { left: false, middle: false, right: false },
-          });
-          setBubbleSizes({});
-          setNotes("");
-
-          // =========================================================
-          // 4. CLEAR WRITTEN CACHE FROM LOCALSTORAGE WORKSPACE KEYS
-          // =========================================================
-          localStorage.removeItem("ws_start_time");
-          localStorage.removeItem("ws_end_time");
-          localStorage.removeItem("ws_load_time");
-          localStorage.removeItem("ws_selected_squares");
-          localStorage.removeItem("ws_bubble_checkboxes");
-          localStorage.removeItem("ws_bubble_sizes");
-          localStorage.removeItem("ws_notes");
-
-          // Cleanly close the panels and write immediately to cache
-          localStorage.setItem("shift_panel_open", "false");
-          setIsShiftOpen(false);
-          setIsBubblesOpen(false);
-
-          alert(`Saved entry successfully! Form workspace cleared.`);
         }}
         className="space-y-4"
       >
@@ -993,6 +995,7 @@ export default function ProductionForm({ session }: { session: any }) {
           disabled={session ? loadTime === "" || Number(loadTime) < 1 : true}
           className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
         >
+          {isSubmitting && <Loader2 className="animate-spin" size={20} />}
           {session
             ? loadTime === ""
               ? "Enter Timestamps to Submit"
