@@ -71,6 +71,8 @@ export default function ProductionForm({ session }: { session: any }) {
     }
     return "";
   });
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
 
   const [tableMatTypes, setTableMatTypes] = useState<Record<number, string>>(
     () => {
@@ -160,6 +162,29 @@ export default function ProductionForm({ session }: { session: any }) {
   });
 
   const [currentDate, setCurrentDate] = useState<string>("");
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isTimerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      setIsTimerActive(false);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerActive, timeLeft]);
+
+  // Helper function to format seconds into standard industrial MM:SS layout
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
 
   // --- AUTOMATED DISPATCH WATCHERS & POLL SYNCING ---
   useEffect(() => {
@@ -255,11 +280,10 @@ export default function ProductionForm({ session }: { session: any }) {
   }, [notes]);
 
   useEffect(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-    setCurrentDate(`${year}-${month}-${day}`);
+    const perthDate = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Australia/Perth",
+    });
+    setCurrentDate(perthDate);
   }, []);
 
   // Automated midnight-crossover duration calculator
@@ -306,7 +330,6 @@ export default function ProductionForm({ session }: { session: any }) {
     setBubbleSizes((prev) => ({ ...prev, [tableId]: size }));
   };
 
-  // Local Section Resets
   const handleResetShortMolding = () => {
     setSelectedTableSquares({});
   };
@@ -323,8 +346,8 @@ export default function ProductionForm({ session }: { session: any }) {
 
   return (
     <div className="w-full max-w-md mx-auto p-3 space-y-4 pb-12">
-      {/* Header Info Banner with Press Dropdown Selection */}
-      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm space-y-3">
+      {/* Header Info Banner - Added "relative" so absolute clock floats properly */}
+      <div className="relative bg-emerald-800 text-white p-4 rounded-xl shadow-sm space-y-3">
         {/* Row 1: Full-width Title */}
         <div>
           <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
@@ -351,6 +374,24 @@ export default function ProductionForm({ session }: { session: any }) {
               </SelectContent>
             </Select>
           </div>
+          {/* Right Side: Absolute Floating Timer Clock Component */}
+          {isTimerActive && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-950/70 backdrop-blur-xs border border-emerald-800/60 p-3 rounded-xl flex items-center gap-3 shadow-xl select-none animate-fade-in z-10">
+              {/* Dynamic Digital Numbers */}
+              <div className="font-mono text-xl font-black tracking-widest text-emerald-400 bg-emerald-900/40 px-3 py-1.5 rounded-lg border border-emerald-800/40 shadow-inner min-w-[75px] text-center">
+                {formatTime(timeLeft)}
+              </div>
+
+              {/* Minimalist Action Button */}
+              <button
+                type="button"
+                onClick={() => setIsTimerActive(false)}
+                className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-red-400 border border-neutral-800 hover:border-red-950 px-2.5 py-1.5 rounded-md transition-all active:scale-95 bg-emerald-950/40"
+              >
+                Skip
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -360,7 +401,6 @@ export default function ProductionForm({ session }: { session: any }) {
           setIsSubmitting(true);
 
           try {
-            // 1. Fetch the latest cycle number from the database
             const { data: latestEntry, error: fetchError } = await supabase
               .from("live_log")
               .select("cycle_number")
@@ -368,27 +408,22 @@ export default function ProductionForm({ session }: { session: any }) {
               .limit(1)
               .single();
 
-            // If table is empty, start at 1, otherwise increment the last found number
             const nextCycleNumber = (latestEntry?.cycle_number || 0) + 1;
 
-            // Create valid ISO timestamps combining current date + input time
             const startTimestamp = new Date(
-              `${currentDate}T${startTime}:00Z`,
-            ).toISOString();
-            const endTimestamp = new Date(
-              `${currentDate}T${endTime}:00Z`,
+              `${currentDate}T${startTime}:00+08:00`,
             ).toISOString();
 
-            // ---------------------------------------------------------
-            // NEW: Format short_mold_json to match SQL Yield logic
-            // ---------------------------------------------------------
+            const endTimestamp = new Date(
+              `${currentDate}T${endTime}:00+08:00`,
+            ).toISOString();
+
             const formattedYieldJson: Record<string, any> = {};
 
             [1, 2, 3, 4].forEach((tableId) => {
               const matType = tableMatTypes[tableId] || "Unknown";
               const shortMoldPos = selectedTableSquares[tableId];
 
-              // Check if table produced a defect in this cycle
               const hasShortMold = !!shortMoldPos;
               const hasBubble =
                 bubbleCheckboxes[tableId]?.left ||
@@ -401,15 +436,13 @@ export default function ProductionForm({ session }: { session: any }) {
                 good: isReject ? 0 : 1,
                 reject: isReject ? 1 : 0,
                 type: matType,
-                position: shortMoldPos || null, // Preserves location (e.g. "top-left") for UI
+                position: shortMoldPos || null,
               };
             });
-            // ---------------------------------------------------------
 
-            // 2. Prepare payload (excluding live_id as it auto-increments)
             const payload = {
-              shift_id: 1, // Placeholder for now
-              cycle_number: nextCycleNumber, // Required
+              shift_id: 1,
+              cycle_number: nextCycleNumber,
               start_time: startTimestamp,
               end_time: endTimestamp,
               load_duration_seconds: Number(loadTime) * 60,
@@ -419,14 +452,9 @@ export default function ProductionForm({ session }: { session: any }) {
               updated_at: new Date().toISOString(),
             };
 
-            // 3. Insert into Supabase
             const { error } = await supabase.from("live_log").insert([payload]);
-
             if (error) throw error;
 
-            // ... rest of your success logic
-
-            // 1. Package the current workspace data into a log entry
             const newCycleEntry = {
               id: Math.random().toString(36).substring(2, 9),
               pressNumber,
@@ -445,7 +473,6 @@ export default function ProductionForm({ session }: { session: any }) {
               timestamp: Date.now(),
             };
 
-            // 2. Append to the production log history in localStorage
             const existingRecords = JSON.parse(
               localStorage.getItem("production_cycles") || "[]",
             );
@@ -455,9 +482,6 @@ export default function ProductionForm({ session }: { session: any }) {
               JSON.stringify(existingRecords),
             );
 
-            // =========================================================
-            // 3. RESET SPECIFIC ACTIVE WORKSPACE STATES ON SUBMIT
-            // =========================================================
             setStartTime("");
             setEndTime("");
             setLoadTime("");
@@ -473,9 +497,6 @@ export default function ProductionForm({ session }: { session: any }) {
             setBubbleSizes({});
             setNotes("");
 
-            // =========================================================
-            // 4. CLEAR WRITTEN CACHE FROM LOCALSTORAGE WORKSPACE KEYS
-            // =========================================================
             localStorage.removeItem("ws_start_time");
             localStorage.removeItem("ws_end_time");
             localStorage.removeItem("ws_load_time");
@@ -484,15 +505,22 @@ export default function ProductionForm({ session }: { session: any }) {
             localStorage.removeItem("ws_bubble_sizes");
             localStorage.removeItem("ws_notes");
 
-            // Cleanly close the panels and write immediately to cache
             localStorage.setItem("shift_panel_open", "false");
             setIsShiftOpen(false);
             setIsBubblesOpen(false);
             setIsSubmitting(false);
+
             alert(`Saved entry successfully! Form workspace cleared.`);
+
+            const minutes = parseInt(String(runTime), 10);
+            if (!isNaN(minutes) && minutes > 0) {
+              setTimeLeft(minutes * 60);
+              setIsTimerActive(true);
+            }
           } catch (err) {
             console.error("Error submitting:", err);
             alert("Failed to submit entry.");
+            setIsSubmitting(false);
           }
         }}
         className="space-y-4"
@@ -528,7 +556,6 @@ export default function ProductionForm({ session }: { session: any }) {
 
           {isShiftOpen && (
             <CardContent className="p-4 pt-2 border-t border-neutral-100/60 space-y-4">
-              {/* Balanced 2-Column Grid for Metadata Configuration */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="date">Shift Date</Label>
@@ -580,21 +607,25 @@ export default function ProductionForm({ session }: { session: any }) {
                 <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider block">
                   Table Setup (Mat type)
                 </span>
-                <div className="min-w-[340px] flex flex-col gap-3">
+                <div className="w-full max-w-[440px] flex flex-col gap-2.5">
                   {[1, 2, 3, 4].map((tableId) => (
-                    <div key={tableId} className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-neutral-600 w-4">
+                    <div
+                      key={tableId}
+                      className="flex items-center gap-1.5 w-full"
+                    >
+                      <span className="text-xs font-bold text-neutral-500 w-3 shrink-0 text-left">
                         {tableId}
                       </span>
+
                       <RadioGroup
                         value={tableMatTypes[tableId] || ""}
                         onValueChange={(val) =>
                           handleMatSetupSelect(tableId, val)
                         }
-                        className="flex flex-1 items-center justify-between"
+                        className="grid grid-cols-5 gap-1 flex-1 w-full"
                       >
                         {["DF", "DD", "CF", "CD", "SG"].map((type) => (
-                          <div key={type} className="flex items-center gap-1">
+                          <div key={type} className="flex items-center w-full">
                             <RadioGroupItem
                               value={type}
                               id={`msetup-${tableId}-${type}`}
@@ -602,11 +633,21 @@ export default function ProductionForm({ session }: { session: any }) {
                             />
                             <Label
                               htmlFor={`msetup-${tableId}-${type}`}
-                              className={`h-7 px-2 border rounded flex items-center justify-center gap-1.5 text-[11px] font-bold cursor-pointer transition-all select-none ${tableMatTypes[tableId] === type ? "border-emerald-600 bg-emerald-600 text-white shadow-sm" : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"}`}
+                              className={`h-7 w-full px-1 border rounded flex items-center justify-between gap-0.5 text-[10px] font-bold cursor-pointer transition-all select-none ${
+                                tableMatTypes[tableId] === type
+                                  ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                                  : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"
+                              }`}
                             >
-                              <span>{type}</span>
+                              <span className="font-mono tracking-tighter">
+                                {type}
+                              </span>
                               <div
-                                className={`w-1.5 h-1.5 rounded-full ${tableMatTypes[tableId] === type ? "bg-white" : "bg-neutral-300"}`}
+                                className={`w-1 h-1 rounded-full shrink-0 ${
+                                  tableMatTypes[tableId] === type
+                                    ? "bg-white"
+                                    : "bg-neutral-300"
+                                }`}
                               />
                             </Label>
                           </div>
@@ -630,7 +671,6 @@ export default function ProductionForm({ session }: { session: any }) {
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              {/* Start Time Field */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>Start Time</Label>
@@ -670,7 +710,6 @@ export default function ProductionForm({ session }: { session: any }) {
                 )}
               </div>
 
-              {/* End Time Field */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label>End Time</Label>
@@ -780,7 +819,6 @@ export default function ProductionForm({ session }: { session: any }) {
                     onValueChange={(val) => handleSquareSelect(tableNum, val)}
                     className="grid grid-cols-3 gap-1.5 relative w-[100px] h-[100px]"
                   >
-                    {/* Top Left */}
                     <div className="absolute top-0 left-0">
                       <RadioGroupItem
                         value="top-left"
@@ -796,7 +834,6 @@ export default function ProductionForm({ session }: { session: any }) {
                         />
                       </Label>
                     </div>
-                    {/* Top Right */}
                     <div className="absolute top-0 right-0">
                       <RadioGroupItem
                         value="top-right"
@@ -812,7 +849,6 @@ export default function ProductionForm({ session }: { session: any }) {
                         />
                       </Label>
                     </div>
-                    {/* Center */}
                     <div className="absolute top-[36px] left-[36px]">
                       <RadioGroupItem
                         value="center"
@@ -828,7 +864,6 @@ export default function ProductionForm({ session }: { session: any }) {
                         />
                       </Label>
                     </div>
-                    {/* Bottom Left */}
                     <div className="absolute bottom-0 left-0">
                       <RadioGroupItem
                         value="bottom-left"
@@ -844,7 +879,6 @@ export default function ProductionForm({ session }: { session: any }) {
                         />
                       </Label>
                     </div>
-                    {/* Bottom Right */}
                     <div className="absolute bottom-0 right-0">
                       <RadioGroupItem
                         value="bottom-right"
@@ -867,7 +901,7 @@ export default function ProductionForm({ session }: { session: any }) {
           </CardContent>
         </Card>
 
-        {/* Collapsible Bubbles Card (Closed by Default) */}
+        {/* Collapsible Bubbles Card */}
         <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
           <button
             type="button"

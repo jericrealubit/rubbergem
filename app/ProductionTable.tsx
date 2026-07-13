@@ -317,7 +317,7 @@ export default function ProductionTablePage({
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         <div className="flex items-center gap-2">
-          <Button
+          {/* <Button
             variant="outline"
             onClick={() => fetchLogs(true)}
             disabled={isRefreshing || isLoading}
@@ -327,7 +327,7 @@ export default function ProductionTablePage({
               className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
             />
             Force Refresh
-          </Button>
+          </Button> */}
           <Button
             onClick={handleResetLog}
             disabled={!session}
