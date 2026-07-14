@@ -27,7 +27,13 @@ import {
   Loader2,
 } from "lucide-react";
 
-export default function ProductionForm({ session }: { session: any }) {
+export default function ProductionForm({
+  session,
+  onStartTimer,
+}: {
+  session: any;
+  onStartTimer?: (minutes: number) => void;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- LAYOUT & CONFIGURATION PERSISTENCE ---
@@ -71,8 +77,6 @@ export default function ProductionForm({ session }: { session: any }) {
     }
     return "";
   });
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
 
   const [tableMatTypes, setTableMatTypes] = useState<Record<number, string>>(
     () => {
@@ -162,29 +166,6 @@ export default function ProductionForm({ session }: { session: any }) {
   });
 
   const [currentDate, setCurrentDate] = useState<string>("");
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (isTimerActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setIsTimerActive(false);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTimerActive, timeLeft]);
-
-  // Helper function to format seconds into standard industrial MM:SS layout
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
 
   // --- AUTOMATED DISPATCH WATCHERS & POLL SYNCING ---
   useEffect(() => {
@@ -374,24 +355,6 @@ export default function ProductionForm({ session }: { session: any }) {
               </SelectContent>
             </Select>
           </div>
-          {/* Right Side: Absolute Floating Timer Clock Component */}
-          {isTimerActive && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-950/70 backdrop-blur-xs border border-emerald-800/60 p-3 rounded-xl flex items-center gap-3 shadow-xl select-none animate-fade-in z-10">
-              {/* Dynamic Digital Numbers */}
-              <div className="font-mono text-xl font-black tracking-widest text-emerald-400 bg-emerald-900/40 px-3 py-1.5 rounded-lg border border-emerald-800/40 shadow-inner min-w-[75px] text-center">
-                {formatTime(timeLeft)}
-              </div>
-
-              {/* Minimalist Action Button */}
-              <button
-                type="button"
-                onClick={() => setIsTimerActive(false)}
-                className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-red-400 border border-neutral-800 hover:border-red-950 px-2.5 py-1.5 rounded-md transition-all active:scale-95 bg-emerald-950/40"
-              >
-                Skip
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -511,11 +474,9 @@ export default function ProductionForm({ session }: { session: any }) {
             setIsSubmitting(false);
 
             alert(`Saved entry successfully! Form workspace cleared.`);
-
             const minutes = parseInt(String(runTime), 10);
-            if (!isNaN(minutes) && minutes > 0) {
-              setTimeLeft(minutes * 60);
-              setIsTimerActive(true);
+            if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
+              onStartTimer(minutes);
             }
           } catch (err) {
             console.error("Error submitting:", err);

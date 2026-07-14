@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // Ensure this path is correct
+import { supabase } from "@/lib/supabase";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,6 @@ import AboutPage from "./AboutPage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// Define the expanded view type union
 type ViewType = "form" | "table" | "history" | "about";
 
 export default function Home() {
@@ -32,11 +31,12 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState("");
-  const [pass, setPass] = useState("");
   const [currentView, setCurrentView] = useState<ViewType>("form");
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  // --- LIFTED TIMER GLOBAL STATE ---
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
 
   // 1. Listen for Auth changes
   useEffect(() => {
@@ -52,6 +52,41 @@ export default function Home() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // --- GLOBAL TIMER COUNTDOWN EFFECT ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isTimerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      setIsTimerActive(false);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerActive, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  // Handler passed down to the form trigger (automatically subtracts 3 minutes)
+  const handleStartTimer = (minutes: number) => {
+    const adjustedMinutes = Math.max(0, minutes - 3);
+    if (adjustedMinutes > 0) {
+      setTimeLeft(adjustedMinutes * 60);
+      setIsTimerActive(true);
+    } else {
+      setTimeLeft(0);
+      setIsTimerActive(false);
+    }
+  };
 
   // 2. Auth Handlers
   const handleLogin = async () => {
@@ -75,7 +110,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col relative overflow-x-hidden">
-      {/* Global Top Banner with Burger Menu Trigger */}
+      {/* Global Top Header with Persistent Countdown Timer */}
       <header className="bg-emerald-950 text-white h-14 px-4 flex items-center justify-between shadow-md z-40 sticky top-0">
         <div className="flex items-center gap-3">
           <button
@@ -90,9 +125,28 @@ export default function Home() {
             )}
           </button>
           <span className="font-bold tracking-wide uppercase text-sm md:text-base">
-            Rubber Production System
+            Production System
           </span>
         </div>
+
+        {/* Global Timer Placement Area */}
+        {isTimerActive && (
+          <div className="flex items-center gap-2 bg-emerald-900/40 border border-emerald-800/50 px-2.5 py-1 rounded-xl shadow-inner select-none animate-fade-in z-50">
+            <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider hidden sm:inline">
+              Cycle Time:
+            </span>
+            <div className="font-mono text-sm font-black tracking-widest text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-lg border border-emerald-800/30 min-w-[55px] text-center">
+              {formatTime(timeLeft)}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsTimerActive(false)}
+              className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 hover:text-red-400 border border-neutral-800/80 hover:border-red-950 px-1.5 py-0.5 rounded bg-emerald-950/40 transition-all active:scale-95"
+            >
+              Skip
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Slide-out Burger Menu Navigation Drawer */}
@@ -108,7 +162,6 @@ export default function Home() {
             </p>
           </div>
           <nav className="space-y-1.5">
-            {/* Press Entry Form Route */}
             <button
               onClick={() => navigateTo("form")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -121,7 +174,6 @@ export default function Home() {
               <span>Press Entry Form</span>
             </button>
 
-            {/* Press Live Log Table Route */}
             <button
               onClick={() => navigateTo("table")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -134,7 +186,6 @@ export default function Home() {
               <span>Press Live Log Table</span>
             </button>
 
-            {/* Press Production History Route */}
             <button
               onClick={() => navigateTo("history")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -147,7 +198,6 @@ export default function Home() {
               <span>Press History</span>
             </button>
 
-            {/* About System Route */}
             <button
               onClick={() => navigateTo("about")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
@@ -212,7 +262,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Click-Away Backdrop Overlay Mask */}
       {isMenuOpen && (
         <div
           onClick={() => setIsMenuOpen(false)}
@@ -220,9 +269,11 @@ export default function Home() {
         />
       )}
 
-      {/* Main Container View Router Frame */}
+      {/* Main Container View Frame */}
       <main className="flex-1 w-full p-2 sm:p-4">
-        {currentView === "form" && <ProductionForm session={session} />}
+        {currentView === "form" && (
+          <ProductionForm session={session} onStartTimer={handleStartTimer} />
+        )}
 
         {currentView === "table" && (
           <ProductionTablePage
