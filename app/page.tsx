@@ -34,9 +34,10 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>("form");
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
-  // --- LIFTED TIMER GLOBAL STATE ---
+  // --- MOBILE-SAFE LIFTED TIMER STATE ---
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
+  const [endTime, setEndTime] = useState<number | null>(null); // Real-world target timestamp
 
   // 1. Listen for Auth changes
   useEffect(() => {
@@ -53,22 +54,42 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- GLOBAL TIMER COUNTDOWN EFFECT ---
+  // --- MOBILE-RESILIENT TIMER SYNC EFFECT ---
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    if (!isTimerActive || !endTime) return;
 
-    if (isTimerActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setIsTimerActive(false);
-    }
+    const updateTimer = () => {
+      const remainingMs = endTime - Date.now();
+      if (remainingMs <= 0) {
+        setTimeLeft(0);
+        setIsTimerActive(false);
+        setEndTime(null);
+      } else {
+        // Round up so 59.1s shows as 01:00 or 00:59 correctly
+        setTimeLeft(Math.ceil(remainingMs / 1000));
+      }
+    };
+
+    // Run calculation immediately
+    updateTimer();
+
+    // Standard interval to update screen every second while active
+    const interval = setInterval(updateTimer, 1000);
+
+    // CRITICAL: When phone wakes up/unlocks, immediately catch up to real-world time
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updateTimer();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isTimerActive, timeLeft]);
+  }, [isTimerActive, endTime]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -76,13 +97,16 @@ export default function Home() {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  // Handler passed down to the form trigger (automatically subtracts 3 minutes)
+  // Start handler (Calculates absolute end target & subtracts 3 minutes)
   const handleStartTimer = (minutes: number) => {
     const adjustedMinutes = Math.max(0, minutes - 3);
     if (adjustedMinutes > 0) {
+      const targetEndTime = Date.now() + adjustedMinutes * 60 * 1000;
+      setEndTime(targetEndTime);
       setTimeLeft(adjustedMinutes * 60);
       setIsTimerActive(true);
     } else {
+      setEndTime(null);
       setTimeLeft(0);
       setIsTimerActive(false);
     }
@@ -125,7 +149,7 @@ export default function Home() {
             )}
           </button>
           <span className="font-bold tracking-wide uppercase text-sm md:text-base">
-            Production System
+            Rubber Production System
           </span>
         </div>
 
@@ -140,7 +164,10 @@ export default function Home() {
             </div>
             <button
               type="button"
-              onClick={() => setIsTimerActive(false)}
+              onClick={() => {
+                setIsTimerActive(false);
+                setEndTime(null);
+              }}
               className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 hover:text-red-400 border border-neutral-800/80 hover:border-red-950 px-1.5 py-0.5 rounded bg-emerald-950/40 transition-all active:scale-95"
             >
               Skip

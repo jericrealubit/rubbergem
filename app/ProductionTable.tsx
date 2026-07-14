@@ -183,7 +183,9 @@ export default function ProductionTablePage({
 
         const { error } = await supabase.rpc("reset_shift_log", {
           p_shift_id: 1,
-          p_date: new Date().toISOString().split("T")[0],
+          p_date: new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Australia/Perth",
+          }).format(new Date()),
           p_machine_press: machinePress,
           p_operator_shift: `${operator} (${shiftGroup})`,
         });
