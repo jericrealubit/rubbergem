@@ -49,13 +49,12 @@ export default function ProductionTablePage({
 }) {
   const [entries, setEntries] = useState<CycleEntry[]>([]);
   const [matTypes, setMatTypes] = useState<Record<number, string>>({});
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [perthDate, setPerthDate] = useState<string>("");
 
   // Core data retrieval engine with explicit cache-busting headers
   const fetchLogs = async (showSpinner = false) => {
-    if (showSpinner) setIsRefreshing(true);
     setFetchError(null);
 
     try {
@@ -130,7 +129,6 @@ export default function ProductionTablePage({
       setFetchError(err.message || "An unexpected network error occurred.");
     } finally {
       setIsLoading(false);
-      if (showSpinner) setIsRefreshing(false);
     }
   };
 
@@ -165,6 +163,14 @@ export default function ProductionTablePage({
     };
   }, []);
 
+  useEffect(() => {
+    const formatted = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Australia/Perth",
+    }).format(new Date());
+
+    setPerthDate(formatted);
+  }, []);
+
   const handlePrintPDF = () => {
     window.print();
   };
@@ -183,9 +189,7 @@ export default function ProductionTablePage({
 
         const { error } = await supabase.rpc("reset_shift_log", {
           p_shift_id: 1,
-          p_date: new Intl.DateTimeFormat("en-CA", {
-            timeZone: "Australia/Perth",
-          }).format(new Date()),
+          p_date: perthDate,
           p_machine_press: machinePress,
           p_operator_shift: `${operator} (${shiftGroup})`,
         });
@@ -319,17 +323,6 @@ export default function ProductionTablePage({
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
         <div className="flex items-center gap-2">
-          {/* <Button
-            variant="outline"
-            onClick={() => fetchLogs(true)}
-            disabled={isRefreshing || isLoading}
-            className="h-9 gap-1.5 text-xs text-neutral-600 border-neutral-200"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            Force Refresh
-          </Button> */}
           <Button
             onClick={handleResetLog}
             disabled={!session}

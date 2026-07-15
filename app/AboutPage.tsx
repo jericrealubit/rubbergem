@@ -1,14 +1,9 @@
-"use client";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Cpu,
   Layers,
   FileText,
-  ClipboardList,
-  Clock,
-  Printer,
   Smartphone,
   LayoutDashboard,
   MapPin,
@@ -16,11 +11,14 @@ import {
   User,
   ExternalLink,
   Sparkles,
+  Database,
+  ShieldAlert,
+  History,
 } from "lucide-react";
 
 export default function AboutPage() {
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 space-y-6 pb-12">
+    <div className="w-full max-w-3xl mx-auto p-4 space-y-6 pb-12 text-neutral-800">
       {/* Hero Header Card */}
       <div className="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 rounded-2xl shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
@@ -30,7 +28,7 @@ export default function AboutPage() {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-700/50 text-emerald-200 text-xs font-semibold tracking-wide uppercase">
             <Sparkles className="w-3.5 h-3.5" /> Core Infrastructure
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
             Rubber Production System
           </h1>
           <p className="text-emerald-100 text-sm sm:text-base max-w-xl leading-relaxed font-medium">
@@ -43,40 +41,40 @@ export default function AboutPage() {
 
       {/* Technical Stack Architecture Ribbon */}
       <div className="space-y-2">
-        <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-2 px-1">
+        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
           <Layers className="w-3.5 h-3.5" /> Technical Stack
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-          <div className="bg-white border border-neutral-200/80 p-3 rounded-xl shadow-sm">
+          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
             <p className="text-[10px] uppercase font-bold text-neutral-400">
               Framework
             </p>
-            <p className="text-xs font-bold text-neutral-800 mt-0.5">
+            <p className="text-xs font-bold mt-0.5 text-neutral-800">
               Next.js App Router
             </p>
           </div>
-          <div className="bg-white border border-neutral-200/80 p-3 rounded-xl shadow-sm">
+          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
             <p className="text-[10px] uppercase font-bold text-neutral-400">
-              Library
+              Database & Sync
             </p>
-            <p className="text-xs font-bold text-neutral-800 mt-0.5">
-              React 19 & LocalCache
+            <p className="text-xs font-bold mt-0.5 text-neutral-800">
+              Supabase Cloud DB
             </p>
           </div>
-          <div className="bg-white border border-neutral-200/80 p-3 rounded-xl shadow-sm">
+          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
             <p className="text-[10px] uppercase font-bold text-neutral-400">
               Styling
             </p>
-            <p className="text-xs font-bold text-neutral-800 mt-0.5">
+            <p className="text-xs font-bold mt-0.5 text-neutral-800">
               Tailwind CSS v4
             </p>
           </div>
-          <div className="bg-white border border-neutral-200/80 p-3 rounded-xl shadow-sm">
+          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
             <p className="text-[10px] uppercase font-bold text-neutral-400">
-              UI Primitives
+              State & Cache
             </p>
-            <p className="text-xs font-bold text-neutral-800 mt-0.5">
-              shadcn/ui Contexts
+            <p className="text-xs font-bold mt-0.5 text-neutral-800">
+              React Context & Local
             </p>
           </div>
         </div>
@@ -84,12 +82,12 @@ export default function AboutPage() {
 
       {/* Main Application Modules */}
       <div className="space-y-4">
-        <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-2 px-1">
+        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
           <Layers className="w-3.5 h-3.5" /> System Architecture & Features
         </h2>
 
         {/* Feature 1: Mobile Fast-Entry Terminal */}
-        <Card className="shadow-sm border-neutral-200/60 overflow-hidden">
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
@@ -101,35 +99,35 @@ export default function AboutPage() {
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm text-neutral-600 space-y-3 leading-relaxed">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
             <p>
               Designed explicitly for high-efficiency operation on the
               production floor with minimal data-entry friction:
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-neutral-600">
+            <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   Dynamic Header Switcher:
                 </strong>{" "}
                 Instantly toggles runtime configuration tracking between{" "}
-                <span className="font-medium text-neutral-900">Press #1</span>{" "}
+                <span className="font-semibold text-neutral-900">Press #1</span>{" "}
                 and{" "}
-                <span className="font-medium text-neutral-900">Press #2</span>{" "}
+                <span className="font-semibold text-neutral-900">Press #2</span>{" "}
                 on-the-fly.
               </li>
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   Collapsible Shift Panel:
                 </strong>{" "}
                 Keeps the interface clean on small mobile viewports, displaying
                 a real-time summary string fallback (
-                <span className="italic text-neutral-700 font-medium">
+                <span className="italic font-medium text-neutral-700">
                   Operator • Shift • Date
                 </span>
                 ) when hidden.
               </li>
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   Smart Timestamps Engine:
                 </strong>{" "}
                 One-tap cycle logs with automated duration parsing. Integrates
@@ -141,7 +139,7 @@ export default function AboutPage() {
                 as 25 minutes instead of throwing negative values).
               </li>
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   Geometric Matrix Mapping:
                 </strong>{" "}
                 Replicates physical sheets using custom absolute coordinate
@@ -151,34 +149,148 @@ export default function AboutPage() {
                 </span>{" "}
                 to log table short molds, matched with multi-select checkbox
                 arrays tracking positional micro-bubbles (
-                <span className="italic">Left, Middle, Right</span>) and sizing
-                dimensions.
+                <span className="italic text-neutral-700">
+                  Left, Middle, Right
+                </span>
+                ) and sizing dimensions.
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        {/* Feature 2: Single-Page Audit Dashboard Sheet */}
-        <Card className="shadow-sm border-neutral-200/60 overflow-hidden">
+        {/* Feature 2: Supabase Cloud Integration */}
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                <Database className="w-4 h-4" />
+              </div>
+              2. Real-Time Supabase Cloud Sync{" "}
+              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
+                (database schema & pipelines)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+            <p>
+              Synchronizes local runtime sessions directly with global Postgres
+              cloud nodes:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Cloud Live Logging:
+                </strong>{" "}
+                Dispatches secure, structured cycle payloads to the database,
+                ensuring zero lag on submission.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Structured JSON Payloads:
+                </strong>{" "}
+                Packs detailed rejection metrics, target bubble sizes, and
+                coordinates into clean JSON payloads for flexible and
+                lightweight data reporting.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Feature 3: Authentication & Security */}
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                <ShieldAlert className="w-4 h-4" />
+              </div>
+              3. Session Authentication Controls{" "}
+              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
+                (Supabase Auth integration)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+            <p>
+              Restricts floor inputs and logs to authorized operator accounts to
+              prevent data contamination:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Submission Locks:
+                </strong>{" "}
+                Prevents workspace writes unless an active session is
+                established.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Session Verification Warners:
+                </strong>{" "}
+                Fires responsive UX indicators showing authorization warnings
+                when an session drops, keeping metrics airtight.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Feature 4: Local Cache and Historical Timeline */}
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                <History className="w-4 h-4" />
+              </div>
+              4. Historical Production Timeline{" "}
+              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
+                (local cache feed)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+            <p>
+              Applies client-side workspace caching safeguards to preserve logs
+              against sudden power loss:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Storage Caching:
+                </strong>{" "}
+                Backs up ongoing form metrics, active parameters, and runtime
+                progress state seamlessly in local browser sandboxes.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Collapsible Feed Logs:
+                </strong>{" "}
+                Presents historical shift logs within collapsible visual list
+                panels for quick terminal lookups.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Feature 5: Single-Page Audit Dashboard Sheet */}
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
                 <LayoutDashboard className="w-4 h-4" />
               </div>
-              2. Single-Page Audit Dashboard Sheet{" "}
+              5. Single-Page Audit Dashboard Sheet{" "}
               <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
                 (/app/ProductionTable.tsx)
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm text-neutral-600 space-y-3 leading-relaxed">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
             <p>
               Optimized to aggregate data blocks into physical and digital
               records structured cleanly for auditing:
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-neutral-600">
+            <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   Parameter Extraction:
                 </strong>{" "}
                 Isolates metadata parameters to a singular card component at the
@@ -186,7 +298,7 @@ export default function AboutPage() {
                 exactly once per sheet.
               </li>
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   15-Row Immutable Frame Grid:
                 </strong>{" "}
                 Guarantees layout structural uniformity by locking the matrix
@@ -195,7 +307,7 @@ export default function AboutPage() {
                 balanced placeholder alignments.
               </li>
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   Strict Boundary Analytics:
                 </strong>{" "}
                 Automates cumulative reject math, enforcing a strict constraint
@@ -203,7 +315,7 @@ export default function AboutPage() {
                 cycle frame, regardless of overlapping defect combinations.
               </li>
               <li>
-                <strong className="text-neutral-800">
+                <strong className="text-neutral-800 font-bold">
                   Landscape Print Automation:
                 </strong>{" "}
                 Embedded CSS media injection completely overrides browser frames
@@ -216,20 +328,20 @@ export default function AboutPage() {
           </CardContent>
         </Card>
 
-        {/* Feature 3: Shell State Navigation Router */}
-        <Card className="shadow-sm border-neutral-200/60 overflow-hidden">
+        {/* Feature 6: Shell State Navigation Router */}
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
                 <FileText className="w-4 h-4" />
               </div>
-              3. Shell State Navigation Router{" "}
+              6. Shell State Navigation Router{" "}
               <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
                 (/app/page.tsx)
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm text-neutral-600 leading-relaxed">
+          <CardContent className="p-4 text-xs sm:text-sm leading-relaxed text-neutral-600">
             <p>
               Orchestrates client-side state transfers through a smooth,
               responsive sliding drawer UI masked with a backdrop overlay
@@ -243,12 +355,12 @@ export default function AboutPage() {
 
       {/* Contact & Collaboration / Profile Card */}
       <div className="space-y-3">
-        <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-2 px-1">
+        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
           <User className="w-3.5 h-3.5" /> Contact & Developer Profile
         </h2>
-        <Card className="shadow-sm border-neutral-200/60 overflow-hidden bg-gradient-to-b from-white to-neutral-50/40">
+        <Card className="overflow-hidden shadow-sm border border-neutral-200/60 bg-gradient-to-b from-white to-neutral-50/40">
           <CardContent className="p-5 space-y-5">
-            <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+            <p className="text-xs sm:text-sm leading-relaxed text-neutral-600">
               Are you an engineering hiring manager looking for a versatile
               Full-Stack Web Developer with practical AI implementation skills,
               or a business owner looking to deploy optimized, zero-overhead
@@ -260,15 +372,15 @@ export default function AboutPage() {
             <div className="p-4 bg-white border border-neutral-200/80 rounded-xl shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3 text-xs sm:text-sm">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block">
+                  <span className="text-[10px] uppercase font-bold tracking-wider block text-neutral-400">
                     Name
                   </span>
-                  <span className="font-bold text-neutral-900 text-base">
+                  <span className="font-bold text-base text-neutral-900">
                     Jeric Realubit
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider block">
+                  <span className="text-[10px] uppercase font-bold tracking-wider block text-neutral-400">
                     Role
                   </span>
                   <span className="font-semibold text-emerald-800">
@@ -281,12 +393,12 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              {/* Action Interactive Connectors (Using Direct SVG Paths to Prevent Package Version Mismatches) */}
-              <div className="flex flex-col justify-end gap-2 sm:pl-4 sm:border-l sm:border-neutral-100">
+              {/* Action Interactive Connectors */}
+              <div className="flex flex-col justify-end gap-2 sm:pl-4 sm:border-l border-neutral-100">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-between font-medium border-neutral-300 hover:bg-neutral-50"
+                  className="w-full justify-between font-medium border border-neutral-300 hover:bg-neutral-50 text-neutral-700"
                   asChild
                 >
                   <a
@@ -294,7 +406,7 @@ export default function AboutPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <span className="flex items-center gap-2 text-neutral-700">
+                    <span className="flex items-center gap-2">
                       <svg
                         className="w-4 h-4 text-[#0A66C2] fill-current"
                         viewBox="0 0 24 24"
@@ -311,7 +423,7 @@ export default function AboutPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-between font-medium border-neutral-300 hover:bg-neutral-50"
+                  className="w-full justify-between font-medium border border-neutral-300 hover:bg-neutral-50 text-neutral-700"
                   asChild
                 >
                   <a
@@ -319,7 +431,7 @@ export default function AboutPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <span className="flex items-center gap-2 text-neutral-700">
+                    <span className="flex items-center gap-2">
                       <svg
                         className="w-4 h-4 text-neutral-900 fill-current"
                         viewBox="0 0 24 24"
@@ -340,18 +452,18 @@ export default function AboutPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start font-mono text-[11px] sm:text-xs text-neutral-700 border-neutral-300 hover:bg-neutral-50"
+                  className="w-full justify-start font-mono text-[11px] sm:text-xs border border-neutral-300 hover:bg-neutral-50 text-neutral-700"
                   asChild
                 >
                   <a href="tel:+61491098073">
-                    <Phone className="w-4 h-4 text-emerald-600 shrink-0 mr-2" />{" "}
+                    <Phone className="w-4 h-4 shrink-0 mr-2 text-emerald-600" />{" "}
                     +61 491 098 073
                   </a>
                 </Button>
               </div>
             </div>
 
-            <p className="text-[11px] text-center text-neutral-400 font-medium">
+            <p className="text-[11px] text-center font-medium text-neutral-400">
               Open to local, hybrid, and global remote opportunities.
             </p>
           </CardContent>
