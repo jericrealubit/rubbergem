@@ -36,6 +36,7 @@ interface DayYield {
   operator: string;
   tables: Record<number, { matType: string; good: number; reject: number }>;
   totalCycles: number;
+  cycles: any[]; // <-- FIX 1: Added cycles array to interface
 }
 
 interface MonthGroup {
@@ -60,7 +61,7 @@ export default function ProductionHistory() {
     async function fetchProductionData() {
       try {
         setLoading(true);
-        // Fetching from your 'production_logs' table
+        // Fetching from 'production_logs' table
         const { data, error } = await supabase
           .from("production_logs")
           .select("*")
@@ -108,35 +109,38 @@ export default function ProductionHistory() {
             { matType: string; good: number; reject: number }
           > = {
             1: {
-              matType: log.table_line_output_yields.table_1.type,
-              good: log.table_line_output_yields.table_1.good,
-              reject: log.table_line_output_yields.table_1.reject,
+              matType: log.table_line_output_yields?.table_1?.type || "—",
+              good: log.table_line_output_yields?.table_1?.good || 0,
+              reject: log.table_line_output_yields?.table_1?.reject || 0,
             },
             2: {
-              matType: log.table_line_output_yields.table_2.type,
-              good: log.table_line_output_yields.table_2.good,
-              reject: log.table_line_output_yields.table_2.reject,
+              matType: log.table_line_output_yields?.table_2?.type || "—",
+              good: log.table_line_output_yields?.table_2?.good || 0,
+              reject: log.table_line_output_yields?.table_2?.reject || 0,
             },
             3: {
-              matType: log.table_line_output_yields.table_3.type,
-              good: log.table_line_output_yields.table_3.good,
-              reject: log.table_line_output_yields.table_3.reject,
+              matType: log.table_line_output_yields?.table_3?.type || "—",
+              good: log.table_line_output_yields?.table_3?.good || 0,
+              reject: log.table_line_output_yields?.table_3?.reject || 0,
             },
             4: {
-              matType: log.table_line_output_yields.table_4.type,
-              good: log.table_line_output_yields.table_4.good,
-              reject: log.table_line_output_yields.table_4.reject,
+              matType: log.table_line_output_yields?.table_4?.type || "—",
+              good: log.table_line_output_yields?.table_4?.good || 0,
+              reject: log.table_line_output_yields?.table_4?.reject || 0,
             },
           };
 
-          monthsMap[monthName].totalCycles += log.cycles.length;
-          monthsMap[monthName].totalMats += log.total_mats_produced;
+          const cyclesArray = Array.isArray(log.cycles) ? log.cycles : [];
+
+          monthsMap[monthName].totalCycles += cyclesArray.length;
+          monthsMap[monthName].totalMats += log.total_mats_produced || 0;
           monthsMap[monthName].days.push({
             dateString: log.date,
             shift: isNight ? "Night" : "Day",
             operator: cleanOperator,
             tables,
-            totalCycles: log.cycles.length,
+            totalCycles: cyclesArray.length,
+            cycles: cyclesArray, // <-- FIX 2: Preserved cycles mapping to day level
           });
         });
 
@@ -194,7 +198,6 @@ export default function ProductionHistory() {
     );
   }
 
-  // --- REST OF YOUR ORIGINAL JSX REMAINS EXACTLY THE SAME ---
   return (
     <div className="w-full max-w-md mx-auto p-3 space-y-4 pb-12 font-sans text-neutral-800">
       <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center gap-3">
@@ -392,6 +395,68 @@ export default function ProductionHistory() {
                                 </span>
                               </div>
                             </CardContent>
+
+                            {/* --- FIX 3: Replaced "log.cycles" with "day.cycles" and added inline card padding layout --- */}
+                            {day.cycles &&
+                              Array.isArray(day.cycles) &&
+                              day.cycles.some(
+                                (c) => c.notes && c.notes.trim() !== "",
+                              ) && (
+                                <div className="space-y-2 border-t border-neutral-100 p-3 pt-2.5 bg-neutral-50/30">
+                                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                                    Shift Remarks & Fault Notes
+                                  </span>
+
+                                  <div className="grid grid-cols-1 gap-2">
+                                    {day.cycles
+                                      .filter(
+                                        (cycle: any) =>
+                                          cycle.notes &&
+                                          cycle.notes.trim() !== "",
+                                      )
+                                      .map((cycle: any, idx: number) => {
+                                        // Convert the stored run_duration_seconds into a readable minute format
+                                        const durationDisplay =
+                                          cycle.run_duration_seconds
+                                            ? `${Math.round(cycle.run_duration_seconds / 60)}m`
+                                            : "—";
+
+                                        return (
+                                          <div
+                                            key={idx}
+                                            className="bg-red-50/40 border border-red-100/80 p-2.5 rounded-xl text-xs flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+                                          >
+                                            {/* Left Side: The Note Content */}
+                                            <div className="flex-1 min-w-0">
+                                              <span className="font-bold text-red-700 inline-flex items-center gap-1 mr-1.5">
+                                                ⚠️ Note:
+                                              </span>
+                                              <span className="text-neutral-700 font-medium break-words">
+                                                {cycle.notes}
+                                              </span>
+                                            </div>
+
+                                            {/* Right Side: Timeline Details Badge */}
+                                            <div className="flex items-center gap-1.5 font-mono text-[10px] text-neutral-500 bg-white border border-neutral-200/70 px-2 py-1 rounded-lg self-start shrink-0 shadow-xs">
+                                              <span className="font-bold text-neutral-800">
+                                                {cycle.start_time || "--:--"}
+                                              </span>
+                                              <span className="text-neutral-300">
+                                                →
+                                              </span>
+                                              <span className="font-bold text-neutral-800">
+                                                {cycle.end_time || "--:--"}
+                                              </span>
+                                              <span className="text-neutral-400 ml-0.5 bg-neutral-50 px-1.5 py-0.5 rounded border border-neutral-100">
+                                                {durationDisplay}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              )}
                           </Card>
                         )}
                       </div>
