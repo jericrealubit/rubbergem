@@ -261,10 +261,11 @@ export default function ProductionForm({
   }, [notes]);
 
   useEffect(() => {
-    const perthDate = new Date().toLocaleDateString("en-CA", {
+    const formatted = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Australia/Perth",
-    });
-    setCurrentDate(perthDate);
+    }).format(new Date());
+
+    setPerthDate(formatted);
   }, []);
 
   // Automated midnight-crossover duration calculator
