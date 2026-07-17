@@ -164,9 +164,14 @@ export default function ProductionTablePage({
   }, []);
 
   useEffect(() => {
+    const date = new Date();
+
+    // Advance the date by exactly 1 day
+    date.setDate(date.getDate() + 1);
+
     const formatted = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Australia/Perth",
-    }).format(new Date());
+    }).format(date);
 
     setPerthDate(formatted);
   }, []);
