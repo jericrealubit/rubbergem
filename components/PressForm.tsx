@@ -232,6 +232,33 @@ export default function ProductionForm({
   useEffect(() => {
     localStorage.setItem("shift_mat_types", JSON.stringify(tableMatTypes));
   }, [tableMatTypes]);
+
+  // Broadcast the current shift config to the DB so other terminals / the boss's
+  // ProductionTable see the live shift. Debounced; only logged-in operators write.
+  useEffect(() => {
+    if (!session) return;
+    const t = setTimeout(() => {
+      supabase
+        .from("shift_config")
+        .upsert(
+          {
+            shift_id: 1,
+            operator,
+            shift_group: shift,
+            press_number: pressNumber,
+            run_time_minutes: runTime === "" ? null : Number(runTime),
+            mat_types: tableMatTypes,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "shift_id" },
+        )
+        .then(({ error }) => {
+          if (error) console.error("shift_config upsert failed", error);
+        });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [session, operator, shift, pressNumber, runTime, tableMatTypes]);
+
   useEffect(() => {
     localStorage.setItem("ws_start_time", startTime);
   }, [startTime]);
@@ -265,7 +292,7 @@ export default function ProductionForm({
       timeZone: "Australia/Perth",
     }).format(new Date());
 
-    setPerthDate(formatted);
+    setCurrentDate(formatted);
   }, []);
 
   // Automated midnight-crossover duration calculator
@@ -418,6 +445,102 @@ export default function ProductionForm({
 
             const { error } = await supabase.from("live_log").insert([payload]);
             if (error) throw error;
+
+            // Mirror the whole shift into production_logs so History reflects it live.
+            // Re-aggregate from live_log (good/reject already baked into short_mold_json).
+            const { data: shiftRows } = await supabase
+              .from("live_log")
+              .select("*")
+              .eq("shift_id", 1)
+              .order("cycle_number", { ascending: true });
+
+            const shiftLogRows = shiftRows || [];
+
+            const tableYields: Record<
+              string,
+              { good: number; reject: number; type: string }
+            > = {};
+            [1, 2, 3, 4].forEach((tableId) => {
+              const key = `table_${tableId}`;
+              let good = 0;
+              let reject = 0;
+              let type = "—";
+              shiftLogRows.forEach((r: any) => {
+                const cell = r.short_mold_json?.[key];
+                if (cell) {
+                  good += cell.good || 0;
+                  reject += cell.reject || 0;
+                  if (cell.type) type = cell.type; // latest wins (ordered by cycle_number asc)
+                }
+              });
+              tableYields[key] = { good, reject, type };
+            });
+
+            const totalGoods = Object.values(tableYields).reduce(
+              (s, t) => s + t.good,
+              0,
+            );
+            const totalRejects = Object.values(tableYields).reduce(
+              (s, t) => s + t.reject,
+              0,
+            );
+
+            const fmtPerth = (iso: string | null) =>
+              iso
+                ? new Intl.DateTimeFormat("en-GB", {
+                    timeZone: "Australia/Perth",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  }).format(new Date(iso))
+                : null;
+
+            const aggregatedCycles = shiftLogRows.map((r: any) => ({
+              cycle_number: r.cycle_number,
+              start_time: fmtPerth(r.start_time),
+              end_time: fmtPerth(r.end_time),
+              run_duration_seconds:
+                r.start_time && r.end_time
+                  ? Math.floor(
+                      (new Date(r.end_time).getTime() -
+                        new Date(r.start_time).getTime()) /
+                        1000,
+                    )
+                  : null,
+              load_duration_seconds: r.load_duration_seconds,
+              short_mold_json: r.short_mold_json,
+              bubble_json: r.bubble_json,
+              notes: r.notes,
+            }));
+
+            const logRow = {
+              date: currentDate, // Perth YYYY-MM-DD computed on mount
+              machine_press: `Press #${pressNumber}`,
+              operator_shift: `${operator} (${shift})`,
+              table_line_output_yields: tableYields,
+              cycles: aggregatedCycles,
+              total_mats_produced: totalGoods,
+              faulty_mats_produced: totalRejects,
+            };
+
+            const existingLogId = localStorage.getItem("production_log_id");
+            if (existingLogId) {
+              const { error: updateError } = await supabase
+                .from("production_logs")
+                .update(logRow)
+                .eq("id", existingLogId);
+              if (updateError) throw updateError;
+            } else {
+              const { data: inserted, error: insertError } = await supabase
+                .from("production_logs")
+                .insert([logRow])
+                .select("id")
+                .single();
+              if (insertError) throw insertError;
+              if (inserted?.id) {
+                localStorage.setItem("production_log_id", String(inserted.id));
+              }
+            }
 
             const newCycleEntry = {
               id: Math.random().toString(36).substring(2, 9),

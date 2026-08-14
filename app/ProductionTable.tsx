@@ -51,7 +51,28 @@ export default function ProductionTablePage({
   const [matTypes, setMatTypes] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [perthDate, setPerthDate] = useState<string>("");
+  const [isResetting, setIsResetting] = useState(false);
+  const [shiftConfig, setShiftConfig] = useState<{
+    operator: string;
+    shift_group: string;
+    press_number: string;
+    run_time_minutes: number | null;
+    mat_types: Record<number, string>;
+  } | null>(null);
+
+  // Current shift setup, shared via the DB so any viewer (e.g. the boss on a
+  // remote screen) sees the live operator / shift / press / run time / mat types.
+  const fetchShiftConfig = async () => {
+    const { data } = await supabase
+      .from("shift_config")
+      .select("*")
+      .eq("shift_id", 1)
+      .maybeSingle();
+    if (data) {
+      setShiftConfig(data as any);
+      setMatTypes(data.mat_types || {});
+    }
+  };
 
   // Core data retrieval engine with explicit cache-busting headers
   const fetchLogs = async (showSpinner = false) => {
@@ -135,8 +156,9 @@ export default function ProductionTablePage({
   useEffect(() => {
     // 1. Initial Access Fetch
     fetchLogs();
+    fetchShiftConfig();
 
-    // 2. Realtime listener sync channel
+    // 2. Realtime listener sync channel (cycles)
     const liveLogChannel = supabase
       .channel("production-page-sync")
       .on(
@@ -148,32 +170,22 @@ export default function ProductionTablePage({
       )
       .subscribe();
 
-    // Load configuration safely from local storage if initialized
-    const savedMatTypes = localStorage.getItem("shift_mat_types");
-    if (savedMatTypes) {
-      try {
-        setMatTypes(JSON.parse(savedMatTypes));
-      } catch (e) {
-        console.error("Failed to parse mat types", e);
-      }
-    }
+    // 3. Realtime listener for the shared shift setup
+    const shiftConfigChannel = supabase
+      .channel("shift-config-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shift_config" },
+        () => {
+          fetchShiftConfig();
+        },
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(liveLogChannel);
+      supabase.removeChannel(shiftConfigChannel);
     };
-  }, []);
-
-  useEffect(() => {
-    const date = new Date();
-
-    // Advance the date by exactly 1 day
-    date.setDate(date.getDate() + 1);
-
-    const formatted = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Australia/Perth",
-    }).format(date);
-
-    setPerthDate(formatted);
   }, []);
 
   const handlePrintPDF = () => {
@@ -182,34 +194,41 @@ export default function ProductionTablePage({
 
   const handleResetLog = async () => {
     const isConfirmed = window.confirm(
-      "CRITICAL: This will archive the current shift to history and wipe the live log. Continue?",
+      "This will clear the live log. The shift is already saved to history — a new shift will start a fresh history entry. Continue?",
     );
 
-    if (isConfirmed) {
-      try {
-        const operator = localStorage.getItem("shift_operator") || "--";
-        const shiftGroup = localStorage.getItem("shift_group") || "Day";
-        const machinePress =
-          "Press #" + (localStorage.getItem("terminal_press_number") || "1");
+    if (!isConfirmed) return;
 
-        const { error } = await supabase.rpc("reset_shift_log", {
-          p_shift_id: 1,
-          p_date: perthDate,
-          p_machine_press: machinePress,
-          p_operator_shift: `${operator} (${shiftGroup})`,
-        });
+    setIsResetting(true);
+    try {
+      const { error } = await supabase.rpc("reset_shift_log", {
+        p_shift_id: "1",
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        setEntries([]);
-        localStorage.removeItem("shift_operator");
-        localStorage.removeItem("shift_group");
-        localStorage.removeItem("shift_run_time");
+      // Clear the shared shift board so it doesn't show a stale operator.
+      // Keep press_number / mat_types (persist across shifts, like localStorage).
+      await supabase
+        .from("shift_config")
+        .update({
+          operator: "",
+          run_time_minutes: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("shift_id", 1);
 
-        alert("Shift archived and log cleared successfully.");
-      } catch (err: any) {
-        alert("Failed to reset shift: " + err.message);
-      }
+      setEntries([]);
+      localStorage.removeItem("shift_operator");
+      localStorage.removeItem("shift_group");
+      localStorage.removeItem("shift_run_time");
+      localStorage.removeItem("production_log_id"); // next shift starts a fresh production_logs row
+
+      alert("Live log cleared. A new shift will start a fresh history entry.");
+    } catch (err: any) {
+      alert("Failed to reset shift: " + err.message);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -330,12 +349,20 @@ export default function ProductionTablePage({
         <div className="flex items-center gap-2">
           <Button
             onClick={handleResetLog}
-            disabled={!session}
+            disabled={!session || isResetting}
             variant="destructive"
             className="bg-red-600 hover:bg-red-700 gap-2 h-9 text-xs font-bold shadow-sm text-white"
           >
-            <Trash2 className="w-4 h-4" />
-            {session ? "Reset Shift Log" : "Login to Reset"}
+            {isResetting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            {!session
+              ? "Login to Reset"
+              : isResetting
+                ? "Archiving..."
+                : "Reset Shift Log"}
           </Button>
           <Button
             onClick={handlePrintPDF}
@@ -386,16 +413,10 @@ export default function ProductionTablePage({
                   Operator / Shift
                 </span>
                 <span className="font-bold text-neutral-950 text-xs">
-                  {typeof window !== "undefined"
-                    ? localStorage.getItem("shift_operator") || "Remote Screen"
-                    : "—"}
+                  {shiftConfig?.operator || "Remote Screen"}
                 </span>
                 <span className="text-[10px] text-neutral-500 capitalize ml-1">
-                  (
-                  {typeof window !== "undefined"
-                    ? localStorage.getItem("shift_group") || "View"
-                    : "—"}
-                  )
+                  ({shiftConfig?.shift_group || "View"})
                 </span>
               </div>
             </div>
@@ -407,10 +428,7 @@ export default function ProductionTablePage({
                   Machine Press
                 </span>
                 <span className="font-extrabold text-emerald-800 text-xs">
-                  Press #
-                  {typeof window !== "undefined"
-                    ? localStorage.getItem("terminal_press_number") || "1"
-                    : "—"}
+                  Press #{shiftConfig?.press_number || "1"}
                 </span>
               </div>
             </div>
@@ -422,9 +440,8 @@ export default function ProductionTablePage({
                   Target Run Time
                 </span>
                 <span className="font-bold text-neutral-950 text-xs">
-                  {typeof window !== "undefined" &&
-                  localStorage.getItem("shift_run_time")
-                    ? `${localStorage.getItem("shift_run_time")}m`
+                  {shiftConfig?.run_time_minutes
+                    ? `${shiftConfig.run_time_minutes}m`
                     : "—"}
                 </span>
               </div>
