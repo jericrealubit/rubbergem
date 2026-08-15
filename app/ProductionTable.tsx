@@ -630,7 +630,14 @@ export default function ProductionTablePage({
                       <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
                         {entry.endTime}
                       </span>
-                      <span className="text-[9px] text-neutral-500 font-sans ml-1 font-semibold">
+                      <span
+                        className={`text-[9px] font-sans ml-1 font-semibold ${
+                          typeof entry.loadTime === "number" &&
+                          entry.loadTime > 17
+                            ? "text-red-600"
+                            : "text-neutral-500"
+                        }`}
+                      >
                         ({entry.loadTime}m)
                       </span>
                     </td>
