@@ -266,6 +266,15 @@ export default function ProductionTablePage({
     return total + time;
   }, 0);
 
+  const DEFAULT_LOAD_TIME_MINUTES = 17;
+  const totalDowntime = entries.reduce((total, entry) => {
+    const time =
+      typeof entry.loadTime === "number"
+        ? entry.loadTime
+        : parseFloat(entry.loadTime as any) || 0;
+    return total + Math.max(0, time - DEFAULT_LOAD_TIME_MINUTES);
+  }, 0);
+
   let faultyMatsProduced = 0;
   entries.forEach((entry) => {
     for (let id = 1; id <= 4; id++) {
@@ -452,12 +461,10 @@ export default function ProductionTablePage({
               <Clock className="w-4 h-4 text-emerald-700 shrink-0" />
               <div>
                 <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
-                  Target Run Time
+                  Total Downtime(Load:17m)
                 </span>
-                <span className="font-bold text-neutral-950 text-xs">
-                  {shiftConfig?.run_time_minutes
-                    ? `${shiftConfig.run_time_minutes}m`
-                    : "—"}
+                <span className="font-bold text-red-600 text-xs">
+                  {totalDowntime > 0 ? `${totalDowntime}m` : "0m"}
                 </span>
               </div>
             </div>

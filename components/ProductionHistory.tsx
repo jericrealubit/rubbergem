@@ -8,6 +8,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Clock,
   Folder,
   FolderOpen,
   Layers,
@@ -280,7 +281,8 @@ export default function ProductionHistory() {
               {isMonthOpen && (
                 <div className="pl-3 pr-1 py-1 space-y-2 border-l-2 border-emerald-100 ml-5">
                   {month.days.map((day) => {
-                    const isDayOpen = expandedDay === day.dateString;
+                    const keyForDay = `${day.dateString}-${day.shift}`;
+                    const isDayOpen = expandedDay === keyForDay;
                     const totalGood = Object.values(day.tables).reduce(
                       (a, b) => a + b.good,
                       0,
@@ -290,12 +292,30 @@ export default function ProductionHistory() {
                       0,
                     );
 
-                    const keyForDay = `${day.dateString}-${day.shift}`;
+                    const DEFAULT_LOAD_TIME_MINUTES = 17;
+                    const dayCycles = Array.isArray(day.cycles)
+                      ? day.cycles
+                      : [];
+                    const accumulatedLoadTime = dayCycles.reduce(
+                      (sum, c: any) =>
+                        sum + (c.load_duration_seconds || 0) / 60,
+                      0,
+                    );
+                    const totalDowntime = dayCycles.reduce(
+                      (sum, c: any) =>
+                        sum +
+                        Math.max(
+                          0,
+                          (c.load_duration_seconds || 0) / 60 -
+                            DEFAULT_LOAD_TIME_MINUTES,
+                        ),
+                      0,
+                    );
 
                     return (
                       <div key={keyForDay} className="space-y-1">
                         <button
-                          onClick={() => toggleDay(day.dateString)}
+                          onClick={() => toggleDay(keyForDay)}
                           className={`w-full p-2.5 flex items-center justify-between text-left text-xs font-semibold rounded-lg border transition-all ${
                             isDayOpen
                               ? "bg-white border-neutral-300 text-neutral-900 shadow-sm"
@@ -406,6 +426,30 @@ export default function ProductionHistory() {
                                     : 0}
                                   %
                                 </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="border border-neutral-100 rounded-md bg-neutral-50/40 p-2 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                                  <div>
+                                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight leading-none">
+                                      Accumulated Load Time
+                                    </p>
+                                    <p className="text-xs font-black font-mono text-neutral-800">
+                                      {Math.round(accumulatedLoadTime)}m
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="border border-neutral-100 rounded-md bg-neutral-50/40 p-2 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                                  <div>
+                                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight leading-none">
+                                      Total Downtime(Load:17m)
+                                    </p>
+                                    <p className="text-xs font-black font-mono text-red-600">
+                                      {Math.round(totalDowntime)}m
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
                             </CardContent>
 
