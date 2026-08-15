@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   Cpu,
   Layers,
-  FileText,
+  Menu,
   Smartphone,
   LayoutDashboard,
   MapPin,
@@ -14,6 +14,8 @@ import {
   Database,
   ShieldAlert,
   History,
+  Save,
+  RotateCcw,
 } from "lucide-react";
 
 export default function AboutPage() {
@@ -26,15 +28,16 @@ export default function AboutPage() {
         </div>
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-700/50 text-emerald-200 text-xs font-semibold tracking-wide uppercase">
-            <Sparkles className="w-3.5 h-3.5" /> Core Infrastructure
+            <Sparkles className="w-3.5 h-3.5" /> About This App
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            Rubber Production System
+            RubberGem — Shift Logging Made Simple
           </h1>
           <p className="text-emerald-100 text-sm sm:text-base max-w-xl leading-relaxed font-medium">
-            A high-performance, mobile-optimized terminal and single-page audit
-            engine engineered for precise, immutable industrial shift cycle
-            logging.
+            A simple app operators use on the shop floor to record every press
+            cycle, defect, and downtime as it happens — so shift records stay
+            accurate and the boss can see real production numbers without
+            walking the floor.
           </p>
         </div>
       </div>
@@ -42,7 +45,7 @@ export default function AboutPage() {
       {/* Technical Stack Architecture Ribbon */}
       <div className="space-y-2">
         <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
-          <Layers className="w-3.5 h-3.5" /> Technical Stack
+          <Layers className="w-3.5 h-3.5" /> Built With
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
           <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
@@ -50,7 +53,10 @@ export default function AboutPage() {
               Framework
             </p>
             <p className="text-xs font-bold mt-0.5 text-neutral-800">
-              Next.js App Router
+              Next.js
+            </p>
+            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+              The engine that makes the app fast and reliable on any device.
             </p>
           </div>
           <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
@@ -58,7 +64,11 @@ export default function AboutPage() {
               Database & Sync
             </p>
             <p className="text-xs font-bold mt-0.5 text-neutral-800">
-              Supabase Cloud DB
+              Supabase
+            </p>
+            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+              Where shift data is safely stored and shared instantly across
+              devices.
             </p>
           </div>
           <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
@@ -66,7 +76,11 @@ export default function AboutPage() {
               Styling
             </p>
             <p className="text-xs font-bold mt-0.5 text-neutral-800">
-              Tailwind CSS v4
+              Tailwind CSS
+            </p>
+            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+              Keeps the app looking clean and working well on phones and
+              tablets.
             </p>
           </div>
           <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
@@ -74,7 +88,10 @@ export default function AboutPage() {
               State & Cache
             </p>
             <p className="text-xs font-bold mt-0.5 text-neutral-800">
-              React Context & Local
+              Local Browser Storage
+            </p>
+            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+              Remembers what you were typing even if the page refreshes.
             </p>
           </div>
         </div>
@@ -83,272 +100,365 @@ export default function AboutPage() {
       {/* Main Application Modules */}
       <div className="space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
-          <Layers className="w-3.5 h-3.5" /> System Architecture & Features
+          <Layers className="w-3.5 h-3.5" /> How the System Works
         </h2>
 
-        {/* Feature 1: Mobile Fast-Entry Terminal */}
+        {/* Feature 1: Quick Entry Form */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
                 <Smartphone className="w-4 h-4" />
               </div>
-              1. Mobile Fast-Entry Terminal{" "}
-              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
-                (/components/PressForm.tsx)
+              1. Quick Entry Form{" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                components/PressForm.tsx
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
-            <p>
-              Designed explicitly for high-efficiency operation on the
-              production floor with minimal data-entry friction:
-            </p>
+            <p>What the operator fills in on the floor, one cycle at a time:</p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Dynamic Header Switcher:
+                  Switch presses in one tap:
                 </strong>{" "}
-                Instantly toggles runtime configuration tracking between{" "}
+                Jump between{" "}
                 <span className="font-semibold text-neutral-900">Press #1</span>{" "}
                 and{" "}
                 <span className="font-semibold text-neutral-900">Press #2</span>{" "}
-                on-the-fly.
+                instantly.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Collapsible Shift Panel:
+                  Stays out of the way:
                 </strong>{" "}
-                Keeps the interface clean on small mobile viewports, displaying
-                a real-time summary string fallback (
-                <span className="italic font-medium text-neutral-700">
-                  Operator • Shift • Date
-                </span>
-                ) when hidden.
+                The shift details panel (operator, shift, date) can be
+                collapsed to keep the screen clean on a phone, while still
+                showing a short summary so you always know what&apos;s set.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Smart Timestamps Engine:
+                  Does the time math for you:
                 </strong>{" "}
-                One-tap cycle logs with automated duration parsing. Integrates
-                complex{" "}
-                <span className="font-semibold text-emerald-800">
-                  midnight-crossover protection
-                </span>{" "}
-                (e.g., a cycle logged from 23:55 to 00:20 calculates flawlessly
-                as 25 minutes instead of throwing negative values).
+                Just enter a start and end time — the app works out how long
+                the cycle took automatically, even across midnight (a cycle
+                from 11:55pm to 12:20am is correctly counted as 25 minutes,
+                not a negative number).
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Geometric Matrix Mapping:
+                  Mark defects on a diagram:
                 </strong>{" "}
-                Replicates physical sheets using custom absolute coordinate
-                radios in an{" "}
-                <span className="font-semibold text-neutral-800">
-                  X-pattern alignment
-                </span>{" "}
-                to log table short molds, matched with multi-select checkbox
-                arrays tracking positional micro-bubbles (
+                Tap the exact spot on an on-screen diagram (matching the real
+                sheet layout) to record a short mold, and check off bubble
+                defects by position (
                 <span className="italic text-neutral-700">
                   Left, Middle, Right
                 </span>
-                ) and sizing dimensions.
+                ) and size.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Can&apos;t accidentally double-submit:
+                </strong>{" "}
+                The Submit button locks itself while an entry is saving, so a
+                double-tap can&apos;t create two records for the same cycle.
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        {/* Feature 2: Supabase Cloud Integration */}
+        {/* Feature 2: Saves Instantly to the Cloud */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
                 <Database className="w-4 h-4" />
               </div>
-              2. Real-Time Supabase Cloud Sync{" "}
-              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
-                (database schema & pipelines)
+              2. Saves Instantly to the Cloud{" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                Supabase database
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
             <p>
-              Synchronizes local runtime sessions directly with global Postgres
-              cloud nodes:
+              Every cycle you submit is sent straight to a secure online
+              database — nothing lives only on the terminal:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Cloud Live Logging:
+                  No waiting, no lost entries:
                 </strong>{" "}
-                Dispatches secure, structured cycle payloads to the database,
-                ensuring zero lag on submission.
+                Cycle data is saved the moment you submit, so it&apos;s safe even
+                if the terminal is turned off right after.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Structured JSON Payloads:
+                  Everything stays together:
                 </strong>{" "}
-                Packs detailed rejection metrics, target bubble sizes, and
-                coordinates into clean JSON payloads for flexible and
-                lightweight data reporting.
+                Reject details, bubble sizes, and positions are all saved as
+                one record, so nothing gets mixed up between cycles.
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        {/* Feature 3: Authentication & Security */}
+        {/* Feature 3: Only Logged-In Operators Can Make Changes */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
                 <ShieldAlert className="w-4 h-4" />
               </div>
-              3. Session Authentication Controls{" "}
-              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
-                (Supabase Auth integration)
+              3. Only Logged-In Operators Can Make Changes{" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                Supabase Auth
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
             <p>
-              Restricts floor inputs and logs to authorized operator accounts to
-              prevent data contamination:
+              This keeps the records trustworthy — anyone can view the live
+              board, but only signed-in operators can change it:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Submission Locks:
+                  Editing requires login:
                 </strong>{" "}
-                Prevents workspace writes unless an active session is
-                established.
+                Submitting a cycle, changing shift settings, or resetting the
+                log all require an active, logged-in session.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Session Verification Warners:
+                  Clear warnings, not silent failures:
                 </strong>{" "}
-                Fires responsive UX indicators showing authorization warnings
-                when an session drops, keeping metrics airtight.
+                If your session drops, the app shows you a clear warning
+                instead of quietly failing to save.
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        {/* Feature 4: Local Cache and Historical Timeline */}
+        {/* Feature 4: Nothing Is Lost If the Page Closes */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
-                <History className="w-4 h-4" />
+                <Save className="w-4 h-4" />
               </div>
-              4. Historical Production Timeline{" "}
-              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
-                (local cache feed)
+              4. Nothing Is Lost If the Page Closes{" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                local browser backup
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
             <p>
-              Applies client-side workspace caching safeguards to preserve logs
-              against sudden power loss:
+              A safety net for accidental refreshes, closed tabs, or a
+              terminal that loses power mid-entry:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Storage Caching:
+                  Auto-backup while you type:
                 </strong>{" "}
-                Backs up ongoing form metrics, active parameters, and runtime
-                progress state seamlessly in local browser sandboxes.
+                Whatever you&apos;re filling in — times, defect selections, notes —
+                is quietly backed up on that device as you go.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Collapsible Feed Logs:
+                  Recently logged cycles:
                 </strong>{" "}
-                Presents historical shift logs within collapsible visual list
-                panels for quick terminal lookups.
+                Kept in a simple, browsable list for quick reference on the
+                terminal.
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        {/* Feature 5: Single-Page Audit Dashboard Sheet */}
+        {/* Feature 5: The Live Shift Log Table */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
                 <LayoutDashboard className="w-4 h-4" />
               </div>
-              5. Single-Page Audit Dashboard Sheet{" "}
-              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
-                (/app/ProductionTable.tsx)
+              5. The Live Shift Log Table{" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                app/ProductionTable.tsx
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
             <p>
-              Optimized to aggregate data blocks into physical and digital
-              records structured cleanly for auditing:
+              The audit sheet the whole shift&apos;s cycles get logged onto,
+              designed to print cleanly:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Parameter Extraction:
+                  Shift details shown once:
                 </strong>{" "}
-                Isolates metadata parameters to a singular card component at the
-                top, standardizing the document format so shift details appear
-                exactly once per sheet.
+                Operator, press, and date appear in one card at the top
+                instead of being repeated on every row.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  15-Row Immutable Frame Grid:
+                  Always 15 rows:
                 </strong>{" "}
-                Guarantees layout structural uniformity by locking the matrix
-                view to exactly 15 indexed blocks. Active cycles populate
-                sequentially, while remaining slots automatically fall back to
-                balanced placeholder alignments.
+                The sheet always shows exactly 15 rows, whether the shift had
+                3 cycles or 15, so every printed sheet looks the same and
+                fits one page.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Strict Boundary Analytics:
+                  Fair reject counting:
                 </strong>{" "}
-                Automates cumulative reject math, enforcing a strict constraint
-                limiting reporting to a maximum of 1 reject count per table per
-                cycle frame, regardless of overlapping defect combinations.
+                A cycle only ever counts as one reject per table, even if it
+                has more than one type of defect — so the numbers can&apos;t be
+                double-counted.
               </li>
               <li>
                 <strong className="text-neutral-800 font-bold">
-                  Landscape Print Automation:
+                  Runtime column:
                 </strong>{" "}
-                Embedded CSS media injection completely overrides browser frames
-                during compilation. It strips navigational elements and
-                perfectly auto-scales table data cells to force-fit the complete
-                15-cycle log seamlessly onto a single landscape sheet or
-                zero-overhead PDF export.
+                Records the target run time that was set at the moment each
+                cycle was logged, permanently — so if the target gets changed
+                later in the shift, earlier rows still show what was actually
+                true when they happened.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Total Downtime (default: 17m):
+                </strong>{" "}
+                Automatically adds up, across the whole shift, how many extra
+                minutes were spent loading/unloading beyond the standard
+                17-minute target — shown in red so it stands out at a glance.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  One-tap PDF/print:
+                </strong>{" "}
+                &quot;Print PDF&quot; automatically formats the full 15-row sheet to
+                fit neatly on a single landscape page.
               </li>
             </ul>
           </CardContent>
         </Card>
 
-        {/* Feature 6: Shell State Navigation Router */}
+        {/* Feature 6: Simple Menu Navigation */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
             <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
-                <FileText className="w-4 h-4" />
+                <Menu className="w-4 h-4" />
               </div>
-              6. Shell State Navigation Router{" "}
-              <span className="font-mono text-[11px] text-neutral-400 lowercase font-normal">
-                (/app/page.tsx)
+              6. Simple Menu Navigation{" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                app/page.tsx
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm leading-relaxed text-neutral-600">
             <p>
-              Orchestrates client-side state transfers through a smooth,
-              responsive sliding drawer UI masked with a backdrop overlay
-              filter. This shell design enables operators to navigate seamlessly
-              between active terminal entries and the historical log tables
-              without causing temporary context state or form data loss.
+              A single slide-out menu lets you move between the entry form,
+              the live shift table, and shift history — without losing
+              whatever you were in the middle of typing.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Feature 7: Production History (Past Shifts) */}
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                <History className="w-4 h-4" />
+              </div>
+              7. Production History (Past Shifts){" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                components/ProductionHistory.tsx
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+            <p>
+              Every completed shift is automatically archived so past
+              performance can be reviewed any time:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Organized by month and day:
+                </strong>{" "}
+                Browse past shifts in a simple, expandable list.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Full shift breakdown:
+                </strong>{" "}
+                Each day expands to show good/reject counts per table, plus
+                Accumulated Load Time and Total Downtime for that exact
+                shift — the same numbers you&apos;d have seen live at the time.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Day and Night shifts open independently:
+                </strong>{" "}
+                If both a Day and Night shift happened on the same date,
+                opening one no longer forces the other closed.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Clear error messages:
+                </strong>{" "}
+                If history can&apos;t load for any reason, a clear warning banner
+                explains that instead of just showing an empty screen.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Feature 8: Resetting a Shift Safely */}
+        <Card className="bg-white border border-neutral-200/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+                <RotateCcw className="w-4 h-4" />
+              </div>
+              8. Resetting a Shift Safely{" "}
+              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+                app/ProductionTable.tsx
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+            <p>
+              When a shift ends, &quot;Reset Shift Log&quot; clears the live table so
+              the next shift starts clean:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Already archived first:
+                </strong>{" "}
+                By the time you reset, that shift&apos;s data has already been
+                safely saved to History — resetting only clears the live
+                working table.
+              </li>
+              <li>
+                <strong className="text-neutral-800 font-bold">
+                  Double-checked before saying &quot;done&quot;:
+                </strong>{" "}
+                The app now verifies the clear actually happened before
+                showing a success message, instead of ever showing a false
+                &quot;success&quot; if something went wrong.
+              </li>
+            </ul>
           </CardContent>
         </Card>
       </div>
@@ -364,7 +474,7 @@ export default function AboutPage() {
               Are you an engineering hiring manager looking for a versatile
               Full-Stack Web Developer with practical AI implementation skills,
               or a business owner looking to deploy optimized, zero-overhead
-              automated intelligence tools onto your internal systems? Let's
+              automated intelligence tools onto your internal systems? Let&apos;s
               connect!
             </p>
 

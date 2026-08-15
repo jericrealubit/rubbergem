@@ -1,7 +1,7 @@
 
 # RubberGem Production Tracking System
 
-A fast-entry mobile web terminal and manufacturing audit logging solution built with Next.js, React, Tailwind CSS, and shadcn/ui. This system provides press operators with an optimized mobile viewport to quickly enter cycle logs, calculate durations, and generate strict single-page print/PDF audit sheets in landscape orientation.
+A single-page operational tool for rubber-press manufacturing shift logging. Operators use a mobile-optimized entry terminal to log press cycles in real time; a live audit table, a printable single-page PDF sheet, and a browsable production history let anyone — including a remote viewer who never logs in — see shift performance as it happens.
 
 ---
 Live: https://waai.au/rubbergem
@@ -12,87 +12,122 @@ Live: https://waai.au/rubbergem
 ---
 ## 🚀 Technical Stack
 
-- **Framework:** Next.js (App Router Architecture)
-- **Library:** React 19 (Hooks, local storage caching context states)
-- **Styling:** Tailwind CSS v4 & custom print stylesheet overrides
+- **Framework:** Next.js 16 (App Router), deployed as a **static export** (`output: "export"` in `next.config.ts`, served from `https://waai.au/rubbergem`)
+- **Library:** React 19 (hooks, `localStorage`-backed state)
+- **Database & Realtime:** Supabase (Postgres + Row Level Security + Realtime subscriptions)
+- **Styling:** Tailwind CSS v4 & a custom `@media print` stylesheet for the audit sheet
 - **Icons:** Lucide React
-- **UI Components:** Built following shadcn/ui structural primitives (Card, Button, Label, Input, Select, Checkbox, RadioGroup)
-
-
-
-## 🛠️ Main Application Features
-
-### 1. Mobile Fast-Entry Terminal (`/components/PressForm.tsx`)
-- **Dynamic Header Switcher:** Dropdown menu allowing operators to seamlessly toggle configuration modes on-the-fly between **Press #1** and **Press #2**.
-- **Collapsible Shift Card:** Keeps general operational variables compact on smaller screens. Includes a real-time inline summary string context preview (*Operator Name • Shift Group • Current Date*) visible even when collapsed.
-- **Table Setup Matrix:** Input module built into the collapsible panel tracking specific product mat designations (`DF`, `DD`, `CF`, `CD`, `SG`) uniquely logged exactly **once** per shift frame.
-- **Smart Timestamps Calculator:** Fast-touch "TAP TO START" and "TAP TO END" timestamp indicators with automated duration interval parsing. Built-in **midnight-crossover protection** logic (e.g., cycle starting at 23:55 and ending at 00:20 logs precisely as 25 minutes runtime instead of throwing a negative error).
-- **Tables Short Molding Pattern Matrix:** Interactive grid tracking 4 independent production modules. Replicates physical grid checklists using custom square layout radio options mapped in an absolute coordinate geometric X-pattern alignment.
-- **Bubbles Position Grid Mapping:** 3 distinct multi-select checkbox indicators tracking positional micro-defects (**L**eft, **M**iddle, **R**ight) for every single table module, complete with companion size dimension selection keys (`Big` or `Small`).
-
-### 2. Single-Page Audit Dashboard Sheet (`/app/ProductionTable.tsx`)
-- **Shift Parameter Extraction Header:** Aggregates shift parameters (Operator, Shift Group, Press number, and Table Setup Mat Types) inside a dedicated parameters card above the main matrix grid layout so they appear exactly **once** per shift sheet.
-- **15-Row Immutable Frame Grid:** Guarantees a clean layout representation by fixing exactly 15 indexed rows. Populates active cycle records sequentially and defaults to neat, aligned filler slots if less than 15 cycles have been run during the logged shift.
-- **Dynamic Analytics Footer Calculations:** Real-time production efficiency reporting:
-  - *Total Mats Produced:* Total active cycles × 4 tables.
-  - *Faulty Mats Produced:* Scans the matrix columns and computes cumulative reject rates, enforcing a strict boundary constraint of **maximum 1 reject count per table per cycle frame** regardless of whether a table possesses a short mold defect, multi-point positional bubble markings, or both.
-- **Landscape Print Automation Engine:** Complete layout optimization wrapping the form matrix structure inside specific CSS media print rules. Strips away browser UI widgets, responsive navigation controls, block spacing, and scales column cells to cleanly force-fit the complete 15-cycle history grid perfectly onto **one single landscape sheet** when printing or exporting to PDF.
-
-### 3. Shell State Navigation Router (`/app/page.tsx`)
-- Implements a modern slide-out **Burger Menu navigation drawer** with an integrated visual layer background overlay filter.
-- Orchestrates smooth, persistent client-side transition routing without causing data loss across separate entry form pages or production log dashboards.
+- **UI Components:** shadcn/ui (`radix-nova` style) primitives — Card, Button, Input, Select, Checkbox, RadioGroup
 
 ---
+## 🛠️ Main Application Features
 
-## 📦 Getting Started & Development Installation
+`app/page.tsx` is a client-side view switcher (not the Next.js router) that swaps between four views by local state — there is effectively one route. It also owns login/session state and a global per-cycle countdown timer, both passed down as props.
 
-Follow these steps to spin up the local instance development environment client:
+### 1. Entry Terminal (`components/PressForm.tsx`)
+- **Press switcher:** toggles the active config between **Press #1** and **Press #2**.
+- **Collapsible shift panel:** operator, shift group, press number, and per-table mat type (`DF`, `DD`, `CF`, `CD`, `SG`), with an inline summary shown even when collapsed.
+- **Smart timestamps:** tap-to-start / tap-to-end cycle timing with automatic duration parsing, including midnight-crossover handling (23:55 → 00:20 correctly computes as 25 minutes).
+- **Defect capture:** an absolute-coordinate grid for marking short-mold position per table, plus a Left/Middle/Right bubble-defect checkbox matrix with size selection.
+- **Debounced shared broadcast:** shift setup (operator, shift, press, run time, mat types) is mirrored to a shared `shift_config` Supabase row while logged in, so a remote viewer sees the live setup without needing to log in.
+- **Live archiving:** every cycle submit both inserts into `live_log` and re-aggregates the whole shift into a single upserted `production_logs` row, so History reflects the shift as it happens rather than only after a reset.
+- **Duplicate-submit guard:** the submit button disables itself while a submission is in flight.
 
-### 1. Extract Project and Clone Dependencies
-Ensure you have Node.js installed on your machine. Install the required Node packages specified in your `package.json` file:
+### 2. Live Audit Table (`app/ProductionTable.tsx`)
+- **Shift header strip:** operator, press, and shift setup shown once per sheet, live-subscribed to `shift_config` and `live_log` via Supabase Realtime.
+- **Runtime column:** records the target run time (minutes) that was active *when each cycle was submitted*, persisted per-row so later changes to the target don't rewrite earlier rows' history.
+- **Total Downtime (default: 17m):** sums, across the shift, how many minutes each cycle's load time ran over the 17-minute default (clamped at 0 per cycle), shown in red.
+- **15-row fixed grid:** always renders 15 rows (real cycles + filler) so every printed sheet has the same shape.
+- **One-reject-per-table-per-cycle rule:** a table counts as a reject if *either* a short-mold position or a bubble checkbox is set, never more than once per cycle.
+- **Landscape print/PDF:** an embedded `@media print` stylesheet force-fits the full 15-row sheet onto a single landscape page.
+- **Reset Shift Log:** login-gated, destructive action that clears `live_log` for the next shift (via the `reset_shift_log` Postgres RPC) — the shift's data is already archived in `production_logs` by this point. The reset now verifies the delete actually happened before reporting success.
+
+### 3. Production History (`components/ProductionHistory.tsx`)
+- Reads archived shifts from `production_logs`, grouped by month and day.
+- Each day expands to show per-table good/reject counts, total cycles, Accumulated Load Time, and Total Downtime for that specific shift.
+- Day and Night shifts on the same date expand/collapse independently.
+- Shows a clear error banner (instead of a silent empty list) if the fetch fails.
+
+### 4. About Page (`app/AboutPage.tsx`)
+- In-app, plain-language explanation of what the system does and how, aimed at non-technical readers (operators, management) — kept in sync with this README's feature list.
+
+### 5. Shell Navigation (`app/page.tsx`)
+- Slide-out burger menu switching between the entry form, live table, history, and about views without losing in-progress form state.
+- Handles Supabase Auth session state and a global per-cycle countdown timer (started from the shift's target run time on each submit).
+
+---
+## 📦 Getting Started
+
+### 1. Install dependencies
 
 ```bash
 npm install
-
 ```
 
-### 2. Run the Development Server
+### 2. Configure environment variables
 
-Launch the local client engine instance framework:
+Create `.env.local` in the project root with your Supabase project's credentials:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+### 3. Set up the database
+
+This project doesn't use a migration tool — the Supabase schema, RLS policies, and RPC functions are applied manually in the Supabase SQL editor. Run these SQL files (in the repo root) against your project:
+
+- `shift_config.sql` — creates the `shift_config` table + RLS policies.
+- `reset_shift_log.txt` — creates the `reset_shift_log(p_shift_id text)` RPC used by "Reset Shift Log".
+- `production_logs_rls.sql` — RLS policies for the `production_logs` table.
+- `live_log_add_run_time.sql` — adds the `run_time_minutes` column to `live_log`.
+
+The `live_log` and `production_logs` tables themselves are expected to already exist (see `components/PressForm.tsx`'s payload objects for the columns each one writes).
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-
 ```
 
-Open [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000) inside your web client browser or mobile emulator frame terminal to preview the system interface layout.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-### 3. Create Production Builds
+### 5. Build for production
 
-To build a highly optimized deployment compilation artifact ready for industrial plant terminals:
+The build produces a static export (`next.config.ts`: `output: "export"`):
 
 ```bash
 npm run build
 npm run start
+```
 
+### 6. Lint
+
+```bash
+npm run lint
 ```
 
 ---
-
 ## 🗂️ Project Directory Topology
 
 ```text
 rubbergem/
 ├── app/
-│   ├── page.tsx               # Main Core Router & Shell Frame Sidebar Wrapper Layout
-│   ├── ProductionTable.tsx    # Landscape Single-Page Print Layout Engine & Audit Table
-│   ├── layout.tsx             # Global Structural Viewport Configuration File
-│   └── globals.css            # Custom Styling & CSS Base Layer Injectors
+│   ├── page.tsx                    # View switcher shell, auth/session, global cycle timer
+│   ├── ProductionTable.tsx         # Live audit table, print/PDF layout, Reset Shift Log
+│   ├── AboutPage.tsx               # In-app plain-language system overview
+│   ├── layout.tsx                  # Root layout / viewport config
+│   └── globals.css                 # Base styling layer
 ├── components/
-│   ├── PressForm.tsx          # Fast-Entry Operator Terminal Form (Calculators, Matrices)
-│   └── ui/                    # Base Atom components (Card, Button, Input, Select, etc.)
-├── package.json               # Node Package Dependencies Management Script
-└── README.md                  # System Setup Documentation Profile
-
-
+│   ├── PressForm.tsx               # Entry terminal: cycle capture, live_log/production_logs writes
+│   ├── ProductionHistory.tsx       # Archived shift browser (production_logs)
+│   └── ui/                         # shadcn/ui primitives (Card, Button, Input, Select, etc.)
+├── lib/
+│   └── supabase.ts                 # Supabase client (anon key)
+├── shift_config.sql                # Manual SQL: shift_config table + RLS
+├── reset_shift_log.txt             # Manual SQL: reset_shift_log RPC
+├── production_logs_rls.sql         # Manual SQL: production_logs RLS
+├── live_log_add_run_time.sql       # Manual SQL: live_log.run_time_minutes column
+├── package.json
+└── README.md
 ```
