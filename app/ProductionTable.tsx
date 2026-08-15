@@ -207,6 +207,21 @@ export default function ProductionTablePage({
 
       if (error) throw error;
 
+      // Verify the delete actually happened. Postgres doesn't error on a
+      // DELETE that matches 0 rows (e.g. if RLS silently filters it), so
+      // without this check a permissions regression would look like success.
+      const { count, error: verifyError } = await supabase
+        .from("live_log")
+        .select("*", { count: "exact", head: true })
+        .eq("shift_id", 1);
+
+      if (verifyError) throw verifyError;
+      if (count && count > 0) {
+        throw new Error(
+          "Live log still has rows after reset — check the reset_shift_log RLS/permissions in Supabase.",
+        );
+      }
+
       // Clear the shared shift board so it doesn't show a stale operator.
       // Keep press_number / mat_types (persist across shifts, like localStorage).
       await supabase

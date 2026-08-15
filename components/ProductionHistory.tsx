@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase"; // Ensure this import matches your project setup
 import { Card, CardContent } from "@/components/ui/card";
 import {
+  AlertCircle,
   Calendar,
   ChevronDown,
   ChevronUp,
@@ -161,6 +162,7 @@ export default function ProductionHistory() {
 
         setHistoricalData(structuredList);
       } catch (err: any) {
+        console.error("Error fetching production_logs:", err);
         setError(err.message || "Failed parsing production records.");
       } finally {
         setLoading(false);
@@ -211,6 +213,17 @@ export default function ProductionHistory() {
           </p>
         </div>
       </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-sm text-red-800">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold">Database Fetch Failed: </span>
+            {error}. Verify that RLS SELECT permissions are correct for
+            production_logs.
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {historicalData.map((month) => {

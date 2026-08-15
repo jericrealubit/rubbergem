@@ -1139,7 +1139,11 @@ export default function ProductionForm({
         {/* Global Submit Trigger */}
         <Button
           type="submit"
-          disabled={session ? loadTime === "" || Number(loadTime) < 1 : true}
+          disabled={
+            session
+              ? isSubmitting || loadTime === "" || Number(loadTime) < 1
+              : true
+          }
           className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
         >
           {isSubmitting && <Loader2 className="animate-spin" size={20} />}

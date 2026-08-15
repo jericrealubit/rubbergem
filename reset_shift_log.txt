@@ -1,10 +1,25 @@
 CREATE OR REPLACE FUNCTION reset_shift_log(p_shift_id TEXT)
-RETURNS void AS $$
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   -- Simply clear the live_log rows for this shift.
   -- Archiving to production_logs now happens live on each cycle submit
   -- (see components/PressForm.tsx), so this function only wipes the live log.
+  --
+  -- SECURITY DEFINER: live_log's RLS policies have no DELETE policy for the
+  -- authenticated role, so a plain SECURITY INVOKER delete here was silently
+  -- matching 0 rows (no error, no rows deleted). Running as the function
+  -- owner bypasses RLS for this deliberate, gated destructive action.
   DELETE FROM public.live_log
   WHERE shift_id::text = p_shift_id;
 END;
-$$ LANGUAGE plpgsql;
+$$;
+
+-- Lock execution down to logged-in operators only (mirrors the UI gating in
+-- app/ProductionTable.tsx, which already disables the button unless a
+-- session exists).
+REVOKE ALL ON FUNCTION reset_shift_log(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION reset_shift_log(TEXT) TO authenticated;
