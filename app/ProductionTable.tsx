@@ -126,7 +126,7 @@ export default function ProductionTablePage({
                   minute: "2-digit",
                 })
               : "--:--",
-            runTime: 0,
+            runTime: row.run_time_minutes ?? "",
             loadTime: Math.round((row.load_duration_seconds || 0) / 60),
             tableMatTypes: {},
             selectedTableSquares: parsedSquares,
@@ -534,6 +534,9 @@ export default function ProductionTablePage({
                 <th className="p-2 border-r border-neutral-200 text-center w-[140px]">
                   Times (S/E / Load)
                 </th>
+                <th className="p-2 border-r border-neutral-200 text-center w-[70px]">
+                  Runtime
+                </th>
                 <th className="p-2 border-r border-neutral-200 text-center min-w-[160px] px-3">
                   Short Mold Locations
                 </th>
@@ -557,6 +560,9 @@ export default function ProductionTablePage({
                         {index + 1}
                       </td>
                       <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[140px]">
+                        —
+                      </td>
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[70px]">
                         —
                       </td>
                       <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[160px]">
@@ -620,6 +626,9 @@ export default function ProductionTablePage({
                       <span className="text-[9px] text-neutral-500 font-sans ml-1 font-semibold">
                         ({entry.loadTime}m)
                       </span>
+                    </td>
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[70px]">
+                      {entry.runTime !== "" ? `${entry.runTime}m` : "—"}
                     </td>
                     <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[160px]">
                       {formatShortMolds()}

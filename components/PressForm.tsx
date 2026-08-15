@@ -437,6 +437,7 @@ export default function ProductionForm({
               start_time: startTimestamp,
               end_time: endTimestamp,
               load_duration_seconds: Number(loadTime) * 60,
+              run_time_minutes: Number(runTime) || null,
               short_mold_json: formattedYieldJson,
               bubble_json: { checks: bubbleCheckboxes, sizes: bubbleSizes },
               notes: notes,
@@ -508,6 +509,7 @@ export default function ProductionForm({
                     )
                   : null,
               load_duration_seconds: r.load_duration_seconds,
+              run_time_minutes: r.run_time_minutes,
               short_mold_json: r.short_mold_json,
               bubble_json: r.bubble_json,
               notes: r.notes,
