@@ -31,7 +31,7 @@ export default function AboutPage() {
             <Sparkles className="w-3.5 h-3.5" /> About This App
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            RubberGem — Shift Logging Made Simple
+            Rubber — Shift Logging Made Simple
           </h1>
           <p className="text-emerald-100 text-sm sm:text-base max-w-xl leading-relaxed font-medium">
             A simple app operators use on the shop floor to record every press

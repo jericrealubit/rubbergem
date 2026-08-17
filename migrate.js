@@ -10,7 +10,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 async function runMigration() {
   // 2. Read your existing data
-  const rawData = fs.readFileSync("./public/rubbergem/data/data.json", "utf8");
+  const rawData = fs.readFileSync("./public/rubber/data/data.json", "utf8");
   const jsonData = JSON.parse(rawData);
 
   console.log(`Starting migration of ${jsonData.length} records...`);

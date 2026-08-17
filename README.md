@@ -1,10 +1,10 @@
 
-# RubberGem Production Tracking System
+# Rubber Production Tracking System
 
 A single-page operational tool for rubber-press manufacturing shift logging. Operators use a mobile-optimized entry terminal to log press cycles in real time; a live audit table, a printable single-page PDF sheet, and a browsable production history let anyone — including a remote viewer who never logs in — see shift performance as it happens.
 
 ---
-Live: https://waai.au/rubbergem
+Live: https://waai.au/rubber
 ---
 
 <img width="50%" height="50%" alt="image" src="https://github.com/user-attachments/assets/1c17b4e4-5a39-41c9-ab72-1ecd815845e5" />
@@ -12,7 +12,7 @@ Live: https://waai.au/rubbergem
 ---
 ## 🚀 Technical Stack
 
-- **Framework:** Next.js 16 (App Router), deployed as a **static export** (`output: "export"` in `next.config.ts`, served from `https://waai.au/rubbergem`)
+- **Framework:** Next.js 16 (App Router), deployed as a **static export** (`output: "export"` in `next.config.ts`, served from `https://waai.au/rubber`)
 - **Library:** React 19 (hooks, `localStorage`-backed state)
 - **Database & Realtime:** Supabase (Postgres + Row Level Security + Realtime subscriptions)
 - **Styling:** Tailwind CSS v4 & a custom `@media print` stylesheet for the audit sheet
@@ -111,7 +111,7 @@ npm run lint
 ## 🗂️ Project Directory Topology
 
 ```text
-rubbergem/
+rubber/
 ├── app/
 │   ├── page.tsx                    # View switcher shell, auth/session, global cycle timer
 │   ├── ProductionTable.tsx         # Live audit table, print/PDF layout, Reset Shift Log
