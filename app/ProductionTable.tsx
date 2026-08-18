@@ -112,7 +112,9 @@ export default function ProductionTablePage({
             cycleNumber: row.cycle_number ?? index + 1,
             pressNumber: "1",
             date: row.start_time
-              ? new Date(row.start_time).toISOString().split("T")[0]
+              ? new Intl.DateTimeFormat("en-CA", {
+                  timeZone: "Australia/Perth",
+                }).format(new Date(row.start_time))
               : "---",
             operator: "N/A",
             shift: "N/A",
@@ -251,7 +253,7 @@ export default function ProductionTablePage({
 
   // --- UI Computation Logic ---
   const latestEntry = entries[entries.length - 1] || null;
-  const totalDisplayRows = 15;
+  const totalDisplayRows = 16;
   const rows = Array.from(
     { length: totalDisplayRows },
     (_, i) => entries[i] || null,
