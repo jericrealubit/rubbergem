@@ -371,7 +371,9 @@ export default function ProductionForm({
         .select("cycle_number")
         .order("cycle_number", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
 
       const nextCycleNumber = (latestEntry?.cycle_number || 0) + 1;
 
@@ -580,7 +582,9 @@ export default function ProductionForm({
       }
     } catch (err) {
       console.error("Error submitting:", err);
-      alert("Failed to submit entry.");
+      alert(
+        `Failed to submit entry: ${err instanceof Error ? err.message : String(err)}`,
+      );
       setIsSubmitting(false);
     }
   };
@@ -615,7 +619,9 @@ export default function ProductionForm({
       await submitCycle();
     } catch (err) {
       console.error("Error checking for leftover shift data:", err);
-      toast.error("Could not check for leftover shift data. Submit cancelled.");
+      toast.error(
+        `Could not check for leftover shift data. Submit cancelled: ${err instanceof Error ? err.message : String(err)}`,
+      );
       setIsSubmitting(false);
     }
   };
@@ -659,7 +665,9 @@ export default function ProductionForm({
       await submitCycle();
     } catch (err) {
       console.error("Error clearing leftover live log data:", err);
-      toast.error("Failed to clear leftover live log data. Submit cancelled.");
+      toast.error(
+        `Failed to clear leftover live log data. Submit cancelled: ${err instanceof Error ? err.message : String(err)}`,
+      );
       setIsSubmitting(false);
     }
   };
