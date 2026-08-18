@@ -117,15 +117,13 @@ export default function ProductionTablePage({
             startTime: row.start_time
               ? new Date(row.start_time).toLocaleTimeString([], {
                   hour: "2-digit",
-                  minute: "2-digit",
-                timeZone: "UTC", // <--- Add this option to force UTC display
+                  minute: "2-digit",    
                 })
               : "--:--",
             endTime: row.end_time
               ? new Date(row.end_time).toLocaleTimeString([], {
                   hour: "2-digit",
-                  minute: "2-digit",
-                timeZone: "UTC", // <--- Add this option to force UTC display
+                  minute: "2-digit",          
                 })
               : "--:--",
             runTime: row.run_time_minutes ?? "",
