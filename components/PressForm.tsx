@@ -17,6 +17,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import {
   Clock,
   CheckCircle2,
   AlertTriangle,
@@ -35,6 +43,9 @@ export default function ProductionForm({
   onStartTimer?: (minutes: number) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [staleClearConfirm, setStaleClearConfirm] = useState<{
+    count: number;
+  } | null>(null);
 
   // --- LAYOUT & CONFIGURATION PERSISTENCE ---
   const [pressNumber, setPressNumber] = useState<string>(() => {
@@ -353,6 +364,306 @@ export default function ProductionForm({
     setBubbleSizes({});
   };
 
+  const submitCycle = async () => {
+    try {
+      const { data: latestEntry, error: fetchError } = await supabase
+        .from("live_log")
+        .select("cycle_number")
+        .order("cycle_number", { ascending: false })
+        .limit(1)
+        .single();
+
+      const nextCycleNumber = (latestEntry?.cycle_number || 0) + 1;
+
+      const startTimestamp = new Date(
+        `${currentDate}T${startTime}:00+08:00`,
+      ).toISOString();
+
+      const endTimestamp = new Date(
+        `${currentDate}T${endTime}:00+08:00`,
+      ).toISOString();
+
+      const formattedYieldJson: Record<string, any> = {};
+
+      [1, 2, 3, 4].forEach((tableId) => {
+        const matType = tableMatTypes[tableId] || "Unknown";
+        const shortMoldPos = selectedTableSquares[tableId];
+
+        const hasShortMold = !!shortMoldPos;
+        const hasBubble =
+          bubbleCheckboxes[tableId]?.left ||
+          bubbleCheckboxes[tableId]?.middle ||
+          bubbleCheckboxes[tableId]?.right;
+
+        const isReject = hasShortMold || hasBubble;
+
+        formattedYieldJson[`table_${tableId}`] = {
+          good: isReject ? 0 : 1,
+          reject: isReject ? 1 : 0,
+          type: matType,
+          position: shortMoldPos || null,
+        };
+      });
+
+      const payload = {
+        shift_id: 1,
+        cycle_number: nextCycleNumber,
+        start_time: startTimestamp,
+        end_time: endTimestamp,
+        load_duration_seconds: Number(loadTime) * 60,
+        run_time_minutes: Number(runTime) || null,
+        short_mold_json: formattedYieldJson,
+        bubble_json: { checks: bubbleCheckboxes, sizes: bubbleSizes },
+        notes: notes,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from("live_log").insert([payload]);
+      if (error) throw error;
+
+      // Mirror the whole shift into production_logs so History reflects it live.
+      // Re-aggregate from live_log (good/reject already baked into short_mold_json).
+      const { data: shiftRows } = await supabase
+        .from("live_log")
+        .select("*")
+        .eq("shift_id", 1)
+        .order("cycle_number", { ascending: true });
+
+      const shiftLogRows = shiftRows || [];
+
+      const tableYields: Record<
+        string,
+        { good: number; reject: number; type: string }
+      > = {};
+      [1, 2, 3, 4].forEach((tableId) => {
+        const key = `table_${tableId}`;
+        let good = 0;
+        let reject = 0;
+        let type = "—";
+        shiftLogRows.forEach((r: any) => {
+          const cell = r.short_mold_json?.[key];
+          if (cell) {
+            good += cell.good || 0;
+            reject += cell.reject || 0;
+            if (cell.type) type = cell.type; // latest wins (ordered by cycle_number asc)
+          }
+        });
+        tableYields[key] = { good, reject, type };
+      });
+
+      const totalGoods = Object.values(tableYields).reduce(
+        (s, t) => s + t.good,
+        0,
+      );
+      const totalRejects = Object.values(tableYields).reduce(
+        (s, t) => s + t.reject,
+        0,
+      );
+
+      const fmtPerth = (iso: string | null) =>
+        iso
+          ? new Intl.DateTimeFormat("en-GB", {
+              timeZone: "Australia/Perth",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }).format(new Date(iso))
+          : null;
+
+      const aggregatedCycles = shiftLogRows.map((r: any) => ({
+        cycle_number: r.cycle_number,
+        start_time: fmtPerth(r.start_time),
+        end_time: fmtPerth(r.end_time),
+        run_duration_seconds:
+          r.start_time && r.end_time
+            ? Math.floor(
+                (new Date(r.end_time).getTime() -
+                  new Date(r.start_time).getTime()) /
+                  1000,
+              )
+            : null,
+        load_duration_seconds: r.load_duration_seconds,
+        run_time_minutes: r.run_time_minutes,
+        short_mold_json: r.short_mold_json,
+        bubble_json: r.bubble_json,
+        notes: r.notes,
+      }));
+
+      const logRow = {
+        date: currentDate, // Perth YYYY-MM-DD computed on mount
+        machine_press: `Press #${pressNumber}`,
+        operator_shift: `${operator} (${shift})`,
+        table_line_output_yields: tableYields,
+        cycles: aggregatedCycles,
+        total_mats_produced: totalGoods,
+        faulty_mats_produced: totalRejects,
+      };
+
+      const existingLogId = localStorage.getItem("production_log_id");
+      if (existingLogId) {
+        const { error: updateError } = await supabase
+          .from("production_logs")
+          .update(logRow)
+          .eq("id", existingLogId);
+        if (updateError) throw updateError;
+      } else {
+        const { data: inserted, error: insertError } = await supabase
+          .from("production_logs")
+          .insert([logRow])
+          .select("id")
+          .single();
+        if (insertError) throw insertError;
+        if (inserted?.id) {
+          localStorage.setItem("production_log_id", String(inserted.id));
+        }
+      }
+
+      const newCycleEntry = {
+        id: Math.random().toString(36).substring(2, 9),
+        pressNumber,
+        date: currentDate,
+        operator,
+        shift,
+        startTime,
+        endTime,
+        runTime,
+        loadTime,
+        tableMatTypes,
+        selectedTableSquares,
+        bubbleCheckboxes,
+        bubbleSizes,
+        notes,
+        timestamp: Date.now(),
+      };
+
+      const existingRecords = JSON.parse(
+        localStorage.getItem("production_cycles") || "[]",
+      );
+      existingRecords.unshift(newCycleEntry);
+      localStorage.setItem(
+        "production_cycles",
+        JSON.stringify(existingRecords),
+      );
+
+      setStartTime("");
+      setEndTime("");
+      setLoadTime("");
+      setIsManualStart(false);
+      setIsManualEnd(false);
+      setSelectedTableSquares({});
+      setBubbleCheckboxes({
+        1: { left: false, middle: false, right: false },
+        2: { left: false, middle: false, right: false },
+        3: { left: false, middle: false, right: false },
+        4: { left: false, middle: false, right: false },
+      });
+      setBubbleSizes({});
+      setNotes("");
+
+      localStorage.removeItem("ws_start_time");
+      localStorage.removeItem("ws_end_time");
+      localStorage.removeItem("ws_load_time");
+      localStorage.removeItem("ws_selected_squares");
+      localStorage.removeItem("ws_bubble_checkboxes");
+      localStorage.removeItem("ws_bubble_sizes");
+      localStorage.removeItem("ws_notes");
+
+      localStorage.setItem("shift_panel_open", "false");
+      setIsShiftOpen(false);
+      setIsBubblesOpen(false);
+      setIsSubmitting(false);
+
+      alert(`Saved entry successfully! Form workspace cleared.`);
+      const minutes = parseInt(String(runTime), 10);
+      if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
+        onStartTimer(minutes);
+      }
+    } catch (err) {
+      console.error("Error submitting:", err);
+      alert("Failed to submit entry.");
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // A submit with no production_log_id in this terminal's localStorage
+      // means we're starting a new shift here. live_log is a single shared
+      // table (shift_id hardcoded to 1), so a different terminal/browser
+      // may have left un-reset cycles behind — check before mixing them
+      // into this new shift's cycle sequence.
+      const isNewShift = !localStorage.getItem("production_log_id");
+
+      if (isNewShift) {
+        const { count, error: countError } = await supabase
+          .from("live_log")
+          .select("*", { count: "exact", head: true })
+          .eq("shift_id", 1);
+
+        if (countError) throw countError;
+
+        if (count && count > 0) {
+          setStaleClearConfirm({ count });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      await submitCycle();
+    } catch (err) {
+      console.error("Error checking for leftover shift data:", err);
+      toast.error("Could not check for leftover shift data. Submit cancelled.");
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelClearStale = () => {
+    setStaleClearConfirm(null);
+    setIsSubmitting(false);
+    toast.info("Submit cancelled — leftover live log data was not cleared.");
+  };
+
+  const handleConfirmClearStale = async () => {
+    if (!staleClearConfirm) return;
+    const clearedCount = staleClearConfirm.count;
+    setIsSubmitting(true);
+
+    try {
+      const { error: rpcError } = await supabase.rpc("reset_shift_log", {
+        p_shift_id: "1",
+      });
+      if (rpcError) throw rpcError;
+
+      // Verify the delete actually happened. Postgres doesn't error on a
+      // DELETE that matches 0 rows (e.g. if RLS silently filters it), so
+      // without this check a permissions regression would look like success.
+      const { count: verifyCount, error: verifyError } = await supabase
+        .from("live_log")
+        .select("*", { count: "exact", head: true })
+        .eq("shift_id", 1);
+      if (verifyError) throw verifyError;
+      if (verifyCount && verifyCount > 0) {
+        throw new Error(
+          "Live log still has rows after clearing — check reset_shift_log RLS/permissions in Supabase.",
+        );
+      }
+
+      setStaleClearConfirm(null);
+      toast.warning(
+        `Cleared ${clearedCount} leftover cycle${clearedCount === 1 ? "" : "s"} from a previous shift.`,
+      );
+
+      await submitCycle();
+    } catch (err) {
+      console.error("Error clearing leftover live log data:", err);
+      toast.error("Failed to clear leftover live log data. Submit cancelled.");
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-md mx-auto p-3 space-y-4 pb-12">
       {/* Header Info Banner - Added "relative" so absolute clock floats properly */}
@@ -386,232 +697,7 @@ export default function ProductionForm({
         </div>
       </div>
 
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setIsSubmitting(true);
-
-          try {
-            const { data: latestEntry, error: fetchError } = await supabase
-              .from("live_log")
-              .select("cycle_number")
-              .order("cycle_number", { ascending: false })
-              .limit(1)
-              .single();
-
-            const nextCycleNumber = (latestEntry?.cycle_number || 0) + 1;
-
-            const startTimestamp = new Date(
-              `${currentDate}T${startTime}:00+08:00`,
-            ).toISOString();
-
-            const endTimestamp = new Date(
-              `${currentDate}T${endTime}:00+08:00`,
-            ).toISOString();
-
-            const formattedYieldJson: Record<string, any> = {};
-
-            [1, 2, 3, 4].forEach((tableId) => {
-              const matType = tableMatTypes[tableId] || "Unknown";
-              const shortMoldPos = selectedTableSquares[tableId];
-
-              const hasShortMold = !!shortMoldPos;
-              const hasBubble =
-                bubbleCheckboxes[tableId]?.left ||
-                bubbleCheckboxes[tableId]?.middle ||
-                bubbleCheckboxes[tableId]?.right;
-
-              const isReject = hasShortMold || hasBubble;
-
-              formattedYieldJson[`table_${tableId}`] = {
-                good: isReject ? 0 : 1,
-                reject: isReject ? 1 : 0,
-                type: matType,
-                position: shortMoldPos || null,
-              };
-            });
-
-            const payload = {
-              shift_id: 1,
-              cycle_number: nextCycleNumber,
-              start_time: startTimestamp,
-              end_time: endTimestamp,
-              load_duration_seconds: Number(loadTime) * 60,
-              run_time_minutes: Number(runTime) || null,
-              short_mold_json: formattedYieldJson,
-              bubble_json: { checks: bubbleCheckboxes, sizes: bubbleSizes },
-              notes: notes,
-              updated_at: new Date().toISOString(),
-            };
-
-            const { error } = await supabase.from("live_log").insert([payload]);
-            if (error) throw error;
-
-            // Mirror the whole shift into production_logs so History reflects it live.
-            // Re-aggregate from live_log (good/reject already baked into short_mold_json).
-            const { data: shiftRows } = await supabase
-              .from("live_log")
-              .select("*")
-              .eq("shift_id", 1)
-              .order("cycle_number", { ascending: true });
-
-            const shiftLogRows = shiftRows || [];
-
-            const tableYields: Record<
-              string,
-              { good: number; reject: number; type: string }
-            > = {};
-            [1, 2, 3, 4].forEach((tableId) => {
-              const key = `table_${tableId}`;
-              let good = 0;
-              let reject = 0;
-              let type = "—";
-              shiftLogRows.forEach((r: any) => {
-                const cell = r.short_mold_json?.[key];
-                if (cell) {
-                  good += cell.good || 0;
-                  reject += cell.reject || 0;
-                  if (cell.type) type = cell.type; // latest wins (ordered by cycle_number asc)
-                }
-              });
-              tableYields[key] = { good, reject, type };
-            });
-
-            const totalGoods = Object.values(tableYields).reduce(
-              (s, t) => s + t.good,
-              0,
-            );
-            const totalRejects = Object.values(tableYields).reduce(
-              (s, t) => s + t.reject,
-              0,
-            );
-
-            const fmtPerth = (iso: string | null) =>
-              iso
-                ? new Intl.DateTimeFormat("en-GB", {
-                    timeZone: "Australia/Perth",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: false,
-                  }).format(new Date(iso))
-                : null;
-
-            const aggregatedCycles = shiftLogRows.map((r: any) => ({
-              cycle_number: r.cycle_number,
-              start_time: fmtPerth(r.start_time),
-              end_time: fmtPerth(r.end_time),
-              run_duration_seconds:
-                r.start_time && r.end_time
-                  ? Math.floor(
-                      (new Date(r.end_time).getTime() -
-                        new Date(r.start_time).getTime()) /
-                        1000,
-                    )
-                  : null,
-              load_duration_seconds: r.load_duration_seconds,
-              run_time_minutes: r.run_time_minutes,
-              short_mold_json: r.short_mold_json,
-              bubble_json: r.bubble_json,
-              notes: r.notes,
-            }));
-
-            const logRow = {
-              date: currentDate, // Perth YYYY-MM-DD computed on mount
-              machine_press: `Press #${pressNumber}`,
-              operator_shift: `${operator} (${shift})`,
-              table_line_output_yields: tableYields,
-              cycles: aggregatedCycles,
-              total_mats_produced: totalGoods,
-              faulty_mats_produced: totalRejects,
-            };
-
-            const existingLogId = localStorage.getItem("production_log_id");
-            if (existingLogId) {
-              const { error: updateError } = await supabase
-                .from("production_logs")
-                .update(logRow)
-                .eq("id", existingLogId);
-              if (updateError) throw updateError;
-            } else {
-              const { data: inserted, error: insertError } = await supabase
-                .from("production_logs")
-                .insert([logRow])
-                .select("id")
-                .single();
-              if (insertError) throw insertError;
-              if (inserted?.id) {
-                localStorage.setItem("production_log_id", String(inserted.id));
-              }
-            }
-
-            const newCycleEntry = {
-              id: Math.random().toString(36).substring(2, 9),
-              pressNumber,
-              date: currentDate,
-              operator,
-              shift,
-              startTime,
-              endTime,
-              runTime,
-              loadTime,
-              tableMatTypes,
-              selectedTableSquares,
-              bubbleCheckboxes,
-              bubbleSizes,
-              notes,
-              timestamp: Date.now(),
-            };
-
-            const existingRecords = JSON.parse(
-              localStorage.getItem("production_cycles") || "[]",
-            );
-            existingRecords.unshift(newCycleEntry);
-            localStorage.setItem(
-              "production_cycles",
-              JSON.stringify(existingRecords),
-            );
-
-            setStartTime("");
-            setEndTime("");
-            setLoadTime("");
-            setIsManualStart(false);
-            setIsManualEnd(false);
-            setSelectedTableSquares({});
-            setBubbleCheckboxes({
-              1: { left: false, middle: false, right: false },
-              2: { left: false, middle: false, right: false },
-              3: { left: false, middle: false, right: false },
-              4: { left: false, middle: false, right: false },
-            });
-            setBubbleSizes({});
-            setNotes("");
-
-            localStorage.removeItem("ws_start_time");
-            localStorage.removeItem("ws_end_time");
-            localStorage.removeItem("ws_load_time");
-            localStorage.removeItem("ws_selected_squares");
-            localStorage.removeItem("ws_bubble_checkboxes");
-            localStorage.removeItem("ws_bubble_sizes");
-            localStorage.removeItem("ws_notes");
-
-            localStorage.setItem("shift_panel_open", "false");
-            setIsShiftOpen(false);
-            setIsBubblesOpen(false);
-            setIsSubmitting(false);
-
-            alert(`Saved entry successfully! Form workspace cleared.`);
-            const minutes = parseInt(String(runTime), 10);
-            if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
-              onStartTimer(minutes);
-            }
-          } catch (err) {
-            console.error("Error submitting:", err);
-            alert("Failed to submit entry.");
-            setIsSubmitting(false);
-          }
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Collapsible Shift / Metadata Card */}
         <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
           <button
@@ -1158,6 +1244,36 @@ export default function ProductionForm({
             : "Login to submit cycle"}
         </Button>
       </form>
+
+      <Dialog
+        open={!!staleClearConfirm}
+        onOpenChange={(open) => {
+          if (!open) handleCancelClearStale();
+        }}
+      >
+        <DialogContent className="sm:max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              Leftover Shift Data Found
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-neutral-600">
+            This looks like the start of a new shift, but the live log still
+            has <strong>{staleClearConfirm?.count}</strong> cycle
+            {staleClearConfirm?.count === 1 ? "" : "s"} left over from a
+            previous shift. Clear it before continuing?
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelClearStale}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmClearStale}>
+              Clear &amp; Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
