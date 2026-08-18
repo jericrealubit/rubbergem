@@ -21,6 +21,7 @@ import {
 
 interface CycleEntry {
   id: string;
+  cycleNumber: number;
   pressNumber: string;
   date: string;
   operator: string;
@@ -82,7 +83,7 @@ export default function ProductionTablePage({
       const { data, error } = await supabase
         .from("live_log")
         .select("*")
-        .order("start_time", { ascending: false });
+        .order("cycle_number", { ascending: true });
 
       if (error) {
         console.error("Error fetching logs:", error);
@@ -91,7 +92,7 @@ export default function ProductionTablePage({
       }
 
       if (data) {
-        const transformed: CycleEntry[] = data.map((row: any) => {
+        const transformed: CycleEntry[] = data.map((row: any, index: number) => {
           const parsedSquares: Record<number, string> = {};
           [1, 2, 3, 4].forEach((id) => {
             const tableData = row.short_mold_json?.[`table_${id}`];
@@ -108,6 +109,7 @@ export default function ProductionTablePage({
 
           return {
             id: row.live_id.toString(),
+            cycleNumber: row.cycle_number ?? index + 1,
             pressNumber: "1",
             date: row.start_time
               ? new Date(row.start_time).toISOString().split("T")[0]
@@ -248,7 +250,7 @@ export default function ProductionTablePage({
   };
 
   // --- UI Computation Logic ---
-  const latestEntry = entries[0] || null;
+  const latestEntry = entries[entries.length - 1] || null;
   const totalDisplayRows = 15;
   const rows = Array.from(
     { length: totalDisplayRows },
