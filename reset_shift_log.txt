@@ -5,15 +5,21 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Simply clear the live_log rows for this shift.
+  -- Clear the live_log rows and shift_messages chat history for this shift.
   -- Archiving to production_logs now happens live on each cycle submit
-  -- (see components/PressForm.tsx), so this function only wipes the live log.
+  -- (see components/PressForm.tsx), so this function only wipes the live log
+  -- and the chat, both of which are scoped to the shift that's ending.
   --
   -- SECURITY DEFINER: live_log's RLS policies have no DELETE policy for the
   -- authenticated role, so a plain SECURITY INVOKER delete here was silently
   -- matching 0 rows (no error, no rows deleted). Running as the function
   -- owner bypasses RLS for this deliberate, gated destructive action.
+  -- shift_messages likewise has no DELETE policy (see shift_messages.sql) --
+  -- clearing it here reuses the same SECURITY DEFINER bypass.
   DELETE FROM public.live_log
+  WHERE shift_id::text = p_shift_id;
+
+  DELETE FROM public.shift_messages
   WHERE shift_id::text = p_shift_id;
 END;
 $$;

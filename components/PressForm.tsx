@@ -1084,10 +1084,17 @@ export default function ProductionForm({
 
         {/* Collapsible Bubbles Card */}
         <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => setIsBubblesOpen(!isBubblesOpen)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-neutral-50/50 transition-colors focus:outline-none"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsBubblesOpen(!isBubblesOpen);
+              }
+            }}
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-neutral-50/50 transition-colors focus:outline-none cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
               <AlertTriangle className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -1123,7 +1130,7 @@ export default function ProductionForm({
                 <ChevronDown className="w-5 h-5 text-neutral-400 shrink-0" />
               )}
             </div>
-          </button>
+          </div>
 
           {isBubblesOpen && (
             <CardContent className="p-4 pt-2 border-t border-neutral-100 space-y-3.5">

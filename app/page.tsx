@@ -21,6 +21,7 @@ import ProductionForm from "@/components/PressForm";
 import ProductionTablePage from "./ProductionTable";
 import ProductionHistory from "@/components/ProductionHistory";
 import AboutPage from "./AboutPage";
+import ChatPanel from "@/components/ChatPanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -153,8 +154,11 @@ export default function Home() {
           </span>
         </div>
 
-        {/* Global Timer Placement Area */}
-        {isTimerActive && (
+        <div className="flex items-center gap-1">
+          <ChatPanel session={session} />
+
+          {/* Global Timer Placement Area */}
+          {isTimerActive && (
           <div className="flex items-center gap-2 bg-emerald-900/40 border border-emerald-800/50 px-2.5 py-1 rounded-xl shadow-inner select-none animate-fade-in z-50">
             <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider hidden sm:inline">
               Cycle Time:
@@ -173,7 +177,8 @@ export default function Home() {
               Skip
             </button>
           </div>
-        )}
+          )}
+        </div>
       </header>
 
       {/* Slide-out Burger Menu Navigation Drawer */}
