@@ -377,6 +377,32 @@ export default function ProductionForm({
     setBubbleSizes({});
   };
 
+  // production_logs holds exactly ONE row per (date, shift group).
+  // localStorage["production_log_id"] is only a per-browser fast path, so on
+  // its own a second terminal, a cleared browser store or a mid-shift reset
+  // would each insert a duplicate row for the same shift. The database is the
+  // authority: find this shift's row by date + shift group, and only insert
+  // when there genuinely isn't one.
+  const findShiftLogRow = async (): Promise<ShiftLogRowRef | null> => {
+    const { data: sameDateRows, error: lookupError } = await supabase
+      .from("production_logs")
+      .select("id, operator_shift, cycles")
+      .eq("date", currentDate)
+      .order("id", { ascending: true });
+    if (lookupError) throw lookupError;
+
+    // Derive the group from the string we would write, not from `shift`
+    // directly, so this always matches the row it created — an operator whose
+    // name happens to contain "night" would otherwise never match their own
+    // row and duplicate it on every submit.
+    const group = shiftGroupOf(`${operator} (${shift})`);
+    const matches = ((sameDateRows || []) as ShiftLogRowRef[]).filter(
+      (r) => shiftGroupOf(r.operator_shift) === group,
+    );
+    const cachedId = localStorage.getItem("production_log_id");
+    return matches.find((r) => String(r.id) === cachedId) || matches[0] || null;
+  };
+
   const submitCycle = async () => {
     try {
       const { data: latestEntry, error: fetchError } = await supabase
@@ -475,35 +501,7 @@ export default function ProductionForm({
         notes: r.notes,
       }));
 
-      // production_logs holds exactly ONE row per (date, shift group).
-      // localStorage["production_log_id"] is only a per-browser fast path, so
-      // on its own a second terminal, a cleared browser store or a mid-shift
-      // reset would each insert a duplicate row for the same shift. The
-      // database is the authority: look this shift's row up by date + shift
-      // group, and only insert when there genuinely isn't one.
       const operatorShift = `${operator} (${shift})`;
-
-      const resolveShiftLog = async () => {
-        const { data: sameDateRows, error: lookupError } = await supabase
-          .from("production_logs")
-          .select("id, operator_shift, cycles")
-          .eq("date", currentDate)
-          .order("id", { ascending: true });
-        if (lookupError) throw lookupError;
-
-        // Derive the group from the string we are about to write, not from
-        // `shift` directly, so this always matches the row it created — an
-        // operator whose name happens to contain "night" would otherwise
-        // never match their own row and duplicate it on every submit.
-        const group = shiftGroupOf(operatorShift);
-        const matches = ((sameDateRows || []) as ShiftLogRowRef[]).filter(
-          (r) => shiftGroupOf(r.operator_shift) === group,
-        );
-        const cachedId = localStorage.getItem("production_log_id");
-        return (
-          matches.find((r) => String(r.id) === cachedId) || matches[0] || null
-        );
-      };
 
       // Union the row's stored cycles with the live_log re-aggregation rather
       // than overwriting: after a "Reset Shift Log" the live_log no longer
@@ -529,7 +527,7 @@ export default function ProductionForm({
         };
       };
 
-      let targetRow: ShiftLogRowRef | null = await resolveShiftLog();
+      let targetRow: ShiftLogRowRef | null = await findShiftLogRow();
       let savedLogId: string | null = targetRow ? String(targetRow.id) : null;
 
       if (targetRow) {
@@ -562,7 +560,7 @@ export default function ProductionForm({
           // caught it. Re-resolve and update that row instead of duplicating.
           if (insertError.code !== "23505") throw insertError;
 
-          const racedRow = await resolveShiftLog();
+          const racedRow = await findShiftLogRow();
           if (!racedRow) throw insertError;
 
           const { error: retryError } = await supabase
@@ -656,7 +654,7 @@ export default function ProductionForm({
 
     try {
       // A submit with no production_log_id in this terminal's localStorage
-      // means we're starting a new shift here. live_log is a single shared
+      // may mean we're starting a new shift here. live_log is a single shared
       // table (shift_id hardcoded to 1), so a different terminal/browser
       // may have left un-reset cycles behind — check before mixing them
       // into this new shift's cycle sequence.
@@ -671,9 +669,20 @@ export default function ProductionForm({
         if (countError) throw countError;
 
         if (count && count > 0) {
-          setStaleClearConfirm({ count });
-          setIsSubmitting(false);
-          return;
+          // A missing production_log_id doesn't prove those cycles are stale:
+          // this terminal may just be joining a shift already running on
+          // another device (phone as a second terminal, cleared browser
+          // store), in which case they are live and offering to wipe them
+          // mid-shift is destructive and wrong. History already holds a row
+          // for today's shift group exactly when that's the case, so only
+          // prompt when there isn't one.
+          const openShiftRow = await findShiftLogRow();
+
+          if (!openShiftRow) {
+            setStaleClearConfirm({ count });
+            setIsSubmitting(false);
+            return;
+          }
         }
       }
 
