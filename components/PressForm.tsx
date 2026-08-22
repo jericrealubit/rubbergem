@@ -653,36 +653,35 @@ export default function ProductionForm({
     setIsSubmitting(true);
 
     try {
-      // A submit with no production_log_id in this terminal's localStorage
-      // may mean we're starting a new shift here. live_log is a single shared
-      // table (shift_id hardcoded to 1), so a different terminal/browser
-      // may have left un-reset cycles behind — check before mixing them
-      // into this new shift's cycle sequence.
-      const isNewShift = !localStorage.getItem("production_log_id");
+      // live_log is a single shared table (shift_id hardcoded to 1), so it can
+      // hold cycles belonging to a shift other than the one being submitted —
+      // check before mixing them into this shift's cycle sequence.
+      const { count, error: countError } = await supabase
+        .from("live_log")
+        .select("*", { count: "exact", head: true })
+        .eq("shift_id", 1);
 
-      if (isNewShift) {
-        const { count, error: countError } = await supabase
-          .from("live_log")
-          .select("*", { count: "exact", head: true })
-          .eq("shift_id", 1);
+      if (countError) throw countError;
 
-        if (countError) throw countError;
+      if (count && count > 0) {
+        // Whether those cycles are stale is a question about *this* shift, and
+        // only history can answer it: a row exists for today's date + shift
+        // group exactly when the shift is already open, and then the cycles
+        // are live — this terminal is simply joining it (the operator's phone
+        // as a second terminal, or a browser that dropped its storage), so
+        // offering to wipe them mid-shift would be destructive and wrong.
+        //
+        // The cached production_log_id can't answer it. It may be absent on a
+        // terminal joining a live shift, and it may be present but point at a
+        // *different* shift's row — after switching Shift Group day→night, or
+        // once the Perth date has rolled over — where the leftover cycles
+        // really are stale and used to be swept in silently.
+        const openShiftRow = await findShiftLogRow();
 
-        if (count && count > 0) {
-          // A missing production_log_id doesn't prove those cycles are stale:
-          // this terminal may just be joining a shift already running on
-          // another device (phone as a second terminal, cleared browser
-          // store), in which case they are live and offering to wipe them
-          // mid-shift is destructive and wrong. History already holds a row
-          // for today's shift group exactly when that's the case, so only
-          // prompt when there isn't one.
-          const openShiftRow = await findShiftLogRow();
-
-          if (!openShiftRow) {
-            setStaleClearConfirm({ count });
-            setIsSubmitting(false);
-            return;
-          }
+        if (!openShiftRow) {
+          setStaleClearConfirm({ count });
+          setIsSubmitting(false);
+          return;
         }
       }
 
