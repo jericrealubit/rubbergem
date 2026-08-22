@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase"; // Ensure this import matches your project setup
+import { shiftGroupOf } from "@/lib/shift-log";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertCircle,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 interface RawProductionLog {
+  id: number;
   date: string;
   machine_press: string;
   operator_shift: string;
@@ -33,6 +35,7 @@ interface RawProductionLog {
 }
 
 interface DayYield {
+  id: number;
   dateString: string;
   shift: "Day" | "Night";
   operator: string;
@@ -88,7 +91,32 @@ export default function ProductionHistory() {
           "December",
         ];
 
+        // A shift is one record per day: collapse any duplicate rows for the
+        // same (date, shift group) down to a single entry before rendering.
+        // Older rows predate the DB-backed row resolution in PressForm.tsx and
+        // can still be duplicated (a second terminal, a cleared browser store
+        // or a mid-shift reset each used to insert a fresh row) — keep the
+        // richest one, i.e. the most cycles, newest id breaking a tie.
+        const shiftsMap = new Map<string, RawProductionLog>();
         rawLogs.forEach((log) => {
+          const key = `${log.date}|${shiftGroupOf(log.operator_shift)}`;
+          const held = shiftsMap.get(key);
+          if (!held) {
+            shiftsMap.set(key, log);
+            return;
+          }
+
+          const heldCycles = Array.isArray(held.cycles) ? held.cycles.length : 0;
+          const logCycles = Array.isArray(log.cycles) ? log.cycles.length : 0;
+          if (
+            logCycles > heldCycles ||
+            (logCycles === heldCycles && log.id > held.id)
+          ) {
+            shiftsMap.set(key, log);
+          }
+        });
+
+        shiftsMap.forEach((log) => {
           const dateParts = log.date.split("-");
           const year = dateParts[0];
           const monthIdx = parseInt(dateParts[1], 10) - 1;
@@ -103,7 +131,7 @@ export default function ProductionHistory() {
             };
           }
 
-          const isNight = log.operator_shift.toLowerCase().includes("night");
+          const isNight = shiftGroupOf(log.operator_shift) === "night";
           const cleanOperator = log.operator_shift.split("(")[0].trim();
 
           const tables: Record<
@@ -137,6 +165,7 @@ export default function ProductionHistory() {
           monthsMap[monthName].totalCycles += cyclesArray.length;
           monthsMap[monthName].totalMats += log.total_mats_produced || 0;
           monthsMap[monthName].days.push({
+            id: log.id,
             dateString: log.date,
             shift: isNight ? "Night" : "Day",
             operator: cleanOperator,
@@ -154,11 +183,15 @@ export default function ProductionHistory() {
         });
 
         structuredList.forEach((m) => {
-          m.days.sort(
-            (a, b) =>
+          m.days.sort((a, b) => {
+            const byDate =
               new Date(b.dateString).getTime() -
-              new Date(a.dateString).getTime(),
-          );
+              new Date(a.dateString).getTime();
+            if (byDate !== 0) return byDate;
+            // Same date, different shift group: newest first, so Night
+            // (which runs later) sits above Day.
+            return a.shift === b.shift ? 0 : a.shift === "Night" ? -1 : 1;
+          });
         });
 
         setHistoricalData(structuredList);
@@ -281,7 +314,9 @@ export default function ProductionHistory() {
               {isMonthOpen && (
                 <div className="pl-3 pr-1 py-1 space-y-2 border-l-2 border-emerald-100 ml-5">
                   {month.days.map((day) => {
-                    const keyForDay = `${day.dateString}-${day.shift}`;
+                    // Includes the row id so two entries can never collide on
+                    // a React key or expand/collapse in lockstep.
+                    const keyForDay = `${day.dateString}-${day.shift}-${day.id}`;
                     const isDayOpen = expandedDay === keyForDay;
                     const totalGood = Object.values(day.tables).reduce(
                       (a, b) => a + b.good,
