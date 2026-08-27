@@ -20,7 +20,7 @@ import {
 
 export default function AboutPage() {
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 space-y-6 pb-12 text-neutral-800">
+    <div className="w-full max-w-3xl ipad:max-w-4xl mx-auto p-4 ipad:p-6 space-y-6 pb-12 text-neutral-800">
       {/* Hero Header Card */}
       <div className="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 rounded-2xl shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">

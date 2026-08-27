@@ -194,7 +194,7 @@ export default function ProductionHistory() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-md mx-auto p-8 text-center text-xs font-semibold text-neutral-400">
+      <div className="w-full max-w-md ipad:max-w-3xl mx-auto p-8 text-center text-xs font-semibold text-neutral-400">
         <Layers className="w-5 h-5 mx-auto mb-2 text-emerald-700 animate-spin" />
         <span>Parsing Extracted Production Logs...</span>
       </div>
@@ -202,7 +202,7 @@ export default function ProductionHistory() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-3 space-y-4 pb-12 font-sans text-neutral-800">
+    <div className="w-full max-w-md ipad:max-w-3xl mx-auto p-3 ipad:p-4 space-y-4 pb-12 font-sans text-neutral-800">
       <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center gap-3">
         <Calendar className="w-5 h-5 text-emerald-300" />
         <div>
@@ -363,7 +363,7 @@ export default function ProductionHistory() {
                                   Table Line Output Yields
                                 </span>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-2 ipad:grid-cols-4 gap-2">
                                 {[1, 2, 3, 4].map((tableId) => {
                                   const tableData = day.tables[tableId] || {
                                     matType: "---",

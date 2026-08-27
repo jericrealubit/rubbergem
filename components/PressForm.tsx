@@ -673,7 +673,7 @@ export default function ProductionForm({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-3 space-y-4 pb-12">
+    <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 pb-12">
       {/* Header Info Banner - Added "relative" so absolute clock floats properly */}
       <div className="relative bg-emerald-800 text-white p-4 rounded-xl shadow-sm space-y-3">
         {/* Row 1: Full-width Title */}
@@ -705,7 +705,11 @@ export default function ProductionForm({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 ipad:space-y-0 ipad:grid ipad:grid-cols-2 ipad:gap-4 ipad:items-start"
+      >
+      <div className="space-y-4">
         {/* Collapsible Shift / Metadata Card */}
         <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
           <button
@@ -969,7 +973,9 @@ export default function ProductionForm({
             </div>
           </CardContent>
         </Card>
+      </div>
 
+      <div className="space-y-4">
         {/* Tables - Short Molding */}
         <Card className="shadow-sm border-neutral-200/60">
           <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
@@ -998,7 +1004,7 @@ export default function ProductionForm({
                   <RadioGroup
                     value={selectedTableSquares[tableNum] || ""}
                     onValueChange={(val) => handleSquareSelect(tableNum, val)}
-                    className="grid grid-cols-3 gap-1.5 relative w-[100px] h-[100px]"
+                    className="grid grid-cols-3 gap-1.5 relative w-[100px] h-[100px] ipad:w-[130px] ipad:h-[130px]"
                   >
                     <div className="absolute top-0 left-0">
                       <RadioGroupItem
@@ -1008,7 +1014,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tl`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-left" ? "scale-100" : "scale-0"}`}
@@ -1023,14 +1029,14 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tr`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-right" ? "scale-100" : "scale-0"}`}
                         />
                       </Label>
                     </div>
-                    <div className="absolute top-[36px] left-[36px]">
+                    <div className="absolute top-[36px] left-[36px] ipad:top-[47px] ipad:left-[47px]">
                       <RadioGroupItem
                         value="center"
                         id={`t${tableNum}-cc`}
@@ -1038,7 +1044,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-cc`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "center" ? "scale-100" : "scale-0"}`}
@@ -1053,7 +1059,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-bl`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-left" ? "scale-100" : "scale-0"}`}
@@ -1068,7 +1074,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-br`}
-                        className={`w-[28px] h-[28px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-right" ? "scale-100" : "scale-0"}`}
@@ -1224,9 +1230,10 @@ export default function ProductionForm({
             </CardContent>
           )}
         </Card>
+      </div>
 
         {/* Freeform Machine Notes */}
-        <Card className="shadow-sm border-neutral-200/60">
+        <Card className="shadow-sm border-neutral-200/60 ipad:col-span-2">
           <CardContent className="p-4 space-y-1.5">
             <Label htmlFor="notes">Mechanical Faults / Cycle Notes</Label>
             <Textarea
@@ -1247,7 +1254,7 @@ export default function ProductionForm({
               ? isSubmitting || loadTime === "" || Number(loadTime) < 1
               : true
           }
-          className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
+          className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
         >
           {isSubmitting && <Loader2 className="animate-spin" size={20} />}
           {session
