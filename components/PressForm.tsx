@@ -1,6 +1,12 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import {
+  mergeCycles,
+  shiftGroupOf,
+  tableYieldsFromCycles,
+} from "@/lib/shift-log";
+import type { ArchivedCycle } from "@/lib/shift-log";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -34,6 +40,13 @@ import {
   RotateCcw,
   Loader2,
 } from "lucide-react";
+
+/** The production_logs columns read back when resolving a shift's archive row. */
+interface ShiftLogRowRef {
+  id: number;
+  operator_shift: string;
+  cycles: unknown;
+}
 
 export default function ProductionForm({
   session,
@@ -364,6 +377,32 @@ export default function ProductionForm({
     setBubbleSizes({});
   };
 
+  // production_logs holds exactly ONE row per (date, shift group).
+  // localStorage["production_log_id"] is only a per-browser fast path, so on
+  // its own a second terminal, a cleared browser store or a mid-shift reset
+  // would each insert a duplicate row for the same shift. The database is the
+  // authority: find this shift's row by date + shift group, and only insert
+  // when there genuinely isn't one.
+  const findShiftLogRow = async (): Promise<ShiftLogRowRef | null> => {
+    const { data: sameDateRows, error: lookupError } = await supabase
+      .from("production_logs")
+      .select("id, operator_shift, cycles")
+      .eq("date", currentDate)
+      .order("id", { ascending: true });
+    if (lookupError) throw lookupError;
+
+    // Derive the group from the string we would write, not from `shift`
+    // directly, so this always matches the row it created — an operator whose
+    // name happens to contain "night" would otherwise never match their own
+    // row and duplicate it on every submit.
+    const group = shiftGroupOf(`${operator} (${shift})`);
+    const matches = ((sameDateRows || []) as ShiftLogRowRef[]).filter(
+      (r) => shiftGroupOf(r.operator_shift) === group,
+    );
+    const cachedId = localStorage.getItem("production_log_id");
+    return matches.find((r) => String(r.id) === cachedId) || matches[0] || null;
+  };
+
   const submitCycle = async () => {
     try {
       const { data: latestEntry, error: fetchError } = await supabase
@@ -433,35 +472,6 @@ export default function ProductionForm({
 
       const shiftLogRows = shiftRows || [];
 
-      const tableYields: Record<
-        string,
-        { good: number; reject: number; type: string }
-      > = {};
-      [1, 2, 3, 4].forEach((tableId) => {
-        const key = `table_${tableId}`;
-        let good = 0;
-        let reject = 0;
-        let type = "—";
-        shiftLogRows.forEach((r: any) => {
-          const cell = r.short_mold_json?.[key];
-          if (cell) {
-            good += cell.good || 0;
-            reject += cell.reject || 0;
-            if (cell.type) type = cell.type; // latest wins (ordered by cycle_number asc)
-          }
-        });
-        tableYields[key] = { good, reject, type };
-      });
-
-      const totalGoods = Object.values(tableYields).reduce(
-        (s, t) => s + t.good,
-        0,
-      );
-      const totalRejects = Object.values(tableYields).reduce(
-        (s, t) => s + t.reject,
-        0,
-      );
-
       const fmtPerth = (iso: string | null) =>
         iso
           ? new Intl.DateTimeFormat("en-GB", {
@@ -472,7 +482,7 @@ export default function ProductionForm({
             }).format(new Date(iso))
           : null;
 
-      const aggregatedCycles = shiftLogRows.map((r: any) => ({
+      const aggregatedCycles: ArchivedCycle[] = shiftLogRows.map((r: any) => ({
         cycle_number: r.cycle_number,
         start_time: fmtPerth(r.start_time),
         end_time: fmtPerth(r.end_time),
@@ -491,33 +501,82 @@ export default function ProductionForm({
         notes: r.notes,
       }));
 
-      const logRow = {
-        date: currentDate, // Perth YYYY-MM-DD computed on mount
-        machine_press: `Press #${pressNumber}`,
-        operator_shift: `${operator} (${shift})`,
-        table_line_output_yields: tableYields,
-        cycles: aggregatedCycles,
-        total_mats_produced: totalGoods,
-        faulty_mats_produced: totalRejects,
+      const operatorShift = `${operator} (${shift})`;
+
+      // Union the row's stored cycles with the live_log re-aggregation rather
+      // than overwriting: after a "Reset Shift Log" the live_log no longer
+      // holds the earlier cycles, and they must survive in history.
+      const buildLogRow = (existingCycles: unknown) => {
+        const mergedCycles = mergeCycles(existingCycles, aggregatedCycles);
+        const tableYields = tableYieldsFromCycles(mergedCycles);
+
+        return {
+          date: currentDate, // Perth YYYY-MM-DD computed on mount
+          machine_press: `Press #${pressNumber}`,
+          operator_shift: operatorShift,
+          table_line_output_yields: tableYields,
+          cycles: mergedCycles,
+          total_mats_produced: Object.values(tableYields).reduce(
+            (s, t) => s + t.good,
+            0,
+          ),
+          faulty_mats_produced: Object.values(tableYields).reduce(
+            (s, t) => s + t.reject,
+            0,
+          ),
+        };
       };
 
-      const existingLogId = localStorage.getItem("production_log_id");
-      if (existingLogId) {
-        const { error: updateError } = await supabase
+      let targetRow: ShiftLogRowRef | null = await findShiftLogRow();
+      let savedLogId: string | null = targetRow ? String(targetRow.id) : null;
+
+      if (targetRow) {
+        const { data: updated, error: updateError } = await supabase
           .from("production_logs")
-          .update(logRow)
-          .eq("id", existingLogId);
+          .update(buildLogRow(targetRow.cycles))
+          .eq("id", targetRow.id)
+          .select("id");
         if (updateError) throw updateError;
-      } else {
+
+        // Row was deleted out from under us — fall through to an insert
+        // instead of silently matching zero rows.
+        if (!updated || updated.length === 0) {
+          targetRow = null;
+          savedLogId = null;
+        }
+      }
+
+      if (!targetRow) {
         const { data: inserted, error: insertError } = await supabase
           .from("production_logs")
-          .insert([logRow])
+          .insert([buildLogRow(null)])
           .select("id")
           .single();
-        if (insertError) throw insertError;
-        if (inserted?.id) {
-          localStorage.setItem("production_log_id", String(inserted.id));
+
+        if (insertError) {
+          // 23505 = unique violation: another terminal created this shift's
+          // row between our lookup and this insert, and the
+          // one-row-per-shift-per-day index from production_logs_dedupe.sql
+          // caught it. Re-resolve and update that row instead of duplicating.
+          if (insertError.code !== "23505") throw insertError;
+
+          const racedRow = await findShiftLogRow();
+          if (!racedRow) throw insertError;
+
+          const { error: retryError } = await supabase
+            .from("production_logs")
+            .update(buildLogRow(racedRow.cycles))
+            .eq("id", racedRow.id);
+          if (retryError) throw retryError;
+
+          savedLogId = String(racedRow.id);
+        } else if (inserted?.id) {
+          savedLogId = String(inserted.id);
         }
+      }
+
+      if (savedLogId) {
+        localStorage.setItem("production_log_id", savedLogId);
       }
 
       const newCycleEntry = {
@@ -594,22 +653,32 @@ export default function ProductionForm({
     setIsSubmitting(true);
 
     try {
-      // A submit with no production_log_id in this terminal's localStorage
-      // means we're starting a new shift here. live_log is a single shared
-      // table (shift_id hardcoded to 1), so a different terminal/browser
-      // may have left un-reset cycles behind — check before mixing them
-      // into this new shift's cycle sequence.
-      const isNewShift = !localStorage.getItem("production_log_id");
+      // live_log is a single shared table (shift_id hardcoded to 1), so it can
+      // hold cycles belonging to a shift other than the one being submitted —
+      // check before mixing them into this shift's cycle sequence.
+      const { count, error: countError } = await supabase
+        .from("live_log")
+        .select("*", { count: "exact", head: true })
+        .eq("shift_id", 1);
 
-      if (isNewShift) {
-        const { count, error: countError } = await supabase
-          .from("live_log")
-          .select("*", { count: "exact", head: true })
-          .eq("shift_id", 1);
+      if (countError) throw countError;
 
-        if (countError) throw countError;
+      if (count && count > 0) {
+        // Whether those cycles are stale is a question about *this* shift, and
+        // only history can answer it: a row exists for today's date + shift
+        // group exactly when the shift is already open, and then the cycles
+        // are live — this terminal is simply joining it (the operator's phone
+        // as a second terminal, or a browser that dropped its storage), so
+        // offering to wipe them mid-shift would be destructive and wrong.
+        //
+        // The cached production_log_id can't answer it. It may be absent on a
+        // terminal joining a live shift, and it may be present but point at a
+        // *different* shift's row — after switching Shift Group day→night, or
+        // once the Perth date has rolled over — where the leftover cycles
+        // really are stale and used to be swept in silently.
+        const openShiftRow = await findShiftLogRow();
 
-        if (count && count > 0) {
+        if (!openShiftRow) {
           setStaleClearConfirm({ count });
           setIsSubmitting(false);
           return;
