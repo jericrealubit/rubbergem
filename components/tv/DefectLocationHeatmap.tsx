@@ -10,15 +10,12 @@ const POSITIONS = [
   "center",
   "bottom-left",
   "bottom-right",
+  "bubble",
 ] as const;
 type Position = (typeof POSITIONS)[number];
 
-const BUBBLE_SIDES = ["left", "middle", "right"] as const;
-type BubbleSide = (typeof BUBBLE_SIDES)[number];
-
 interface TableDefectTally {
   positions: Record<Position, number>;
-  bubbles: Record<BubbleSide, number>;
 }
 
 function emptyTally(): TableDefectTally {
@@ -29,8 +26,8 @@ function emptyTally(): TableDefectTally {
       center: 0,
       "bottom-left": 0,
       "bottom-right": 0,
+      bubble: 0,
     },
-    bubbles: { left: 0, middle: 0, right: 0 },
   };
 }
 
@@ -51,13 +48,6 @@ function tallyDefectLocations(
       if (position && (POSITIONS as readonly string[]).includes(position)) {
         tallies[id].positions[position as Position] += 1;
       }
-
-      const checks = row.bubble_json?.checks?.[id];
-      if (checks) {
-        BUBBLE_SIDES.forEach((side) => {
-          if (checks[side]) tallies[id].bubbles[side] += 1;
-        });
-      }
     });
   });
 
@@ -66,15 +56,22 @@ function tallyDefectLocations(
 
 function PositionCell({
   count,
+  label,
   className = "",
 }: {
   count: number;
+  label?: string;
   className?: string;
 }) {
   return (
     <div
-      className={`w-11 h-11 rounded flex items-center justify-center text-sm font-mono font-bold text-neutral-100 ${countToRedBucket(count)} ${className}`}
+      className={`w-11 h-11 rounded flex items-center justify-center gap-1 text-sm font-mono font-bold text-neutral-100 ${countToRedBucket(count)} ${className}`}
     >
+      {label && (
+        <span className="text-[9px] font-sans font-bold uppercase tracking-wide">
+          {label}
+        </span>
+      )}
       {count}
     </div>
   );
@@ -109,7 +106,7 @@ export default function DefectLocationHeatmap({
                 {matTypes?.[id] ? ` · ${matTypes[id]}` : ""}
               </span>
 
-              <div className="grid grid-cols-2 grid-rows-3 gap-1">
+              <div className="grid grid-cols-2 grid-rows-4 gap-1 w-full">
                 <PositionCell
                   count={tally.positions["top-left"]}
                   className="col-start-1 row-start-1"
@@ -130,17 +127,11 @@ export default function DefectLocationHeatmap({
                   count={tally.positions["bottom-right"]}
                   className="col-start-2 row-start-3"
                 />
-              </div>
-
-              <div className="grid grid-cols-3 gap-1 w-full">
-                {BUBBLE_SIDES.map((side) => (
-                  <div
-                    key={side}
-                    className={`h-8 rounded flex items-center justify-center text-xs font-mono font-bold text-neutral-100 ${countToRedBucket(tally.bubbles[side])}`}
-                  >
-                    {tally.bubbles[side]}
-                  </div>
-                ))}
+                <PositionCell
+                  count={tally.positions.bubble}
+                  label="Bubble"
+                  className="!w-full col-start-1 col-span-2 row-start-4"
+                />
               </div>
             </div>
           );

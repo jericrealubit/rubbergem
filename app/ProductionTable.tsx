@@ -32,11 +32,6 @@ interface CycleEntry {
   loadTime: number | "";
   tableMatTypes?: Record<number, string>;
   selectedTableSquares: Record<number, string>;
-  bubbleCheckboxes: Record<
-    number,
-    { left: boolean; middle: boolean; right: boolean }
-  >;
-  bubbleSizes: Record<number, string>;
   notes: string;
   timestamp: number;
 }
@@ -134,13 +129,6 @@ export default function ProductionTablePage({
             loadTime: Math.round((row.load_duration_seconds || 0) / 60),
             tableMatTypes: {},
             selectedTableSquares: parsedSquares,
-            bubbleCheckboxes: row.bubble_json?.checks || {
-              1: { left: false, middle: false, right: false },
-              2: { left: false, middle: false, right: false },
-              3: { left: false, middle: false, right: false },
-              4: { left: false, middle: false, right: false },
-            },
-            bubbleSizes: row.bubble_json?.sizes || {},
             notes: row.notes || "",
             timestamp: row.start_time
               ? new Date(row.start_time).getTime()
@@ -283,9 +271,7 @@ export default function ProductionTablePage({
   entries.forEach((entry) => {
     for (let id = 1; id <= 4; id++) {
       const hasShortMold = !!entry.selectedTableSquares?.[id];
-      const b = entry.bubbleCheckboxes?.[id];
-      const hasBubbles = !!(b?.left || b?.middle || b?.right);
-      if (hasShortMold || hasBubbles) {
+      if (hasShortMold) {
         faultyMatsProduced++;
       }
     }
@@ -297,10 +283,8 @@ export default function ProductionTablePage({
 
     entries.forEach((entry) => {
       const hasShortMold = !!entry.selectedTableSquares?.[id];
-      const b = entry.bubbleCheckboxes?.[id];
-      const hasBubbles = !!(b?.left || b?.middle || b?.right);
 
-      if (hasShortMold || hasBubbles) {
+      if (hasShortMold) {
         reject++;
       } else {
         good++;
@@ -536,7 +520,7 @@ export default function ProductionTablePage({
             </div>
           )}
 
-          <table className="w-full text-left border-collapse print-compact min-w-[700px]">
+          <table className="w-full text-left border-collapse print-compact min-w-[600px]">
             <thead>
               <tr className="bg-neutral-100 border-b border-neutral-200 text-neutral-600 text-[10px] uppercase tracking-wider font-bold">
                 <th className="p-2 border-r border-neutral-200 text-center w-[45px]">
@@ -548,11 +532,8 @@ export default function ProductionTablePage({
                 <th className="p-2 border-r border-neutral-200 text-center w-[70px]">
                   Runtime
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center min-w-[160px] px-3">
+                <th className="p-2 border-r border-neutral-200 text-center min-w-[220px] px-3">
                   Short Mold Locations
-                </th>
-                <th className="p-2 border-r border-neutral-200 text-center min-w-[150px] px-3">
-                  Bubbles Matrix
                 </th>
                 <th className="p-2 min-w-[200px] text-left">
                   Fault Notes / Remarks
@@ -576,10 +557,7 @@ export default function ProductionTablePage({
                       <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[70px]">
                         —
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[160px]">
-                        -
-                      </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[150px]">
+                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[220px]">
                         -
                       </td>
                       <td className="p-1 text-neutral-200 italic min-w-[200px]">
@@ -594,28 +572,6 @@ export default function ProductionTablePage({
                     .filter((id) => entry.selectedTableSquares?.[id])
                     .map((id) => `T${id}: ${entry.selectedTableSquares[id]}`);
                   return activeMolds.length > 0 ? activeMolds.join(" | ") : "-";
-                };
-
-                const formatBubbles = () => {
-                  const activeBubbles = [1, 2, 3, 4]
-                    .filter((id) => {
-                      const b = entry.bubbleCheckboxes?.[id];
-                      return b?.left || b?.middle || b?.right;
-                    })
-                    .map((id) => {
-                      const b = entry.bubbleCheckboxes?.[id];
-                      const locs = [];
-                      if (b?.left) locs.push("L");
-                      if (b?.middle) locs.push("M");
-                      if (b?.right) locs.push("R");
-                      const sizeStr = entry.bubbleSizes?.[id]
-                        ? ` (${entry.bubbleSizes[id]})`
-                        : "";
-                      return `T${id}:[${locs.join(",")}]${sizeStr}`;
-                    });
-                  return activeBubbles.length > 0
-                    ? activeBubbles.join(" | ")
-                    : "-";
                 };
 
                 return (
@@ -648,11 +604,8 @@ export default function ProductionTablePage({
                     <td className="p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[70px]">
                       {entry.runTime !== "" ? `${entry.runTime}m` : "—"}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[160px]">
+                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[220px]">
                       {formatShortMolds()}
-                    </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[150px]">
-                      {formatBubbles()}
                     </td>
                     <td
                       className="p-1 text-neutral-500 font-normal text-[10px] min-w-[200px] text-left"
