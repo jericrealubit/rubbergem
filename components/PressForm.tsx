@@ -70,9 +70,9 @@ export default function ProductionForm({
   const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const savedState = localStorage.getItem("shift_panel_open");
-      return savedState !== null ? savedState === "true" : true;
+      return savedState !== null ? savedState === "true" : false;
     }
-    return true;
+    return false;
   });
 
   // --- SHIFT INFORMATION DATA PERSISTENCE ---
@@ -162,7 +162,7 @@ export default function ProductionForm({
     const handleStorageChange = () => {
       setPressNumber(localStorage.getItem("terminal_press_number") || "1");
       const savedState = localStorage.getItem("shift_panel_open");
-      setIsShiftOpen(savedState !== null ? savedState === "true" : true);
+      setIsShiftOpen(savedState !== null ? savedState === "true" : false);
       setOperator(localStorage.getItem("shift_operator") || "");
       setShift(localStorage.getItem("shift_group") || "day");
 
@@ -642,43 +642,29 @@ export default function ProductionForm({
   };
 
   return (
-    <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 pb-12">
-      {/* Header Info Banner - Added "relative" so absolute clock floats properly */}
-      <div className="relative bg-emerald-800 text-white p-4 rounded-xl shadow-sm space-y-3">
-        {/* Row 1: Full-width Title */}
-        <div>
-          <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
-            Press #{pressNumber} Production
-          </h1>
-        </div>
+    <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 ipad:space-y-2 pb-12 ipad:pb-4">
+      {/* Header Info Banner */}
+      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center justify-between gap-4">
+        <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
+          Press #{pressNumber} Production
+        </h1>
 
-        {/* Row 2: 2-Column Split */}
-        <div className="grid grid-cols-2 items-center gap-4">
-          {/* Column 1: Subtitle */}
-          <p className="text-xs text-emerald-200 text-left leading-none">
-            Mobile Fast-Entry Terminal
-          </p>
-
-          {/* Column 2: Select Dropdown (aligned right) */}
-          <div className="flex justify-end">
-            <Select value={pressNumber} onValueChange={setPressNumber}>
-              <SelectTrigger className="w-[120px] h-9 bg-emerald-900/60 border-emerald-700/50 text-white font-medium focus:ring-emerald-500">
-                <SelectValue placeholder="Select Press" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Press #1</SelectItem>
-                <SelectItem value="2">Press #2</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <Select value={pressNumber} onValueChange={setPressNumber}>
+          <SelectTrigger className="w-[120px] h-9 bg-emerald-900/60 border-emerald-700/50 text-white font-medium focus:ring-emerald-500">
+            <SelectValue placeholder="Select Press" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1">Press #1</SelectItem>
+            <SelectItem value="2">Press #2</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <form
         onSubmit={handleSubmit}
         className="space-y-4 ipad:space-y-0 ipad:grid ipad:grid-cols-2 ipad:gap-4 ipad:items-start"
       >
-      <div className="space-y-4">
+      <div className="space-y-4 ipad:space-y-3">
         {/* Collapsible Shift / Metadata Card */}
         <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
           <button
@@ -817,13 +803,13 @@ export default function ProductionForm({
 
         {/* Timestamps & Durations */}
         <Card className="shadow-sm border-neutral-200/60">
-          <CardHeader className="p-4 pb-2">
+          <CardHeader className="p-4 pb-2 ipad:p-3 ipad:pb-1.5">
             <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <Clock className="w-4 h-4 text-emerald-700" /> Timestamps &
               Durations
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0 space-y-4">
+          <CardContent className="p-4 pt-0 ipad:p-3 ipad:pt-0 space-y-4 ipad:space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -850,13 +836,13 @@ export default function ProductionForm({
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="h-12 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
+                    className="h-12 ipad:h-10 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
                   />
                 ) : (
                   <Button
                     type="button"
                     variant={startTime ? "secondary" : "outline"}
-                    className={`w-full h-12 font-bold tracking-wide border-dashed border-2 ${!startTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
+                    className={`w-full h-12 ipad:h-10 font-bold tracking-wide border-dashed border-2 ${!startTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
                     onClick={() => handleTimestamp("start")}
                   >
                     {startTime || "TAP TO START"}
@@ -890,7 +876,7 @@ export default function ProductionForm({
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="h-12 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
+                    className="h-12 ipad:h-10 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
                     disabled={isEndTimeDisabled}
                   />
                 ) : (
@@ -898,7 +884,7 @@ export default function ProductionForm({
                     type="button"
                     disabled={isEndTimeDisabled}
                     variant={endTime ? "secondary" : "outline"}
-                    className={`w-full h-12 font-bold tracking-wide border-dashed border-2 ${!endTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
+                    className={`w-full h-12 ipad:h-10 font-bold tracking-wide border-dashed border-2 ${!endTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
                     onClick={() => handleTimestamp("end")}
                   >
                     {endTime || "TAP TO END"}
@@ -929,7 +915,7 @@ export default function ProductionForm({
                 type="number"
                 id="loadTime"
                 placeholder="Calculated automatically..."
-                className={`h-11 font-medium transition-colors ${
+                className={`h-11 ipad:h-9 font-medium transition-colors ${
                   loadTime === ""
                     ? "bg-neutral-50 border-neutral-200 text-neutral-400"
                     : Number(loadTime) < 1
@@ -944,10 +930,10 @@ export default function ProductionForm({
         </Card>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 ipad:space-y-3">
         {/* Tables - Short Molding */}
         <Card className="shadow-sm border-neutral-200/60">
-          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+          <CardHeader className="p-4 pb-2 ipad:p-3 ipad:pb-1.5 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Tables -
               Short Molding
@@ -963,8 +949,8 @@ export default function ProductionForm({
               Reset Matrix
             </Button>
           </CardHeader>
-          <CardContent className="p-4 pt-2">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-8">
+          <CardContent className="p-4 pt-2 ipad:p-3 ipad:pt-2">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-8 ipad:gap-y-3">
               {[1, 2, 3, 4].map((tableNum) => (
                 <div key={tableNum} className="flex items-start gap-2">
                   <span className="text-2xl font-bold text-neutral-800 pt-1 select-none">
@@ -973,9 +959,9 @@ export default function ProductionForm({
                   <RadioGroup
                     value={selectedTableSquares[tableNum] || ""}
                     onValueChange={(val) => handleSquareSelect(tableNum, val)}
-                    className="flex flex-col gap-1.5"
+                    className="flex flex-row gap-1.5"
                   >
-                  <div className="grid grid-cols-3 gap-1.5 relative w-[100px] h-[100px] ipad:w-[130px] ipad:h-[130px]">
+                  <div className="grid grid-cols-3 gap-1.5 relative w-[100px] h-[100px] ipad:w-[118px] ipad:h-[118px]">
                     <div className="absolute top-0 left-0">
                       <RadioGroupItem
                         value="top-left"
@@ -984,7 +970,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tl`}
-                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-left" ? "scale-100" : "scale-0"}`}
@@ -999,14 +985,14 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tr`}
-                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-right" ? "scale-100" : "scale-0"}`}
                         />
                       </Label>
                     </div>
-                    <div className="absolute top-[36px] left-[36px] ipad:top-[47px] ipad:left-[47px]">
+                    <div className="absolute top-[36px] left-[36px] ipad:top-[43px] ipad:left-[43px]">
                       <RadioGroupItem
                         value="center"
                         id={`t${tableNum}-cc`}
@@ -1014,7 +1000,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-cc`}
-                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "center" ? "scale-100" : "scale-0"}`}
@@ -1029,7 +1015,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-bl`}
-                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-left" ? "scale-100" : "scale-0"}`}
@@ -1044,7 +1030,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-br`}
-                        className={`w-[28px] h-[28px] ipad:w-[36px] ipad:h-[36px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-right" ? "scale-100" : "scale-0"}`}
@@ -1052,7 +1038,7 @@ export default function ProductionForm({
                       </Label>
                     </div>
                   </div>
-                  <div className="w-[100px] ipad:w-[130px]">
+                  <div className="h-[100px] ipad:h-[118px]">
                     <RadioGroupItem
                       value="bubble"
                       id={`t${tableNum}-bubble`}
@@ -1060,7 +1046,7 @@ export default function ProductionForm({
                     />
                     <Label
                       htmlFor={`t${tableNum}-bubble`}
-                      className={`h-7 w-full border-2 rounded flex items-center justify-center text-[10px] font-bold uppercase tracking-wide cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bubble" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"}`}
+                      className={`h-full w-7 border-2 rounded flex items-center justify-center text-[10px] font-bold uppercase tracking-wide cursor-pointer transition-all [writing-mode:vertical-rl] ${selectedTableSquares[tableNum] === "bubble" ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-sm" : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"}`}
                     >
                       Bubble
                     </Label>
@@ -1083,7 +1069,7 @@ export default function ProductionForm({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g., Upper right vacuum pad missed placement..."
-              className="resize-none min-h-[70px]"
+              className="resize-none min-h-[70px] ipad:min-h-[50px]"
             />
           </CardContent>
         </Card>
@@ -1096,7 +1082,7 @@ export default function ProductionForm({
               ? isSubmitting || loadTime === "" || Number(loadTime) < 1
               : true
           }
-          className="w-full h-12 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
+          className="w-full h-12 ipad:h-10 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
         >
           {isSubmitting && <Loader2 className="animate-spin" size={20} />}
           {session
