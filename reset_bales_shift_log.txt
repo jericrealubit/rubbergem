@@ -1,0 +1,32 @@
+CREATE OR REPLACE FUNCTION reset_bales_shift_log(p_shift_id TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Clear the Bales live_log rows and bag-change events for this shift.
+  -- Archiving to bales_production_logs happens live on each cycle submit
+  -- (see components/BalesForm.tsx), so this function only wipes the two
+  -- shift-scoped live tables, both of which are scoped to the shift that's
+  -- ending.
+  --
+  -- SECURITY DEFINER: bales_live_log/bales_bag_changes RLS have no DELETE
+  -- policy for the authenticated role, so a plain SECURITY INVOKER delete
+  -- here would silently match 0 rows (no error, no rows deleted) -- same
+  -- footgun documented in reset_shift_log.txt for live_log/shift_messages.
+  -- Running as the function owner bypasses RLS for this deliberate, gated
+  -- destructive action.
+  DELETE FROM public.bales_live_log
+  WHERE shift_id::text = p_shift_id;
+
+  DELETE FROM public.bales_bag_changes
+  WHERE shift_id::text = p_shift_id;
+END;
+$$;
+
+-- Lock execution down to logged-in operators only (mirrors the UI gating in
+-- app/BalesProductionTable.tsx, which disables the button unless a session
+-- exists).
+REVOKE ALL ON FUNCTION reset_bales_shift_log(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION reset_bales_shift_log(TEXT) TO authenticated;

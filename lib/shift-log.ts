@@ -35,12 +35,24 @@ export interface ArchivedCycle {
 }
 
 /**
+ * The minimal shape cycleKey/mergeCycles need to identify a cycle -- shared
+ * across every production line's own cycle type (Press's ArchivedCycle,
+ * Bales' BalesArchivedCycle, ...) so the dedupe/merge logic has one source of
+ * truth instead of a per-line copy that can drift out of sync with bugfixes.
+ */
+export interface CycleIdentity {
+  cycle_number?: number | null;
+  start_time?: string | null;
+  end_time?: string | null;
+}
+
+/**
  * Identity of a single cycle within a shift. Cycle numbers restart at 1 after
  * a "Reset Shift Log", so the number alone can't distinguish a pre-reset cycle
  * from a post-reset one -- the Perth HH:mm start/end times are what make the
  * key unique across a reset.
  */
-export function cycleKey(cycle: ArchivedCycle): string {
+export function cycleKey(cycle: CycleIdentity): string {
   return [
     cycle.cycle_number ?? "",
     cycle.start_time ?? "",
@@ -57,14 +69,14 @@ export function cycleKey(cycle: ArchivedCycle): string {
  * across terminals or interrupted by a mid-shift reset: the stored cycles the
  * live_log no longer knows about are carried forward instead of overwritten.
  */
-export function mergeCycles(
+export function mergeCycles<T extends CycleIdentity>(
   existing: unknown,
-  incoming: ArchivedCycle[],
-): ArchivedCycle[] {
-  const merged = new Map<string, ArchivedCycle>();
+  incoming: T[],
+): T[] {
+  const merged = new Map<string, T>();
 
   if (Array.isArray(existing)) {
-    (existing as ArchivedCycle[]).forEach((cycle) => {
+    (existing as T[]).forEach((cycle) => {
       if (cycle && typeof cycle === "object") merged.set(cycleKey(cycle), cycle);
     });
   }

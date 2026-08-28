@@ -16,16 +16,28 @@ import {
   ClipboardList,
   History,
   HelpCircle,
+  Boxes,
+  Table2,
 } from "lucide-react";
 import ProductionForm from "@/components/PressForm";
 import ProductionTablePage from "./ProductionTable";
 import ProductionHistory from "@/components/ProductionHistory";
 import AboutPage from "./AboutPage";
 import ChatPanel from "@/components/ChatPanel";
+import BalesForm from "@/components/BalesForm";
+import BalesProductionTable from "./BalesProductionTable";
+import BalesHistory from "@/components/BalesHistory";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-type ViewType = "form" | "table" | "history" | "about";
+type ViewType =
+  | "form"
+  | "table"
+  | "history"
+  | "about"
+  | "balesForm"
+  | "balesTable"
+  | "balesHistory";
 
 export default function Home() {
   const [session, setSession] = useState<any>(null);
@@ -241,6 +253,48 @@ export default function Home() {
               <HelpCircle className="w-4 h-4 shrink-0" />
               <span>About System</span>
             </button>
+
+            <div className="pt-2 mt-2 border-t border-neutral-800">
+              <p className="px-3 pb-1.5 text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
+                Bales
+              </p>
+            </div>
+
+            <button
+              onClick={() => navigateTo("balesForm")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "balesForm"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+              }`}
+            >
+              <Boxes className="w-4 h-4 shrink-0" />
+              <span>Bales Entry Form</span>
+            </button>
+
+            <button
+              onClick={() => navigateTo("balesTable")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "balesTable"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+              }`}
+            >
+              <Table2 className="w-4 h-4 shrink-0" />
+              <span>Bales Live Log Table</span>
+            </button>
+
+            <button
+              onClick={() => navigateTo("balesHistory")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "balesHistory"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+              }`}
+            >
+              <History className="w-4 h-4 shrink-0" />
+              <span>Bales History</span>
+            </button>
           </nav>
         </div>
 
@@ -317,6 +371,17 @@ export default function Home() {
         {currentView === "history" && <ProductionHistory />}
 
         {currentView === "about" && <AboutPage />}
+
+        {currentView === "balesForm" && <BalesForm session={session} />}
+
+        {currentView === "balesTable" && (
+          <BalesProductionTable
+            onBack={() => setCurrentView("balesForm")}
+            session={session}
+          />
+        )}
+
+        {currentView === "balesHistory" && <BalesHistory />}
       </main>
     </div>
   );
