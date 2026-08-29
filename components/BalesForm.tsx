@@ -639,13 +639,10 @@ export default function BalesForm({ session }: { session: any }) {
 
   return (
     <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 pb-12">
-      <div className="relative bg-emerald-800 text-white p-4 rounded-xl shadow-sm space-y-1">
+      <div className="relative bg-emerald-800 text-white p-4 rounded-xl shadow-sm">
         <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
           Bales Production
         </h1>
-        <p className="text-xs text-emerald-200 text-left leading-none">
-          Mobile Fast-Entry Terminal
-        </p>
       </div>
 
       <div className="space-y-4 ipad:space-y-0 ipad:grid ipad:grid-cols-2 ipad:gap-4 ipad:items-start">

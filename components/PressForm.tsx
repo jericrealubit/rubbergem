@@ -644,11 +644,7 @@ export default function ProductionForm({
   return (
     <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 ipad:space-y-2 pb-12 ipad:pb-4">
       {/* Header Info Banner */}
-      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center justify-between gap-4">
-        <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
-          Press #{pressNumber} Production
-        </h1>
-
+      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center gap-4">
         <Select value={pressNumber} onValueChange={setPressNumber}>
           <SelectTrigger className="w-[120px] h-9 bg-emerald-900/60 border-emerald-700/50 text-white font-medium focus:ring-emerald-500">
             <SelectValue placeholder="Select Press" />
@@ -658,6 +654,10 @@ export default function ProductionForm({
             <SelectItem value="2">Press #2</SelectItem>
           </SelectContent>
         </Select>
+
+        <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
+          Production
+        </h1>
       </div>
 
       <form

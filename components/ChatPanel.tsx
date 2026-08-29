@@ -92,16 +92,27 @@ export default function ChatPanel({ session }: { session: any }) {
   const isOperator = !!session;
   const canSend = !!body.trim() && (isOperator || !!senderName.trim());
 
+  // Give operators a sensible starting name (their account email) the first
+  // time they open the panel with the field still empty, rather than a blank
+  // box with an invisible fallback.
+  useEffect(() => {
+    if (isOperator && !senderName) {
+      setSenderName(session.user.email);
+    }
+  }, [isOperator]);
+
   const handleSend = async () => {
     const trimmedBody = body.trim();
-    const trimmedName = isOperator ? session.user.email : senderName.trim();
+    const trimmedName = isOperator
+      ? senderName.trim() || session.user.email
+      : senderName.trim();
 
     if (!trimmedBody || !trimmedName) return;
 
     setIsSending(true);
     try {
-      if (!isOperator) {
-        localStorage.setItem("chat_sender_name", trimmedName);
+      if (senderName.trim()) {
+        localStorage.setItem("chat_sender_name", senderName.trim());
       }
 
       const { error } = await supabase.from("shift_messages").insert([
@@ -178,13 +189,11 @@ export default function ChatPanel({ session }: { session: any }) {
           </div>
 
           <div className="space-y-2 pt-2 border-t border-neutral-100">
-            {!isOperator && (
-              <Input
-                placeholder="Your name"
-                value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-              />
-            )}
+            <Input
+              placeholder="Your name"
+              value={senderName}
+              onChange={(e) => setSenderName(e.target.value)}
+            />
             <div className="flex items-end gap-2">
               <Textarea
                 placeholder="Type a message..."
