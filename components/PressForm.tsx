@@ -58,6 +58,10 @@ export default function ProductionForm({
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
     count: number;
   } | null>(null);
+  const [pendingProceed, setPendingProceed] = useState<
+    (() => Promise<void>) | null
+  >(null);
+  const [endShiftConfirmOpen, setEndShiftConfirmOpen] = useState(false);
 
   // --- LAYOUT & CONFIGURATION PERSISTENCE ---
   const [pressNumber, setPressNumber] = useState<string>(() => {
@@ -116,27 +120,8 @@ export default function ProductionForm({
     return "";
   });
 
-  const [endTime, setEndTime] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("ws_end_time") || "";
-    }
-    return "";
-  });
-
-  // Manual input switches for lunch/break runtime overrides
+  // Manual input switch for lunch/break start-time overrides
   const [isManualStart, setIsManualStart] = useState<boolean>(false);
-  const [isManualEnd, setIsManualEnd] = useState<boolean>(false);
-
-  // The End Time button should be disabled if startTime is not yet set
-  const isEndTimeDisabled = !startTime;
-
-  const [loadTime, setLoadTime] = useState<number | "">(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("ws_load_time");
-      return saved !== null ? (saved === "" ? "" : Number(saved)) : "";
-    }
-    return "";
-  });
 
   const [selectedTableSquares, setSelectedTableSquares] = useState<
     Record<number, string>
@@ -174,9 +159,6 @@ export default function ProductionForm({
 
       // Synchronize active workspace components
       setStartTime(localStorage.getItem("ws_start_time") || "");
-      setEndTime(localStorage.getItem("ws_end_time") || "");
-      const lTime = localStorage.getItem("ws_load_time");
-      setLoadTime(lTime !== null ? (lTime === "" ? "" : Number(lTime)) : "");
       const savedSquares = localStorage.getItem("ws_selected_squares");
       setSelectedTableSquares(savedSquares ? JSON.parse(savedSquares) : {});
       setNotes(localStorage.getItem("ws_notes") || "");
@@ -240,12 +222,6 @@ export default function ProductionForm({
     localStorage.setItem("ws_start_time", startTime);
   }, [startTime]);
   useEffect(() => {
-    localStorage.setItem("ws_end_time", endTime);
-  }, [endTime]);
-  useEffect(() => {
-    localStorage.setItem("ws_load_time", String(loadTime));
-  }, [loadTime]);
-  useEffect(() => {
     localStorage.setItem(
       "ws_selected_squares",
       JSON.stringify(selectedTableSquares),
@@ -263,25 +239,57 @@ export default function ProductionForm({
     setCurrentDate(formatted);
   }, []);
 
-  // Automated midnight-crossover duration calculator
+  const nowHHMM = () =>
+    new Date().toTimeString().split(" ")[0].substring(0, 5);
+
+  const handleStartTap = () => {
+    setStartTime(nowHHMM());
+  };
+
+  // Load/unload duration = elapsed(start, end) minus the shift's configured
+  // press Run Time, clamped at 0 (midnight-crossover handled the same way the
+  // old live calculator did).
+  const computeDurationMinutes = (endTimeHHMM: string) => {
+    const [startHours, startMinutes] = startTime.split(":").map(Number);
+    const [endHours, endMinutes] = endTimeHHMM.split(":").map(Number);
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    let endTotalMinutes = endHours * 60 + endMinutes;
+
+    if (endTotalMinutes < startTotalMinutes) endTotalMinutes += 24 * 60;
+    return Math.max(
+      0,
+      endTotalMinutes - startTotalMinutes - (Number(runTime) || 0),
+    );
+  };
+
+  // Live 1-second ticker driving the Load Time readout while a cycle is open.
+  const [nowTick, setNowTick] = useState(() => Date.now());
   useEffect(() => {
-    if (startTime && endTime) {
-      const [startHours, startMinutes] = startTime.split(":").map(Number);
-      const [endHours, endMinutes] = endTime.split(":").map(Number);
-      const startTotalMinutes = startHours * 60 + startMinutes;
-      let endTotalMinutes = endHours * 60 + endMinutes;
+    if (!startTime) return;
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
 
-      if (endTotalMinutes < startTotalMinutes) endTotalMinutes += 24 * 60;
-      setLoadTime(endTotalMinutes - startTotalMinutes);
-    } else {
-      setLoadTime("");
-    }
-  }, [startTime, endTime]);
+  // Same computation as computeDurationMinutes, but seconds-precision and
+  // unclamped -- reads negative while still inside the press's own Run Time,
+  // crossing to positive once the operator's actual load/unload work begins.
+  const liveDurationSeconds = (() => {
+    if (!startTime) return null;
+    const [startHours, startMinutes] = startTime.split(":").map(Number);
+    const startTotalSeconds = (startHours * 60 + startMinutes) * 60;
+    const now = new Date(nowTick);
+    let nowTotalSeconds =
+      now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    if (nowTotalSeconds < startTotalSeconds) nowTotalSeconds += 24 * 3600;
+    return nowTotalSeconds - startTotalSeconds - (Number(runTime) || 0) * 60;
+  })();
 
-  const handleTimestamp = (type: "start" | "end") => {
-    const currentTime = new Date().toTimeString().split(" ")[0].substring(0, 5);
-    if (type === "start") setStartTime(currentTime);
-    if (type === "end") setEndTime(currentTime);
+  const formatSigned = (totalSeconds: number) => {
+    const sign = totalSeconds < 0 ? "-" : "";
+    const abs = Math.abs(totalSeconds);
+    const mm = String(Math.floor(abs / 60)).padStart(2, "0");
+    const ss = String(Math.floor(abs % 60)).padStart(2, "0");
+    return `${sign}${mm}:${ss}`;
   };
 
   const handleSquareSelect = (tableId: number, positionId: string) => {
@@ -322,7 +330,11 @@ export default function ProductionForm({
     return matches.find((r) => String(r.id) === cachedId) || matches[0] || null;
   };
 
-  const submitCycle = async () => {
+  const submitCycle = async (
+    endTimeHHMM: string,
+    durationMinutes: number,
+    continueChain: boolean,
+  ) => {
     try {
       const { data: latestEntry, error: fetchError } = await supabase
         .from("live_log")
@@ -340,7 +352,7 @@ export default function ProductionForm({
       ).toISOString();
 
       const endTimestamp = new Date(
-        `${currentDate}T${endTime}:00+08:00`,
+        `${currentDate}T${endTimeHHMM}:00+08:00`,
       ).toISOString();
 
       const formattedYieldJson: Record<string, any> = {};
@@ -364,7 +376,7 @@ export default function ProductionForm({
         cycle_number: nextCycleNumber,
         start_time: startTimestamp,
         end_time: endTimestamp,
-        load_duration_seconds: Number(loadTime) * 60,
+        load_duration_seconds: durationMinutes * 60,
         run_time_minutes: Number(runTime) || null,
         short_mold_json: formattedYieldJson,
         notes: notes,
@@ -498,9 +510,9 @@ export default function ProductionForm({
         operator,
         shift,
         startTime,
-        endTime,
+        endTime: endTimeHHMM,
         runTime,
-        loadTime,
+        loadTime: durationMinutes,
         tableMatTypes,
         selectedTableSquares,
         notes,
@@ -516,17 +528,16 @@ export default function ProductionForm({
         JSON.stringify(existingRecords),
       );
 
-      setStartTime("");
-      setEndTime("");
-      setLoadTime("");
+      if (continueChain) {
+        setStartTime(endTimeHHMM);
+      } else {
+        setStartTime("");
+        localStorage.removeItem("ws_start_time");
+      }
       setIsManualStart(false);
-      setIsManualEnd(false);
       setSelectedTableSquares({});
       setNotes("");
 
-      localStorage.removeItem("ws_start_time");
-      localStorage.removeItem("ws_end_time");
-      localStorage.removeItem("ws_load_time");
       localStorage.removeItem("ws_selected_squares");
       localStorage.removeItem("ws_notes");
 
@@ -534,7 +545,11 @@ export default function ProductionForm({
       setIsShiftOpen(false);
       setIsSubmitting(false);
 
-      alert(`Saved entry successfully! Form workspace cleared.`);
+      alert(
+        continueChain
+          ? "Cycle saved! Next cycle started."
+          : "Cycle saved! Shift closed.",
+      );
       const minutes = parseInt(String(runTime), 10);
       if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
         onStartTimer(minutes);
@@ -548,8 +563,25 @@ export default function ProductionForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Shared by the regular per-cycle submit (auto-chains into the next cycle)
+  // and End Shift (closes the chain instead) — mirrors BalesForm's
+  // runWithStaleCheck, since both finalize paths need the same
+  // stale-live_log guard with only the chain behavior differing.
+  const finalizeCycle = async (continueChain: boolean) => {
+    if (!startTime) return;
+
+    // Captured once, at the moment of submit, so the eventual end time
+    // reflects when the operator actually tapped the button — not whenever a
+    // stale-clear confirmation dialog happens to get dismissed.
+    const endTimeHHMM = nowHHMM();
+    const durationMinutes = computeDurationMinutes(endTimeHHMM);
+    if (durationMinutes < 1) {
+      toast.error(
+        "Load/unload duration must be at least 1 minute — check the configured Run Time.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -580,12 +612,15 @@ export default function ProductionForm({
 
         if (!openShiftRow) {
           setStaleClearConfirm({ count });
+          setPendingProceed(
+            () => () => submitCycle(endTimeHHMM, durationMinutes, continueChain),
+          );
           setIsSubmitting(false);
           return;
         }
       }
 
-      await submitCycle();
+      await submitCycle(endTimeHHMM, durationMinutes, continueChain);
     } catch (err) {
       console.error("Error checking for leftover shift data:", err);
       toast.error(
@@ -595,8 +630,16 @@ export default function ProductionForm({
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    finalizeCycle(true);
+  };
+
+  const handleEndShift = () => finalizeCycle(false);
+
   const handleCancelClearStale = () => {
     setStaleClearConfirm(null);
+    setPendingProceed(null);
     setIsSubmitting(false);
     toast.info("Submit cancelled — leftover live log data was not cleared.");
   };
@@ -631,7 +674,13 @@ export default function ProductionForm({
         `Cleared ${clearedCount} leftover cycle${clearedCount === 1 ? "" : "s"} from a previous shift.`,
       );
 
-      await submitCycle();
+      const proceed = pendingProceed;
+      setPendingProceed(null);
+      if (proceed) {
+        await proceed();
+      } else {
+        setIsSubmitting(false);
+      }
     } catch (err) {
       console.error("Error clearing leftover live log data:", err);
       toast.error(
@@ -797,6 +846,19 @@ export default function ProductionForm({
                   ))}
                 </div>
               </div>
+
+              {shift === "night" && (
+                <div className="pt-3 border-t border-neutral-100">
+                  <button
+                    type="button"
+                    disabled={!session || isSubmitting || !startTime}
+                    onClick={() => setEndShiftConfirmOpen(true)}
+                    className="w-full h-9 flex items-center justify-center gap-1.5 text-[11px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-md uppercase tracking-wider transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+                  >
+                    End Shift — Close Cycle Chain
+                  </button>
+                </div>
+              )}
             </CardContent>
           )}
         </Card>
@@ -810,121 +872,61 @@ export default function ProductionForm({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0 ipad:p-3 ipad:pt-0 space-y-4 ipad:space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label>Start Time</Label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!startTime && !isManualStart) {
-                        const currentTime = new Date()
-                          .toTimeString()
-                          .split(" ")[0]
-                          .substring(0, 5);
-                        setStartTime(currentTime);
-                      }
-                      setIsManualStart(!isManualStart);
-                    }}
-                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors uppercase tracking-wider"
-                  >
-                    {isManualStart ? "● Tap Mode" : "✎ Manual"}
-                  </button>
-                </div>
-                {isManualStart ? (
-                  <Input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="h-12 ipad:h-10 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
-                  />
-                ) : (
-                  <Button
-                    type="button"
-                    variant={startTime ? "secondary" : "outline"}
-                    className={`w-full h-12 ipad:h-10 font-bold tracking-wide border-dashed border-2 ${!startTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
-                    onClick={() => handleTimestamp("start")}
-                  >
-                    {startTime || "TAP TO START"}
-                  </Button>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label>End Time</Label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!endTime && !isManualEnd) {
-                        const currentTime = new Date()
-                          .toTimeString()
-                          .split(" ")[0]
-                          .substring(0, 5);
-                        setEndTime(currentTime);
-                      }
-                      setIsManualEnd(!isManualEnd);
-                    }}
-                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors uppercase tracking-wider"
-                    disabled={isEndTimeDisabled}
-                  >
-                    {isManualEnd ? "● Tap Mode" : "✎ Manual"}
-                  </button>
-                </div>
-                {isManualEnd ? (
-                  <Input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="h-12 ipad:h-10 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
-                    disabled={isEndTimeDisabled}
-                  />
-                ) : (
-                  <Button
-                    type="button"
-                    disabled={isEndTimeDisabled}
-                    variant={endTime ? "secondary" : "outline"}
-                    className={`w-full h-12 ipad:h-10 font-bold tracking-wide border-dashed border-2 ${!endTime && "border-emerald-600 bg-emerald-50/50 text-emerald-800"}`}
-                    onClick={() => handleTimestamp("end")}
-                  >
-                    {endTime || "TAP TO END"}
-                  </Button>
-                )}
-              </div>
-            </div>
-
             <div className="space-y-1.5">
-              <Label
-                htmlFor="loadTime"
-                className="flex items-center justify-between"
-              >
-                <span>Load/Unload Duration</span>
-                {loadTime === "" ? (
-                  <span className="text-[10px] text-neutral-400">REQUIRED</span>
-                ) : Number(loadTime) < 1 ? (
-                  <span className="text-[10px] font-bold text-destructive animate-pulse">
-                    MIN 1 MIN REQUIRED
+              <div className="flex items-center justify-between">
+                <Label>{startTime ? "Cycle Started At" : "Start Time"}</Label>
+                <button
+                  type="button"
+                  onClick={() => setIsManualStart(!isManualStart)}
+                  className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors uppercase tracking-wider"
+                >
+                  {isManualStart ? "● Tap Mode" : "✎ Manual"}
+                </button>
+              </div>
+              {isManualStart ? (
+                <Input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="h-12 ipad:h-10 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
+                />
+              ) : startTime ? (
+                <div className="h-12 ipad:h-10 flex items-center justify-center rounded-md border-2 border-dashed border-emerald-600 bg-emerald-50/50 text-emerald-800 font-bold tracking-wide font-mono">
+                  {startTime}
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 ipad:h-10 font-bold tracking-wide border-dashed border-2 border-emerald-600 bg-emerald-50/50 text-emerald-800"
+                  onClick={handleStartTap}
+                >
+                  TAP TO START
+                </Button>
+              )}
+              {startTime && liveDurationSeconds !== null && (
+                <div className="flex items-center justify-between pt-1">
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                        liveDurationSeconds < 0
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                      }`}
+                    />
+                    Load Time
                   </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-emerald-600">
-                    VALID
+                  <span
+                    className={`font-mono font-bold text-lg tabular-nums ${
+                      liveDurationSeconds < 0
+                        ? "text-amber-600"
+                        : "text-emerald-600"
+                    }`}
+                  >
+                    {formatSigned(liveDurationSeconds)}
                   </span>
-                )}
-              </Label>
-              <Input
-                type="number"
-                id="loadTime"
-                placeholder="Calculated automatically..."
-                className={`h-11 ipad:h-9 font-medium transition-colors ${
-                  loadTime === ""
-                    ? "bg-neutral-50 border-neutral-200 text-neutral-400"
-                    : Number(loadTime) < 1
-                      ? "bg-red-50 border-red-300 text-red-900 focus-visible:ring-red-500"
-                      : "bg-emerald-50/30 border-emerald-200 text-neutral-800"
-                }`}
-                value={loadTime}
-                readOnly
-              />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1077,20 +1079,14 @@ export default function ProductionForm({
         {/* Global Submit Trigger */}
         <Button
           type="submit"
-          disabled={
-            session
-              ? isSubmitting || loadTime === "" || Number(loadTime) < 1
-              : true
-          }
+          disabled={session ? isSubmitting || !startTime : true}
           className="w-full h-12 ipad:h-10 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
         >
           {isSubmitting && <Loader2 className="animate-spin" size={20} />}
           {session
-            ? loadTime === ""
-              ? "Enter Timestamps to Submit"
-              : Number(loadTime) < 1
-                ? "Load Time Must Be ≥ 1 Min"
-                : "Submit Cycle Entry"
+            ? startTime
+              ? "Submit Cycle Entry"
+              : "Tap Start Time to Submit"
             : "Login to submit cycle"}
         </Button>
       </form>
@@ -1120,6 +1116,40 @@ export default function ProductionForm({
             </Button>
             <Button variant="destructive" onClick={handleConfirmClearStale}>
               Clear &amp; Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={endShiftConfirmOpen} onOpenChange={setEndShiftConfirmOpen}>
+        <DialogContent className="sm:max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              End Shift?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-neutral-600">
+            This submits the current cycle (started at{" "}
+            <strong>{startTime}</strong>) and closes the chain — you'll need
+            to tap Start Time again to begin a new cycle. Use this only for
+            the last cycle of the shift.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEndShiftConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setEndShiftConfirmOpen(false);
+                handleEndShift();
+              }}
+            >
+              End Shift
             </Button>
           </DialogFooter>
         </DialogContent>
