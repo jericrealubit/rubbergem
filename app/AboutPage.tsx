@@ -106,8 +106,8 @@ export default function AboutPage() {
         {/* Feature 1: Quick Entry Form */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Smartphone className="w-4 h-4" />
               </div>
               1. Quick Entry Form{" "}
@@ -172,8 +172,8 @@ export default function AboutPage() {
         {/* Feature 2: Saves Instantly to the Cloud */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Database className="w-4 h-4" />
               </div>
               2. Saves Instantly to the Cloud{" "}
@@ -209,8 +209,8 @@ export default function AboutPage() {
         {/* Feature 3: Only Logged-In Operators Can Make Changes */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <ShieldAlert className="w-4 h-4" />
               </div>
               3. Only Logged-In Operators Can Make Changes{" "}
@@ -246,8 +246,8 @@ export default function AboutPage() {
         {/* Feature 4: Nothing Is Lost If the Page Closes */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Save className="w-4 h-4" />
               </div>
               4. Nothing Is Lost If the Page Closes{" "}
@@ -283,8 +283,8 @@ export default function AboutPage() {
         {/* Feature 5: The Live Shift Log Table */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <LayoutDashboard className="w-4 h-4" />
               </div>
               5. The Live Shift Log Table{" "}
@@ -353,8 +353,8 @@ export default function AboutPage() {
         {/* Feature 6: Simple Menu Navigation */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Menu className="w-4 h-4" />
               </div>
               6. Simple Menu Navigation{" "}
@@ -375,8 +375,8 @@ export default function AboutPage() {
         {/* Feature 7: Production History (Past Shifts) */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <History className="w-4 h-4" />
               </div>
               7. Production History (Past Shifts){" "}
@@ -426,8 +426,8 @@ export default function AboutPage() {
         {/* Feature 8: Resetting a Shift Safely */}
         <Card className="bg-white border border-neutral-200/60 shadow-sm">
           <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
-            <CardTitle className="text-sm font-bold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <RotateCcw className="w-4 h-4" />
               </div>
               8. Resetting a Shift Safely{" "}
@@ -493,7 +493,7 @@ export default function AboutPage() {
                   <span className="text-[10px] uppercase font-bold tracking-wider block text-neutral-400">
                     Role
                   </span>
-                  <span className="font-semibold text-emerald-800">
+                  <span className="font-semibold text-accent-ink">
                     Full-Stack Web Developer & AI Solutions Engineer
                   </span>
                 </div>

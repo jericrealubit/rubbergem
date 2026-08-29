@@ -39,6 +39,17 @@ type ViewType =
   | "balesTable"
   | "balesHistory";
 
+type ThemeName = "classic" | "ocean" | "amber" | "sage" | "mauve" | "midnight";
+
+const THEMES: { id: ThemeName; label: string }[] = [
+  { id: "classic", label: "Classic Emerald" },
+  { id: "ocean", label: "Ocean Teal" },
+  { id: "amber", label: "Warm Amber" },
+  { id: "sage", label: "Sage" },
+  { id: "mauve", label: "Dusty Mauve" },
+  { id: "midnight", label: "Midnight" },
+];
+
 export default function Home() {
   const [session, setSession] = useState<any>(null);
   const [email, setEmail] = useState("");
@@ -46,6 +57,18 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>("form");
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+  const [theme, setTheme] = useState<ThemeName>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("app_theme") as ThemeName) || "classic";
+    }
+    return "classic";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("app_theme", theme);
+  }, [theme]);
 
   // --- MOBILE-SAFE LIFTED TIMER STATE ---
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -148,11 +171,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col relative overflow-x-hidden">
       {/* Global Top Header with Persistent Countdown Timer */}
-      <header className="bg-emerald-950 text-white h-14 px-4 flex items-center justify-between shadow-md z-40 sticky top-0">
+      <header className="bg-[var(--chrome-bg)] text-white h-14 px-4 flex items-center justify-between shadow-md z-40 sticky top-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-1.5 rounded-lg hover:bg-emerald-900/60 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="p-1.5 rounded-lg hover:bg-[var(--chrome-bg-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
             aria-label="Toggle Navigation Menu"
           >
             {isMenuOpen ? (
@@ -171,11 +194,11 @@ export default function Home() {
 
           {/* Global Timer Placement Area */}
           {isTimerActive && (
-          <div className="flex items-center gap-2 bg-emerald-900/40 border border-emerald-800/50 px-2.5 py-1 rounded-xl shadow-inner select-none animate-fade-in z-50">
+          <div className="flex items-center gap-2 bg-[var(--chrome-bg-hover)] border border-[var(--chrome-border)] px-2.5 py-1 rounded-xl shadow-inner select-none animate-fade-in z-50">
             <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider hidden sm:inline">
               Cycle Time:
             </span>
-            <div className="font-mono text-sm font-black tracking-widest text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-lg border border-emerald-800/30 min-w-[55px] text-center">
+            <div className="font-mono text-sm font-black tracking-widest text-[var(--chrome-accent)] bg-[var(--chrome-bg)]/80 px-2.5 py-0.5 rounded-lg border border-[var(--chrome-border)] min-w-[55px] text-center">
               {formatTime(timeLeft)}
             </div>
             <button
@@ -184,7 +207,7 @@ export default function Home() {
                 setIsTimerActive(false);
                 setEndTime(null);
               }}
-              className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 hover:text-red-400 border border-neutral-800/80 hover:border-red-950 px-1.5 py-0.5 rounded bg-emerald-950/40 transition-all active:scale-95"
+              className="text-[9px] font-bold uppercase tracking-widest text-[var(--chrome-text-muted)] hover:text-red-400 border border-[var(--chrome-border)] hover:border-red-950 px-1.5 py-0.5 rounded bg-[var(--chrome-bg)]/40 transition-all active:scale-95"
             >
               Skip
             </button>
@@ -195,13 +218,13 @@ export default function Home() {
 
       {/* Slide-out Burger Menu Navigation Drawer */}
       <div
-        className={`fixed inset-y-0 left-0 w-64 bg-neutral-900 text-neutral-200 z-50 transform transition-transform duration-300 ease-in-out shadow-2xl pt-14 flex flex-col justify-between ${
+        className={`fixed inset-y-0 left-0 w-64 bg-[var(--drawer-bg)] text-[var(--drawer-text)] z-50 transform transition-transform duration-300 ease-in-out shadow-2xl pt-14 flex flex-col justify-between ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="p-4 space-y-6">
-          <div className="border-b border-neutral-800 pb-3">
-            <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">
+          <div className="border-b border-[var(--chrome-border)] pb-3">
+            <p className="text-xs font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
               Navigation
             </p>
           </div>
@@ -211,7 +234,7 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 currentView === "form"
                   ? "bg-emerald-700 text-white shadow-sm"
-                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
               }`}
             >
               <ClipboardList className="w-4 h-4 shrink-0" />
@@ -223,7 +246,7 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 currentView === "table"
                   ? "bg-emerald-700 text-white shadow-sm"
-                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
               }`}
             >
               <FileText className="w-4 h-4 shrink-0" />
@@ -235,7 +258,7 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 currentView === "history"
                   ? "bg-emerald-700 text-white shadow-sm"
-                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
               }`}
             >
               <History className="w-4 h-4 shrink-0" />
@@ -247,15 +270,15 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 currentView === "about"
                   ? "bg-emerald-700 text-white shadow-sm"
-                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
               }`}
             >
               <HelpCircle className="w-4 h-4 shrink-0" />
               <span>About System</span>
             </button>
 
-            <div className="pt-2 mt-2 border-t border-neutral-800">
-              <p className="px-3 pb-1.5 text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
+            <div className="pt-2 mt-2 border-t border-[var(--chrome-border)]">
+              <p className="px-3 pb-1.5 text-[10px] font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
                 Bales
               </p>
             </div>
@@ -265,7 +288,7 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 currentView === "balesForm"
                   ? "bg-emerald-700 text-white shadow-sm"
-                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
               }`}
             >
               <Boxes className="w-4 h-4 shrink-0" />
@@ -277,7 +300,7 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 currentView === "balesTable"
                   ? "bg-emerald-700 text-white shadow-sm"
-                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
               }`}
             >
               <Table2 className="w-4 h-4 shrink-0" />
@@ -289,16 +312,46 @@ export default function Home() {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 currentView === "balesHistory"
                   ? "bg-emerald-700 text-white shadow-sm"
-                  : "hover:bg-neutral-800 text-neutral-400 hover:text-neutral-200"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
               }`}
             >
               <History className="w-4 h-4 shrink-0" />
               <span>Bales History</span>
             </button>
           </nav>
+
+          <div className="pt-2 border-t border-[var(--chrome-border)] space-y-2">
+            <p className="text-[10px] font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
+              Appearance
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTheme(t.id)}
+                  title={t.label}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
+                    theme === t.id
+                      ? "border-emerald-500 bg-[var(--drawer-hover-bg)]"
+                      : "border-transparent hover:bg-[var(--drawer-hover-bg)]"
+                  }`}
+                >
+                  <span
+                    data-theme={t.id}
+                    className="w-5 h-5 rounded-full border border-black/10 shrink-0"
+                    style={{ background: "var(--color-emerald-600)" }}
+                  />
+                  <span className="text-[9px] font-semibold text-[var(--drawer-text-muted)] text-center leading-tight">
+                    {t.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="p-4 border-t border-neutral-800 space-y-2">
+        <div className="p-4 border-t border-[var(--chrome-border)] space-y-2">
           {session ? (
             <div className="text-center space-y-2">
               <p className="text-[10px] text-emerald-500 font-bold truncate">

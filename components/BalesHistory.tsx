@@ -240,7 +240,7 @@ export default function BalesHistory() {
                 onClick={() => toggleMonth(month.monthName)}
                 className={`w-full p-3.5 flex items-center justify-between rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
                   isMonthOpen
-                    ? "bg-emerald-50/60 border-emerald-200 text-emerald-900"
+                    ? "bg-accent-chip/60 border-emerald-200 text-accent-ink"
                     : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
                 }`}
               >
@@ -384,7 +384,7 @@ export default function BalesHistory() {
                                 </div>
                               </div>
 
-                              <div className="bg-emerald-50/50 rounded-md p-2 flex items-center justify-between text-[10px] font-semibold text-emerald-900 border border-emerald-100/40">
+                              <div className="bg-accent-chip/50 rounded-md p-2 flex items-center justify-between text-[10px] font-semibold text-accent-ink border border-emerald-100/40">
                                 <div className="flex items-center gap-1">
                                   <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
                                   <span>

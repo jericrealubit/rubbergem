@@ -657,7 +657,7 @@ export default function BalesForm({ session }: { session: any }) {
               <div className="flex items-center gap-2.5">
                 <Settings2 className="w-4 h-4 text-emerald-700 shrink-0" />
                 <div>
-                  <span className="text-sm font-semibold uppercase text-emerald-900 tracking-wide block">
+                  <span className="text-sm font-semibold uppercase text-accent-ink tracking-wide block">
                     Shift Information
                   </span>
                   {!isShiftOpen && (
@@ -727,7 +727,7 @@ export default function BalesForm({ session }: { session: any }) {
           {/* Cycle Entry Card */}
           <Card className="shadow-sm border-neutral-200/60">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
                 <Clock className="w-4 h-4 text-emerald-700" /> Cycle Entry
               </CardTitle>
             </CardHeader>
@@ -738,7 +738,7 @@ export default function BalesForm({ session }: { session: any }) {
                   <button
                     type="button"
                     onClick={() => setIsManualStart(!isManualStart)}
-                    className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors uppercase tracking-wider"
+                    className="text-[10px] font-bold text-emerald-700 hover:text-accent-ink transition-colors uppercase tracking-wider"
                   >
                     {isManualStart ? "● Tap Mode" : "✎ Manual"}
                   </button>
@@ -751,14 +751,14 @@ export default function BalesForm({ session }: { session: any }) {
                     className="h-12 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
                   />
                 ) : cycleOpen ? (
-                  <div className="h-12 flex items-center justify-center rounded-md border-2 border-dashed border-emerald-600 bg-emerald-50/50 text-emerald-800 font-bold tracking-wide font-mono">
+                  <div className="h-12 flex items-center justify-center rounded-md border-2 border-dashed border-emerald-600 bg-accent-chip/50 text-accent-ink font-bold tracking-wide font-mono">
                     {startTime}
                   </div>
                 ) : (
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full h-12 font-bold tracking-wide border-dashed border-2 border-emerald-600 bg-emerald-50/50 text-emerald-800"
+                    className="w-full h-12 font-bold tracking-wide border-dashed border-2 border-emerald-600 bg-accent-chip/50 text-accent-ink"
                     onClick={handleStartTap}
                   >
                     TAP TO START
@@ -859,7 +859,7 @@ export default function BalesForm({ session }: { session: any }) {
           {/* Bag Changes Card */}
           <Card className="shadow-sm border-neutral-200/60">
             <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
                 <Package className="w-4 h-4 text-emerald-700" /> Bag Changes
               </CardTitle>
               <Button
@@ -909,7 +909,7 @@ export default function BalesForm({ session }: { session: any }) {
           {/* Main Issues / Faults Card */}
           <Card className="shadow-sm border-neutral-200/60">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-semibold uppercase text-emerald-900 tracking-wide flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-emerald-700" /> Main
                 Issues / Faults
               </CardTitle>
@@ -934,7 +934,7 @@ export default function BalesForm({ session }: { session: any }) {
       <Dialog open={isBagDialogOpen} onOpenChange={setIsBagDialogOpen}>
         <DialogContent className="sm:max-w-[380px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-800">
+            <DialogTitle className="flex items-center gap-2 text-accent-ink">
               <Package className="w-5 h-5 shrink-0" />
               Log Bag Change
             </DialogTitle>
@@ -1005,7 +1005,7 @@ export default function BalesForm({ session }: { session: any }) {
       <Dialog open={isFinishShiftOpen} onOpenChange={setIsFinishShiftOpen}>
         <DialogContent className="sm:max-w-[360px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-800">
+            <DialogTitle className="flex items-center gap-2 text-accent-ink">
               <Clock className="w-5 h-5 shrink-0" />
               End Shift — Manual Runtime
             </DialogTitle>

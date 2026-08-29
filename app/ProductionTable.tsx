@@ -439,7 +439,7 @@ export default function ProductionTablePage({
                 <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
                   Machine Press
                 </span>
-                <span className="font-extrabold text-emerald-800 text-xs">
+                <span className="font-extrabold text-accent-ink text-xs">
                   Press #{shiftConfig?.press_number || "1"}
                 </span>
               </div>
@@ -472,7 +472,7 @@ export default function ProductionTablePage({
 
           {/* Table Line Yield Status Strip */}
           <div className="bg-white p-2 rounded border border-neutral-200 flex flex-col md:flex-row md:items-center gap-2.5 text-xs meta-item-compact">
-            <div className="flex items-center gap-1.5 text-emerald-800 shrink-0 md:border-r border-neutral-200 md:pr-3">
+            <div className="flex items-center gap-1.5 text-accent-ink shrink-0 md:border-r border-neutral-200 md:pr-3">
               <Settings2 className="w-3.5 h-3.5" />
               <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
                 Table Line Output Yields:
@@ -490,7 +490,7 @@ export default function ProductionTablePage({
                       <span className="text-[9px] font-black text-neutral-400 uppercase leading-none mb-1">
                         Table {id}
                       </span>
-                      <span className="text-[11px] font-mono font-bold text-emerald-900 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/80">
+                      <span className="text-[11px] font-mono font-bold text-accent-ink bg-accent-chip px-1.5 py-0.5 rounded border border-emerald-100/80">
                         {stats.matType}
                       </span>
                     </div>
@@ -627,7 +627,7 @@ export default function ProductionTablePage({
       <div className="grid grid-cols-2 gap-3 pt-0.5">
         <div className="bg-white border border-neutral-200 rounded-xl p-2.5 flex items-center justify-between shadow-sm footer-compact">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-700">
+            <div className="p-1.5 rounded-md bg-accent-chip text-accent-ink">
               <CheckCircle className="w-4 h-4" />
             </div>
             <div>
@@ -639,7 +639,7 @@ export default function ProductionTablePage({
               </p>
             </div>
           </div>
-          <div className="text-lg font-black font-mono text-emerald-800">
+          <div className="text-lg font-black font-mono text-accent-ink">
             {totalMatsProduced}
           </div>
         </div>

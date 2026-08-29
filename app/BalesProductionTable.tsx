@@ -378,7 +378,7 @@ export default function BalesProductionTable({
                 <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
                   Mesh Type
                 </span>
-                <span className="font-extrabold text-emerald-800 text-xs">
+                <span className="font-extrabold text-accent-ink text-xs">
                   {shiftConfig?.mesh_type || latestMeshType || "—"}
                 </span>
               </div>
@@ -541,7 +541,7 @@ export default function BalesProductionTable({
       {/* Bag Changes Panel */}
       <Card className="shadow-sm border-neutral-200 overflow-hidden">
         <CardHeader className="p-3 pb-2">
-          <CardTitle className="text-xs font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-2">
+          <CardTitle className="text-xs font-bold uppercase tracking-wider text-accent-ink flex items-center gap-2">
             <Package className="w-4 h-4 text-emerald-700" /> Bag Changes
           </CardTitle>
         </CardHeader>
@@ -598,7 +598,7 @@ export default function BalesProductionTable({
       <div className="grid grid-cols-2 gap-3 pt-0.5">
         <div className="bg-white border border-neutral-200 rounded-xl p-2.5 flex items-center justify-between shadow-sm footer-compact">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-700">
+            <div className="p-1.5 rounded-md bg-accent-chip text-accent-ink">
               <CheckCircle className="w-4 h-4" />
             </div>
             <div>
@@ -611,7 +611,7 @@ export default function BalesProductionTable({
               </p>
             </div>
           </div>
-          <div className="text-lg font-black font-mono text-emerald-800">
+          <div className="text-lg font-black font-mono text-accent-ink">
             {totalBalesProduced}
           </div>
         </div>
