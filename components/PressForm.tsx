@@ -847,18 +847,16 @@ export default function ProductionForm({
                 </div>
               </div>
 
-              {shift === "night" && (
-                <div className="pt-3 border-t border-neutral-100">
-                  <button
-                    type="button"
-                    disabled={!session || isSubmitting || !startTime}
-                    onClick={() => setEndShiftConfirmOpen(true)}
-                    className="w-full h-9 flex items-center justify-center gap-1.5 text-[11px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-md uppercase tracking-wider transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
-                  >
-                    End Shift — Close Cycle Chain
-                  </button>
-                </div>
-              )}
+              <div className="pt-3 border-t border-neutral-100">
+                <button
+                  type="button"
+                  disabled={!session || isSubmitting || !startTime}
+                  onClick={() => setEndShiftConfirmOpen(true)}
+                  className="w-full h-9 flex items-center justify-center gap-1.5 text-[11px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-md uppercase tracking-wider transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+                >
+                  End Shift — Close Cycle Chain
+                </button>
+              </div>
             </CardContent>
           )}
         </Card>
@@ -1105,10 +1103,12 @@ export default function ProductionForm({
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-neutral-600">
-            This looks like the start of a new shift, but the live log still
-            has <strong>{staleClearConfirm?.count}</strong> cycle
-            {staleClearConfirm?.count === 1 ? "" : "s"} left over from a
-            previous shift. Clear it before continuing?
+            Starting the <strong>{shift === "night" ? "Night" : "Day"}</strong>{" "}
+            shift. The live log still has{" "}
+            <strong>{staleClearConfirm?.count}</strong> cycle
+            {staleClearConfirm?.count === 1 ? "" : "s"} left over from the
+            previous shift — normal if it just ended. Clear it to start
+            fresh?
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={handleCancelClearStale}>
