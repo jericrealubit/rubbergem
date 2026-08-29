@@ -27,3 +27,17 @@ export interface LiveLogRow {
     sizes?: Partial<Record<number, string>>;
   } | null;
 }
+
+// One archived shift entry for the TV's history dropdown — derived from a
+// deduped production_logs row (see app/tv/page.tsx).
+import type { ArchivedCycle, ShiftGroup } from "@/lib/shift-log";
+
+export interface ShiftHistoryOption {
+  id: number;
+  date: string;
+  shiftGroup: ShiftGroup;
+  operator: string;
+  machinePress: string | null;
+  cycles: ArchivedCycle[];
+  matTypes: Record<number, string>;
+}

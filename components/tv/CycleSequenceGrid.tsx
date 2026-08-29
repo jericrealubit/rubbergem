@@ -4,10 +4,12 @@ import type { LiveLogRow } from "./types";
 
 interface CycleSequenceGridProps {
   liveLogRows: LiveLogRow[];
+  periodLabel?: string;
 }
 
 export default function CycleSequenceGrid({
   liveLogRows,
+  periodLabel = "This Shift",
 }: CycleSequenceGridProps) {
   // Newest cycle first — combined with flex-row-reverse below, this keeps
   // the most recent cycle visible and clips older ones off the left edge
@@ -18,7 +20,7 @@ export default function CycleSequenceGrid({
     <div className="flex-[2] min-h-0 bg-neutral-900 rounded-xl border border-neutral-800 p-3 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-          Cycle-by-Cycle Sequence — This Shift
+          Cycle-by-Cycle Sequence — {periodLabel}
         </h2>
         <div className="flex items-center gap-3 text-[10px] font-bold uppercase text-neutral-400">
           <span className="flex items-center gap-1">

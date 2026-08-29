@@ -80,18 +80,20 @@ function PositionCell({
 interface DefectLocationHeatmapProps {
   liveLogRows: LiveLogRow[];
   matTypes?: Record<number, string>;
+  periodLabel?: string;
 }
 
 export default function DefectLocationHeatmap({
   liveLogRows,
   matTypes,
+  periodLabel = "This Shift",
 }: DefectLocationHeatmapProps) {
   const tallies = useMemo(() => tallyDefectLocations(liveLogRows), [liveLogRows]);
 
   return (
     <div className="flex-[3] min-h-0 bg-neutral-900 rounded-xl border border-neutral-800 p-3 flex flex-col">
       <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
-        Defect Location Heatmap — This Shift
+        Defect Location Heatmap — {periodLabel}
       </h2>
       <div className="flex-1 grid grid-cols-4 gap-3">
         {([1, 2, 3, 4] as const).map((id) => {
@@ -106,31 +108,33 @@ export default function DefectLocationHeatmap({
                 {matTypes?.[id] ? ` · ${matTypes[id]}` : ""}
               </span>
 
-              <div className="grid grid-cols-2 grid-rows-4 gap-1 w-full">
-                <PositionCell
-                  count={tally.positions["top-left"]}
-                  className="col-start-1 row-start-1"
-                />
-                <PositionCell
-                  count={tally.positions["top-right"]}
-                  className="col-start-2 row-start-1"
-                />
-                <PositionCell
-                  count={tally.positions.center}
-                  className="col-start-1 col-span-2 row-start-2 justify-self-center"
-                />
-                <PositionCell
-                  count={tally.positions["bottom-left"]}
-                  className="col-start-1 row-start-3"
-                />
-                <PositionCell
-                  count={tally.positions["bottom-right"]}
-                  className="col-start-2 row-start-3"
-                />
+              <div className="flex flex-col items-center gap-1.5 w-full">
+                <div className="grid grid-cols-[auto_auto] grid-rows-3 gap-1 justify-center">
+                  <PositionCell
+                    count={tally.positions["top-left"]}
+                    className="col-start-1 row-start-1"
+                  />
+                  <PositionCell
+                    count={tally.positions["top-right"]}
+                    className="col-start-2 row-start-1"
+                  />
+                  <PositionCell
+                    count={tally.positions.center}
+                    className="col-start-1 col-span-2 row-start-2 justify-self-center"
+                  />
+                  <PositionCell
+                    count={tally.positions["bottom-left"]}
+                    className="col-start-1 row-start-3"
+                  />
+                  <PositionCell
+                    count={tally.positions["bottom-right"]}
+                    className="col-start-2 row-start-3"
+                  />
+                </div>
                 <PositionCell
                   count={tally.positions.bubble}
                   label="Bubble"
-                  className="!w-full col-start-1 col-span-2 row-start-4"
+                  className="!w-full h-8"
                 />
               </div>
             </div>
