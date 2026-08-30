@@ -330,6 +330,29 @@ export default function ProductionForm({
     return matches.find((r) => String(r.id) === cachedId) || matches[0] || null;
   };
 
+  // Shared by the stale-clear dialog and End Shift's own post-archive clear.
+  // Throws on failure — callers decide how to surface that.
+  const clearLiveLog = async () => {
+    const { error: rpcError } = await supabase.rpc("reset_shift_log", {
+      p_shift_id: "1",
+    });
+    if (rpcError) throw rpcError;
+
+    // Verify the delete actually happened. Postgres doesn't error on a
+    // DELETE that matches 0 rows (e.g. if RLS silently filters it), so
+    // without this check a permissions regression would look like success.
+    const { count: verifyCount, error: verifyError } = await supabase
+      .from("live_log")
+      .select("*", { count: "exact", head: true })
+      .eq("shift_id", 1);
+    if (verifyError) throw verifyError;
+    if (verifyCount && verifyCount > 0) {
+      throw new Error(
+        "Live log still has rows after clearing — check reset_shift_log RLS/permissions in Supabase.",
+      );
+    }
+  };
+
   const submitCycle = async (
     endTimeHHMM: string,
     durationMinutes: number,
@@ -503,6 +526,21 @@ export default function ProductionForm({
         localStorage.setItem("production_log_id", savedLogId);
       }
 
+      // End Shift: the final cycle is now safely archived above, so clear
+      // live_log (+ shift_messages) so the Press Live Log Table is empty and
+      // ready for the next shift. Isolated try/catch — a failure here must
+      // not make this look like the cycle itself failed to save.
+      if (!continueChain) {
+        try {
+          await clearLiveLog();
+        } catch (clearErr) {
+          console.error("Error clearing live log after End Shift:", clearErr);
+          toast.error(
+            `Shift closed and saved, but the live log table could not be cleared automatically: ${clearErr instanceof Error ? clearErr.message : String(clearErr)}. Clear it manually from Press Live Log Table.`,
+          );
+        }
+      }
+
       const newCycleEntry = {
         id: Math.random().toString(36).substring(2, 9),
         pressNumber,
@@ -650,24 +688,7 @@ export default function ProductionForm({
     setIsSubmitting(true);
 
     try {
-      const { error: rpcError } = await supabase.rpc("reset_shift_log", {
-        p_shift_id: "1",
-      });
-      if (rpcError) throw rpcError;
-
-      // Verify the delete actually happened. Postgres doesn't error on a
-      // DELETE that matches 0 rows (e.g. if RLS silently filters it), so
-      // without this check a permissions regression would look like success.
-      const { count: verifyCount, error: verifyError } = await supabase
-        .from("live_log")
-        .select("*", { count: "exact", head: true })
-        .eq("shift_id", 1);
-      if (verifyError) throw verifyError;
-      if (verifyCount && verifyCount > 0) {
-        throw new Error(
-          "Live log still has rows after clearing — check reset_shift_log RLS/permissions in Supabase.",
-        );
-      }
+      await clearLiveLog();
 
       setStaleClearConfirm(null);
       toast.warning(
@@ -1131,9 +1152,10 @@ export default function ProductionForm({
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             This submits the current cycle (started at{" "}
-            <strong>{startTime}</strong>) and closes the chain — you'll need
-            to tap Start Time again to begin a new cycle. Use this only for
-            the last cycle of the shift.
+            <strong>{startTime}</strong>), closes the chain, and clears the
+            Press Live Log Table so it's ready for the next shift — you'll
+            need to tap Start Time again to begin a new cycle. Use this only
+            for the last cycle of the shift.
           </p>
           <DialogFooter>
             <Button
