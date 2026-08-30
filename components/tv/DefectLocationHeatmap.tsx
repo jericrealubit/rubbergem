@@ -65,7 +65,7 @@ function PositionCell({
 }) {
   return (
     <div
-      className={`w-11 h-11 rounded flex items-center justify-center gap-1 text-sm font-mono font-bold text-neutral-100 ${countToRedBucket(count)} ${className}`}
+      className={`w-11 h-11 rounded flex items-center justify-center gap-1 text-sm font-mono font-bold text-foreground ${countToRedBucket(count)} ${className}`}
     >
       {label && (
         <span className="text-[9px] font-sans font-bold uppercase tracking-wide">
@@ -91,8 +91,8 @@ export default function DefectLocationHeatmap({
   const tallies = useMemo(() => tallyDefectLocations(liveLogRows), [liveLogRows]);
 
   return (
-    <div className="flex-[3] min-h-0 bg-neutral-900 rounded-xl border border-neutral-800 p-3 flex flex-col">
-      <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
+    <div className="flex-[3] min-h-0 bg-card rounded-xl border border-border p-3 flex flex-col">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
         Defect Location Heatmap — {periodLabel}
       </h2>
       <div className="flex-1 grid grid-cols-4 gap-3">
@@ -101,9 +101,9 @@ export default function DefectLocationHeatmap({
           return (
             <div
               key={id}
-              className="flex flex-col items-center gap-2 bg-neutral-950/50 rounded-lg p-2"
+              className="flex flex-col items-center gap-2 bg-muted/50 rounded-lg p-2"
             >
-              <span className="text-[11px] font-bold uppercase text-neutral-400">
+              <span className="text-[11px] font-bold uppercase text-muted-foreground">
                 Table {id}
                 {matTypes?.[id] ? ` · ${matTypes[id]}` : ""}
               </span>

@@ -141,12 +141,12 @@ export default function ChatPanel({ session }: { session: any }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="relative p-1.5 rounded-lg hover:bg-emerald-900/60 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        className="relative p-1.5 rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
         aria-label="Open chat"
       >
         <MessageCircle className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center leading-none">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -160,7 +160,7 @@ export default function ChatPanel({ session }: { session: any }) {
 
           <div className="flex-1 min-h-[200px] max-h-[45vh] overflow-y-auto space-y-2 py-2">
             {messages.length === 0 && (
-              <p className="text-xs text-neutral-400 text-center py-6">
+              <p className="text-xs text-muted-foreground text-center py-6">
                 No messages yet.
               </p>
             )}
@@ -171,14 +171,14 @@ export default function ChatPanel({ session }: { session: any }) {
                   m.is_operator ? "ml-auto items-end" : "items-start"
                 }`}
               >
-                <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wide px-1">
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide px-1">
                   {m.sender_name}
                 </span>
                 <div
                   className={`rounded-xl px-3 py-1.5 text-sm break-words ${
                     m.is_operator
-                      ? "bg-emerald-700 text-white"
-                      : "bg-neutral-100 text-neutral-800"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
                   }`}
                 >
                   {m.body}
@@ -188,7 +188,7 @@ export default function ChatPanel({ session }: { session: any }) {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-neutral-100">
+          <div className="space-y-2 pt-2 border-t border-border">
             <Input
               placeholder="Your name"
               value={senderName}

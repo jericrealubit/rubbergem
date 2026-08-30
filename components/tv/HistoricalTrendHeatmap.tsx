@@ -88,12 +88,12 @@ export default function HistoricalTrendHeatmap() {
   };
 
   return (
-    <div className="h-full min-h-0 bg-neutral-900 rounded-xl border border-neutral-800 p-3 flex flex-col">
-      <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-2">
+    <div className="h-full min-h-0 bg-card rounded-xl border border-border p-3 flex flex-col">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
         Reject-Rate Trend — Last {DAYS_BACK} Days
       </h2>
 
-      <div className="grid grid-cols-[auto_1fr_1fr] gap-1 text-center text-[10px] font-bold uppercase text-neutral-500 pb-1">
+      <div className="grid grid-cols-[auto_1fr_1fr] gap-1 text-center text-[10px] font-bold uppercase text-muted-foreground pb-1">
         <span />
         <span>Day</span>
         <span>Night</span>
@@ -105,7 +105,7 @@ export default function HistoricalTrendHeatmap() {
             key={date}
             className="flex-1 grid grid-cols-[auto_1fr_1fr] gap-1 items-center"
           >
-            <span className="text-[10px] font-mono text-neutral-400 pr-1">
+            <span className="text-[10px] font-mono text-muted-foreground pr-1">
               {date.slice(5)}
             </span>
             {(["day", "night"] as const).map((shift) => {
@@ -113,7 +113,7 @@ export default function HistoricalTrendHeatmap() {
               return (
                 <div
                   key={shift}
-                  className={`h-full rounded flex items-center justify-center text-[10px] font-mono font-bold text-neutral-100 ${rateToRedBucket(rate)}`}
+                  className={`h-full rounded flex items-center justify-center text-[10px] font-mono font-bold text-foreground ${rateToRedBucket(rate)}`}
                 >
                   {rate === null ? "" : `${(rate * 100).toFixed(0)}%`}
                 </div>

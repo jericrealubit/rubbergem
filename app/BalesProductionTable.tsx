@@ -294,11 +294,11 @@ export default function BalesProductionTable({
       `}</style>
 
       {/* Control Actions Panel */}
-      <div className="flex items-center justify-between no-print bg-neutral-50 p-2 rounded-xl border border-neutral-200">
+      <div className="flex items-center justify-between no-print bg-card p-2 rounded-xl border border-border">
         <Button
           variant="ghost"
           onClick={onBack}
-          className="gap-2 h-9 text-neutral-600 text-xs"
+          className="gap-2 h-9 text-muted-foreground text-xs"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
@@ -307,7 +307,7 @@ export default function BalesProductionTable({
             onClick={handleResetLog}
             disabled={!session || isResetting}
             variant="destructive"
-            className="bg-red-600 hover:bg-red-700 gap-2 h-9 text-xs font-bold shadow-sm text-white"
+            className="gap-2 h-9 text-xs font-bold shadow-sm"
           >
             {isResetting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -322,7 +322,7 @@ export default function BalesProductionTable({
           </Button>
           <Button
             onClick={handlePrintPDF}
-            className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-9 text-xs font-bold shadow-sm text-white"
+            className="bg-primary hover:bg-primary/90 gap-2 h-9 text-xs font-bold shadow-sm text-primary-foreground"
           >
             <Printer className="w-4 h-4" /> Print PDF
           </Button>
@@ -330,8 +330,8 @@ export default function BalesProductionTable({
       </div>
 
       {fetchError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-sm text-red-800 no-print">
-          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl flex items-start gap-2 text-sm text-destructive no-print">
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Database Fetch Failed: </span>
             {fetchError}. Verify that RLS permissions are correct for the anon
@@ -340,14 +340,14 @@ export default function BalesProductionTable({
         </div>
       )}
 
-      <Card className="shadow-sm border-neutral-200 overflow-hidden">
-        <CardHeader className="bg-emerald-950 text-white p-3 header-compact">
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-primary text-primary-foreground p-3 header-compact">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-base font-bold tracking-wider uppercase">
                 Bales Live Log Table
               </CardTitle>
-              <p className="text-[10px] text-emerald-300">
+              <p className="text-[10px] text-primary-foreground/70">
                 Baling Line Execution Log
               </p>
             </div>
@@ -355,27 +355,27 @@ export default function BalesProductionTable({
         </CardHeader>
 
         {/* Metadata Strip */}
-        <div className="bg-neutral-50 border-b border-neutral-200 p-2.5 space-y-2.5 meta-grid-compact">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-neutral-700">
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <User className="w-4 h-4 text-emerald-700 shrink-0" />
+        <div className="bg-muted border-b border-border p-2.5 space-y-2.5 meta-grid-compact">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-foreground">
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <User className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Operator / Shift
                 </span>
-                <span className="font-bold text-neutral-950 text-xs">
+                <span className="font-bold text-foreground text-xs">
                   {shiftConfig?.operator || "Remote Screen"}
                 </span>
-                <span className="text-[10px] text-neutral-500 capitalize ml-1">
+                <span className="text-[10px] text-muted-foreground capitalize ml-1">
                   ({shiftConfig?.shift_group || "View"})
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <Settings2 className="w-4 h-4 text-emerald-700 shrink-0" />
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <Settings2 className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Mesh Type
                 </span>
                 <span className="font-extrabold text-accent-ink text-xs">
@@ -384,25 +384,25 @@ export default function BalesProductionTable({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <Hash className="w-4 h-4 text-emerald-700 shrink-0" />
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <Hash className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Cycles Logged
                 </span>
-                <span className="font-bold text-neutral-950 text-xs">
+                <span className="font-bold text-foreground text-xs">
                   {entries.length}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <Layers className="w-4 h-4 text-emerald-700 shrink-0" />
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <Layers className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Total Run Time
                 </span>
-                <span className="font-bold text-neutral-950 text-xs">
+                <span className="font-bold text-foreground text-xs">
                   {totalRunTime > 0 ? `${totalRunTime}m` : "0m"}
                 </span>
               </div>
@@ -413,34 +413,34 @@ export default function BalesProductionTable({
         {/* 22-Row Shift Cycle Data Grid */}
         <CardContent className="p-0 overflow-x-auto relative">
           {isLoading && entries.length === 0 && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center z-10 p-12 gap-2 text-xs font-semibold text-neutral-500">
-              <Loader2 className="w-4 h-4 text-emerald-700 animate-spin" />{" "}
+            <div className="absolute inset-0 bg-card/80 backdrop-blur-xs flex items-center justify-center z-10 p-12 gap-2 text-xs font-semibold text-muted-foreground">
+              <Loader2 className="w-4 h-4 text-primary animate-spin" />{" "}
               Fetching raw logs...
             </div>
           )}
 
           <table className="w-full text-left border-collapse print-compact min-w-[760px]">
             <thead>
-              <tr className="bg-neutral-100 border-b border-neutral-200 text-neutral-600 text-[10px] uppercase tracking-wider font-bold">
-                <th className="p-2 border-r border-neutral-200 text-center w-[45px]">
+              <tr className="bg-muted border-b border-border text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
+                <th className="p-2 border-r border-border text-center w-[45px]">
                   Cycle
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[130px]">
+                <th className="p-2 border-r border-border text-center w-[130px]">
                   Times
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[70px]">
+                <th className="p-2 border-r border-border text-center w-[70px]">
                   Runtime
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[90px]">
+                <th className="p-2 border-r border-border text-center w-[90px]">
                   Bales Produced
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[70px]">
+                <th className="p-2 border-r border-border text-center w-[70px]">
                   Bale Type
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[70px]">
+                <th className="p-2 border-r border-border text-center w-[70px]">
                   Faulty
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[70px]">
+                <th className="p-2 border-r border-border text-center w-[70px]">
                   Mesh
                 </th>
                 <th className="p-2 min-w-[200px] text-left">
@@ -448,36 +448,36 @@ export default function BalesProductionTable({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200 text-[11px]">
+            <tbody className="divide-y divide-border text-[11px]">
               {rows.map((entry, index) => {
                 if (!entry) {
                   return (
                     <tr
                       key={`filler-${index}`}
-                      className="min-h-[25px] bg-white"
+                      className="min-h-[25px] bg-card"
                     >
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-300 font-mono font-bold bg-neutral-50/30 w-[45px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/50 font-mono font-bold bg-muted/30 w-[45px]">
                         {index + 1}
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[130px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 font-mono w-[130px]">
                         —
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[70px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 font-mono w-[70px]">
                         —
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 w-[90px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 w-[90px]">
                         -
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 w-[70px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 w-[70px]">
                         -
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 w-[70px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 w-[70px]">
                         -
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 w-[70px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 w-[70px]">
                         -
                       </td>
-                      <td className="p-1 text-neutral-200 italic min-w-[200px]">
+                      <td className="p-1 text-muted-foreground/40 italic min-w-[200px]">
                         -
                       </td>
                     </tr>
@@ -487,47 +487,47 @@ export default function BalesProductionTable({
                 return (
                   <tr
                     key={entry.id}
-                    className="min-h-[25px] hover:bg-neutral-50/50 text-neutral-800 font-medium"
+                    className="min-h-[25px] hover:bg-accent text-foreground font-medium"
                   >
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono font-bold bg-neutral-50 text-neutral-500 w-[45px]">
+                    <td className="p-1 border-r border-border text-center font-mono font-bold bg-muted text-muted-foreground w-[45px]">
                       {index + 1}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 font-mono text-center text-[10px] w-[130px] whitespace-nowrap">
-                      <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
+                    <td className="p-1 border-r border-border font-mono text-center text-[10px] w-[130px] whitespace-nowrap">
+                      <span className="bg-muted px-1 py-0.5 rounded text-foreground font-bold">
                         {entry.startTime}
                       </span>
-                      <span className="mx-0.5 text-neutral-400">→</span>
-                      <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
+                      <span className="mx-0.5 text-muted-foreground">→</span>
+                      <span className="bg-muted px-1 py-0.5 rounded text-foreground font-bold">
                         {entry.endTime}
                       </span>
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[70px]">
+                    <td className="p-1 border-r border-border text-center font-mono text-[10px] w-[70px]">
                       {entry.runTime !== "" ? `${entry.runTime}m` : "—"}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[90px]">
+                    <td className="p-1 border-r border-border text-center font-mono text-[10px] w-[90px]">
                       {entry.balesProduced}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[70px]">
+                    <td className="p-1 border-r border-border text-center font-mono text-[10px] w-[70px]">
                       {entry.baleType || "—"}
                     </td>
                     <td
-                      className={`p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[70px] ${
+                      className={`p-1 border-r border-border text-center font-mono text-[10px] w-[70px] ${
                         entry.faultyBalesCount > 0
-                          ? "text-red-600 font-bold"
-                          : "text-neutral-400"
+                          ? "text-destructive font-bold"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {entry.faultyBalesCount}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[70px]">
+                    <td className="p-1 border-r border-border text-center font-mono text-[10px] w-[70px]">
                       {entry.meshType || "—"}
                     </td>
                     <td
-                      className="p-1 text-neutral-500 font-normal text-[10px] min-w-[200px] text-left"
+                      className="p-1 text-muted-foreground font-normal text-[10px] min-w-[200px] text-left"
                       title={entry.notes}
                     >
                       {entry.notes || (
-                        <span className="text-neutral-200 italic">None</span>
+                        <span className="text-muted-foreground/50 italic">None</span>
                       )}
                     </td>
                   </tr>
@@ -539,46 +539,46 @@ export default function BalesProductionTable({
       </Card>
 
       {/* Bag Changes Panel */}
-      <Card className="shadow-sm border-neutral-200 overflow-hidden">
+      <Card className="overflow-hidden">
         <CardHeader className="p-3 pb-2">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-accent-ink flex items-center gap-2">
-            <Package className="w-4 h-4 text-emerald-700" /> Bag Changes
+            <Package className="w-4 h-4 text-primary" /> Bag Changes
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {bagChanges.length === 0 ? (
-            <p className="text-xs text-neutral-400 italic p-3">
+            <p className="text-xs text-muted-foreground italic p-3">
               No bag changes logged this shift.
             </p>
           ) : (
             <table className="w-full text-left border-collapse print-compact">
               <thead>
-                <tr className="bg-neutral-100 border-b border-neutral-200 text-neutral-600 text-[10px] uppercase tracking-wider font-bold">
-                  <th className="p-2 border-r border-neutral-200 text-center">
+                <tr className="bg-muted border-b border-border text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
+                  <th className="p-2 border-r border-border text-center">
                     Side
                   </th>
-                  <th className="p-2 border-r border-neutral-200 text-center">
+                  <th className="p-2 border-r border-border text-center">
                     Sequence #
                   </th>
-                  <th className="p-2 border-r border-neutral-200 text-center">
+                  <th className="p-2 border-r border-border text-center">
                     Weight (kg)
                   </th>
                   <th className="p-2 text-center">Logged At</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200 text-[11px]">
+              <tbody className="divide-y divide-border text-[11px]">
                 {bagChanges.map((b) => (
-                  <tr key={b.id} className="hover:bg-neutral-50/50">
-                    <td className="p-1.5 border-r border-neutral-200 text-center font-bold uppercase text-neutral-700">
+                  <tr key={b.id} className="hover:bg-accent">
+                    <td className="p-1.5 border-r border-border text-center font-bold uppercase text-foreground">
                       {b.side}
                     </td>
-                    <td className="p-1.5 border-r border-neutral-200 text-center font-mono">
+                    <td className="p-1.5 border-r border-border text-center font-mono">
                       #{b.sequence_number}
                     </td>
-                    <td className="p-1.5 border-r border-neutral-200 text-center font-mono">
+                    <td className="p-1.5 border-r border-border text-center font-mono">
                       {b.weight_kg != null ? b.weight_kg : "—"}
                     </td>
-                    <td className="p-1.5 text-center font-mono text-neutral-500">
+                    <td className="p-1.5 text-center font-mono text-muted-foreground">
                       {new Intl.DateTimeFormat("en-GB", {
                         timeZone: "Australia/Perth",
                         hour: "2-digit",
@@ -596,16 +596,16 @@ export default function BalesProductionTable({
 
       {/* Production Summary Footer Cards */}
       <div className="grid grid-cols-2 gap-3 pt-0.5">
-        <div className="bg-white border border-neutral-200 rounded-xl p-2.5 flex items-center justify-between shadow-sm footer-compact">
+        <div className="bg-card border border-border rounded-[var(--radius-card)] p-2.5 flex items-center justify-between shadow-[var(--shadow-card)] print:shadow-none footer-compact">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-md bg-accent-chip text-accent-ink">
               <CheckCircle className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-neutral-900">
+              <h3 className="text-xs font-bold text-foreground">
                 Total Bales Produced
               </h3>
-              <p className="text-[9px] text-neutral-400 font-medium">
+              <p className="text-[9px] text-muted-foreground font-medium">
                 Summed across {entries.length} logged cycle
                 {entries.length === 1 ? "" : "s"}
               </p>
@@ -616,22 +616,22 @@ export default function BalesProductionTable({
           </div>
         </div>
 
-        <div className="bg-white border border-neutral-200 rounded-xl p-2.5 flex items-center justify-between shadow-sm footer-compact">
+        <div className="bg-card border border-border rounded-[var(--radius-card)] p-2.5 flex items-center justify-between shadow-[var(--shadow-card)] print:shadow-none footer-compact">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-red-50 text-red-600">
+            <div className="p-1.5 rounded-md bg-destructive/10 text-destructive">
               <AlertCircle className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-neutral-900">
+              <h3 className="text-xs font-bold text-foreground">
                 Total Faulty Bales
               </h3>
-              <p className="text-[9px] text-neutral-400 font-medium">
+              <p className="text-[9px] text-muted-foreground font-medium">
                 Summed from per-cycle faulty count
               </p>
             </div>
           </div>
           <div
-            className={`text-lg font-black font-mono ${totalFaultyBales > 0 ? "text-red-600" : "text-neutral-400"}`}
+            className={`text-lg font-black font-mono ${totalFaultyBales > 0 ? "text-destructive" : "text-muted-foreground"}`}
           >
             {totalFaultyBales}
           </div>

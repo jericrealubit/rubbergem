@@ -350,11 +350,11 @@ export default function ProductionTablePage({
       `}</style>
 
       {/* Control Actions Panel */}
-      <div className="flex items-center justify-between no-print bg-neutral-50 p-2 rounded-xl border border-neutral-200">
+      <div className="flex items-center justify-between no-print bg-card p-2 rounded-xl border border-border">
         <Button
           variant="ghost"
           onClick={onBack}
-          className="gap-2 h-9 text-neutral-600 text-xs"
+          className="gap-2 h-9 text-muted-foreground text-xs"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
@@ -363,7 +363,7 @@ export default function ProductionTablePage({
             onClick={handleResetLog}
             disabled={!session || isResetting}
             variant="destructive"
-            className="bg-red-600 hover:bg-red-700 gap-2 h-9 text-xs font-bold shadow-sm text-white"
+            className="gap-2 h-9 text-xs font-bold shadow-sm"
           >
             {isResetting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -378,7 +378,7 @@ export default function ProductionTablePage({
           </Button>
           <Button
             onClick={handlePrintPDF}
-            className="bg-emerald-700 hover:bg-emerald-800 gap-2 h-9 text-xs font-bold shadow-sm text-white"
+            className="bg-primary hover:bg-primary/90 gap-2 h-9 text-xs font-bold shadow-sm text-primary-foreground"
           >
             <Printer className="w-4 h-4" /> Print PDF
           </Button>
@@ -387,8 +387,8 @@ export default function ProductionTablePage({
 
       {/* Error Alert Banner */}
       {fetchError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-sm text-red-800 no-print">
-          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl flex items-start gap-2 text-sm text-destructive no-print">
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Database Fetch Failed: </span>
             {fetchError}. Verify that RLS permissions are correct for the anon
@@ -398,45 +398,45 @@ export default function ProductionTablePage({
       )}
 
       {/* Main Document Content Area */}
-      <Card className="shadow-sm border-neutral-200 overflow-hidden">
-        <CardHeader className="bg-emerald-950 text-white p-3 header-compact">
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-primary text-primary-foreground p-3 header-compact">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-base font-bold tracking-wider uppercase">
                 Press Live Log Table
               </CardTitle>
-              <p className="text-[10px] text-emerald-300">
+              <p className="text-[10px] text-primary-foreground/70">
                 Shift Execution & Defect Matrix
               </p>
             </div>
-            <div className="text-[10px] bg-emerald-900 border border-emerald-800 px-2.5 py-0.5 rounded font-mono">
+            <div className="text-[10px] bg-primary-foreground/10 border border-primary-foreground/20 px-2.5 py-0.5 rounded font-mono">
               Date: {latestEntry?.date || "---"}
             </div>
           </div>
         </CardHeader>
 
         {/* Metadata Strip */}
-        <div className="bg-neutral-50 border-b border-neutral-200 p-2.5 space-y-2.5 meta-grid-compact">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-neutral-700">
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <User className="w-4 h-4 text-emerald-700 shrink-0" />
+        <div className="bg-muted border-b border-border p-2.5 space-y-2.5 meta-grid-compact">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-foreground">
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <User className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Operator / Shift
                 </span>
-                <span className="font-bold text-neutral-950 text-xs">
+                <span className="font-bold text-foreground text-xs">
                   {shiftConfig?.operator || "Remote Screen"}
                 </span>
-                <span className="text-[10px] text-neutral-500 capitalize ml-1">
+                <span className="text-[10px] text-muted-foreground capitalize ml-1">
                   ({shiftConfig?.shift_group || "View"})
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <Cpu className="w-4 h-4 text-emerald-700 shrink-0" />
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <Cpu className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Machine Press
                 </span>
                 <span className="font-extrabold text-accent-ink text-xs">
@@ -445,25 +445,25 @@ export default function ProductionTablePage({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <Clock className="w-4 h-4 text-emerald-700 shrink-0" />
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <Clock className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Total Downtime(Load:17m)
                 </span>
-                <span className="font-bold text-red-600 text-xs">
+                <span className="font-bold text-destructive text-xs">
                   {totalDowntime > 0 ? `${totalDowntime}m` : "0m"}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded border border-neutral-200 meta-item-compact">
-              <Layers className="w-4 h-4 text-emerald-700 shrink-0" />
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <Layers className="w-4 h-4 text-primary shrink-0" />
               <div>
-                <span className="text-[9px] font-bold uppercase text-neutral-400 block leading-none">
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
                   Accumulated Load Time
                 </span>
-                <span className="font-bold text-neutral-950 text-xs">
+                <span className="font-bold text-foreground text-xs">
                   {accumulatedLoadTime > 0 ? `${accumulatedLoadTime}m` : "0m"}
                 </span>
               </div>
@@ -471,10 +471,10 @@ export default function ProductionTablePage({
           </div>
 
           {/* Table Line Yield Status Strip */}
-          <div className="bg-white p-2 rounded border border-neutral-200 flex flex-col md:flex-row md:items-center gap-2.5 text-xs meta-item-compact">
-            <div className="flex items-center gap-1.5 text-accent-ink shrink-0 md:border-r border-neutral-200 md:pr-3">
+          <div className="bg-card p-2 rounded border border-border flex flex-col md:flex-row md:items-center gap-2.5 text-xs meta-item-compact">
+            <div className="flex items-center gap-1.5 text-accent-ink shrink-0 md:border-r border-border md:pr-3">
               <Settings2 className="w-3.5 h-3.5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                 Table Line Output Yields:
               </span>
             </div>
@@ -484,22 +484,22 @@ export default function ProductionTablePage({
                 return (
                   <div
                     key={id}
-                    className="bg-neutral-50/50 border border-neutral-200/70 rounded-md p-1.5 flex items-center justify-between gap-2"
+                    className="bg-muted/50 border border-border/70 rounded-md p-1.5 flex items-center justify-between gap-2"
                   >
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-black text-neutral-400 uppercase leading-none mb-1">
+                      <span className="text-[9px] font-black text-muted-foreground uppercase leading-none mb-1">
                         Table {id}
                       </span>
-                      <span className="text-[11px] font-mono font-bold text-accent-ink bg-accent-chip px-1.5 py-0.5 rounded border border-emerald-100/80">
+                      <span className="text-[11px] font-mono font-bold text-accent-ink bg-accent-chip px-1.5 py-0.5 rounded border border-border">
                         {stats.matType}
                       </span>
                     </div>
                     <div className="flex flex-col items-end text-[10px] font-bold gap-0.5 shrink-0">
-                      <span className="text-emerald-700 bg-emerald-100/30 px-1.5 py-0.5 rounded font-mono">
+                      <span className="text-success bg-success/10 px-1.5 py-0.5 rounded font-mono">
                         G: {stats.good}
                       </span>
                       <span
-                        className={`px-1.5 py-0.5 rounded font-mono ${stats.reject > 0 ? "text-red-600 bg-red-100/30" : "text-neutral-400 bg-neutral-100"}`}
+                        className={`px-1.5 py-0.5 rounded font-mono ${stats.reject > 0 ? "text-destructive bg-destructive/10" : "text-muted-foreground bg-muted"}`}
                       >
                         R: {stats.reject}
                       </span>
@@ -514,25 +514,25 @@ export default function ProductionTablePage({
         {/* 15-Row Shift Cycle Data Grid */}
         <CardContent className="p-0 overflow-x-auto relative">
           {isLoading && entries.length === 0 && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex items-center justify-center z-10 p-12 gap-2 text-xs font-semibold text-neutral-500">
-              <Loader2 className="w-4 h-4 text-emerald-700 animate-spin" />{" "}
+            <div className="absolute inset-0 bg-card/80 backdrop-blur-xs flex items-center justify-center z-10 p-12 gap-2 text-xs font-semibold text-muted-foreground">
+              <Loader2 className="w-4 h-4 text-primary animate-spin" />{" "}
               Fetching raw matrix logs...
             </div>
           )}
 
           <table className="w-full text-left border-collapse print-compact min-w-[600px]">
             <thead>
-              <tr className="bg-neutral-100 border-b border-neutral-200 text-neutral-600 text-[10px] uppercase tracking-wider font-bold">
-                <th className="p-2 border-r border-neutral-200 text-center w-[45px]">
+              <tr className="bg-muted border-b border-border text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
+                <th className="p-2 border-r border-border text-center w-[45px]">
                   Cycle
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[140px]">
+                <th className="p-2 border-r border-border text-center w-[140px]">
                   Times (S/E / Load)
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center w-[70px]">
+                <th className="p-2 border-r border-border text-center w-[70px]">
                   Runtime
                 </th>
-                <th className="p-2 border-r border-neutral-200 text-center min-w-[220px] px-3">
+                <th className="p-2 border-r border-border text-center min-w-[220px] px-3">
                   Short Mold Locations
                 </th>
                 <th className="p-2 min-w-[200px] text-left">
@@ -540,27 +540,27 @@ export default function ProductionTablePage({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200 text-[11px]">
+            <tbody className="divide-y divide-border text-[11px]">
               {rows.map((entry, index) => {
                 if (!entry) {
                   return (
                     <tr
                       key={`filler-${index}`}
-                      className="min-h-[25px] bg-white"
+                      className="min-h-[25px] bg-card"
                     >
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-300 font-mono font-bold bg-neutral-50/30 w-[45px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/50 font-mono font-bold bg-muted/30 w-[45px]">
                         {index + 1}
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[140px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 font-mono w-[140px]">
                         —
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 font-mono w-[70px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 font-mono w-[70px]">
                         —
                       </td>
-                      <td className="p-1 border-r border-neutral-200 text-center text-neutral-200 min-w-[220px]">
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 min-w-[220px]">
                         -
                       </td>
-                      <td className="p-1 text-neutral-200 italic min-w-[200px]">
+                      <td className="p-1 text-muted-foreground/40 italic min-w-[200px]">
                         -
                       </td>
                     </tr>
@@ -577,42 +577,42 @@ export default function ProductionTablePage({
                 return (
                   <tr
                     key={entry.id}
-                    className="min-h-[25px] hover:bg-neutral-50/50 text-neutral-800 font-medium"
+                    className="min-h-[25px] hover:bg-accent text-foreground font-medium"
                   >
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono font-bold bg-neutral-50 text-neutral-500 w-[45px]">
+                    <td className="p-1 border-r border-border text-center font-mono font-bold bg-muted text-muted-foreground w-[45px]">
                       {index + 1}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 font-mono text-center text-[10px] w-[140px] whitespace-nowrap">
-                      <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
+                    <td className="p-1 border-r border-border font-mono text-center text-[10px] w-[140px] whitespace-nowrap">
+                      <span className="bg-muted px-1 py-0.5 rounded text-foreground font-bold">
                         {entry.startTime}
                       </span>
-                      <span className="mx-0.5 text-neutral-400">→</span>
-                      <span className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-900 font-bold">
+                      <span className="mx-0.5 text-muted-foreground">→</span>
+                      <span className="bg-muted px-1 py-0.5 rounded text-foreground font-bold">
                         {entry.endTime}
                       </span>
                       <span
                         className={`text-[9px] font-sans ml-1 font-semibold ${
                           typeof entry.loadTime === "number" &&
                           entry.loadTime > 17
-                            ? "text-red-600"
-                            : "text-neutral-500"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
                         }`}
                       >
                         ({entry.loadTime}m)
                       </span>
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono text-[10px] w-[70px]">
+                    <td className="p-1 border-r border-border text-center font-mono text-[10px] w-[70px]">
                       {entry.runTime !== "" ? `${entry.runTime}m` : "—"}
                     </td>
-                    <td className="p-1 border-r border-neutral-200 text-center font-mono tracking-tight text-neutral-600 text-[10px] min-w-[220px]">
+                    <td className="p-1 border-r border-border text-center font-mono tracking-tight text-muted-foreground text-[10px] min-w-[220px]">
                       {formatShortMolds()}
                     </td>
                     <td
-                      className="p-1 text-neutral-500 font-normal text-[10px] min-w-[200px] text-left"
+                      className="p-1 text-muted-foreground font-normal text-[10px] min-w-[200px] text-left"
                       title={entry.notes}
                     >
                       {entry.notes || (
-                        <span className="text-neutral-200 italic">None</span>
+                        <span className="text-muted-foreground/50 italic">None</span>
                       )}
                     </td>
                   </tr>
@@ -625,16 +625,16 @@ export default function ProductionTablePage({
 
       {/* Production Summary Footer Cards */}
       <div className="grid grid-cols-2 gap-3 pt-0.5">
-        <div className="bg-white border border-neutral-200 rounded-xl p-2.5 flex items-center justify-between shadow-sm footer-compact">
+        <div className="bg-card border border-border rounded-[var(--radius-card)] p-2.5 flex items-center justify-between shadow-[var(--shadow-card)] print:shadow-none footer-compact">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-md bg-accent-chip text-accent-ink">
               <CheckCircle className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-neutral-900">
+              <h3 className="text-xs font-bold text-foreground">
                 Total Mats Produced
               </h3>
-              <p className="text-[9px] text-neutral-400 font-medium">
+              <p className="text-[9px] text-muted-foreground font-medium">
                 Calculated: {activeEntriesCount} active cycles × 4 tables
               </p>
             </div>
@@ -644,22 +644,22 @@ export default function ProductionTablePage({
           </div>
         </div>
 
-        <div className="bg-white border border-neutral-200 rounded-xl p-2.5 flex items-center justify-between shadow-sm footer-compact">
+        <div className="bg-card border border-border rounded-[var(--radius-card)] p-2.5 flex items-center justify-between shadow-[var(--shadow-card)] print:shadow-none footer-compact">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-red-50 text-red-600">
+            <div className="p-1.5 rounded-md bg-destructive/10 text-destructive">
               <AlertCircle className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-neutral-900">
+              <h3 className="text-xs font-bold text-foreground">
                 Faulty Mats Produced
               </h3>
-              <p className="text-[9px] text-neutral-400 font-medium">
+              <p className="text-[9px] text-muted-foreground font-medium">
                 Max 1 defect count per table per cycle frame
               </p>
             </div>
           </div>
           <div
-            className={`text-lg font-black font-mono ${faultyMatsProduced > 0 ? "text-red-600" : "text-neutral-400"}`}
+            className={`text-lg font-black font-mono ${faultyMatsProduced > 0 ? "text-destructive" : "text-muted-foreground"}`}
           >
             {faultyMatsProduced}
           </div>

@@ -211,7 +211,7 @@ export default function TvPage() {
         }`;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-neutral-950 text-neutral-100 flex flex-col p-4 gap-3">
+    <div className="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col p-4 gap-3">
       <TvHeader
         shiftConfig={displayShiftConfig}
         isConnected={isConnected}

@@ -45,33 +45,33 @@ export default function TvHeader({
   });
 
   return (
-    <header className="h-16 shrink-0 flex items-center justify-between px-5 rounded-xl bg-neutral-900 border border-neutral-800">
-      <h1 className="text-xl font-black uppercase tracking-widest text-white">
+    <header className="h-16 shrink-0 flex items-center justify-between px-5 rounded-xl bg-card border border-border">
+      <h1 className="text-xl font-black uppercase tracking-widest text-foreground">
         Press Floor{mode === "history" ? " — History" : " — Live Production"}
       </h1>
 
       <div className="flex items-center gap-6">
         <div className="text-center">
-          <p className="text-[10px] uppercase tracking-wider text-neutral-500">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Operator
           </p>
-          <p className="text-sm font-bold text-neutral-100">
+          <p className="text-sm font-bold text-foreground">
             {shiftConfig?.operator || "—"}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] uppercase tracking-wider text-neutral-500">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Shift
           </p>
-          <p className="text-sm font-bold text-neutral-100 capitalize">
+          <p className="text-sm font-bold text-foreground capitalize">
             {shiftConfig?.shift_group || "—"}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] uppercase tracking-wider text-neutral-500">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Press
           </p>
-          <p className="text-sm font-bold text-neutral-100">
+          <p className="text-sm font-bold text-foreground">
             {shiftConfig?.press_number
               ? `#${shiftConfig.press_number}`
               : "—"}
@@ -83,7 +83,7 @@ export default function TvHeader({
           onChange={(e) =>
             onSelectShift(e.target.value === "live" ? "live" : Number(e.target.value))
           }
-          className="h-8 pl-2 pr-1 text-xs font-bold rounded-md bg-neutral-800 border border-neutral-700 text-neutral-100 uppercase tracking-wide focus:outline-none focus:ring-1 focus:ring-emerald-600"
+          className="h-8 pl-2 pr-1 text-xs font-bold rounded-md bg-muted border border-border text-foreground uppercase tracking-wide focus:outline-none focus:ring-1 focus:ring-primary"
         >
           <option value="live">Live</option>
           {Array.from(monthGroups.entries()).map(([label, opts]) => (
@@ -97,11 +97,11 @@ export default function TvHeader({
           ))}
         </select>
 
-        <div className="flex items-center gap-2 pl-4 border-l border-neutral-800">
+        <div className="flex items-center gap-2 pl-4 border-l border-border">
           {mode === "history" ? (
             <>
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+              <span className="w-2.5 h-2.5 rounded-full bg-warning" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-warning">
                 Viewing History
               </span>
             </>
@@ -109,10 +109,10 @@ export default function TvHeader({
             <>
               <span
                 className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-                  isConnected ? "bg-emerald-500" : "bg-red-500"
+                  isConnected ? "bg-success" : "bg-destructive"
                 }`}
               />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 {isConnected ? "Live" : "Reconnecting"}
               </span>
             </>

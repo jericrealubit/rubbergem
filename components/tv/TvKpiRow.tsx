@@ -11,15 +11,15 @@ interface TvKpiRowProps {
 function Tile({
   label,
   value,
-  valueClassName = "text-neutral-50",
+  valueClassName = "text-foreground",
 }: {
   label: string;
   value: string;
   valueClassName?: string;
 }) {
   return (
-    <div className="bg-neutral-900 rounded-xl border border-neutral-800 p-3 flex flex-col justify-center">
-      <span className="text-[10px] uppercase tracking-wider text-neutral-500">
+    <div className="bg-card rounded-xl border border-border p-3 flex flex-col justify-center">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
       <span className={`text-5xl font-bold font-sans ${valueClassName}`}>
@@ -53,12 +53,12 @@ export default function TvKpiRow({ liveLogRows }: TvKpiRowProps) {
       <Tile
         label="Rejects"
         value={String(totalRejects)}
-        valueClassName={totalRejects > 0 ? "text-red-500" : "text-neutral-50"}
+        valueClassName={totalRejects > 0 ? "text-destructive" : "text-foreground"}
       />
       <Tile
         label="Yield"
         value={`${yieldPct.toFixed(1)}%`}
-        valueClassName={yieldPct >= 95 ? "text-emerald-500" : "text-red-500"}
+        valueClassName={yieldPct >= 95 ? "text-success" : "text-destructive"}
       />
     </div>
   );

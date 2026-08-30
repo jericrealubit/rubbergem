@@ -639,7 +639,7 @@ export default function BalesForm({ session }: { session: any }) {
 
   return (
     <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 pb-12">
-      <div className="relative bg-emerald-800 text-white p-4 rounded-xl shadow-sm">
+      <div className="relative bg-primary text-primary-foreground p-4 rounded-[var(--radius-card)] shadow-[var(--shadow-card)]">
         <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
           Bales Production
         </h1>
@@ -648,20 +648,20 @@ export default function BalesForm({ session }: { session: any }) {
       <div className="space-y-4 ipad:space-y-0 ipad:grid ipad:grid-cols-2 ipad:gap-4 ipad:items-start">
         <div className="space-y-4">
           {/* Collapsible Shift Information Card */}
-          <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
+          <Card className="overflow-hidden transition-all duration-200">
             <button
               type="button"
               onClick={() => setIsShiftOpen(!isShiftOpen)}
-              className="w-full p-4 flex items-center justify-between text-left hover:bg-neutral-50/50 transition-colors focus:outline-none"
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-accent transition-colors focus:outline-none"
             >
               <div className="flex items-center gap-2.5">
-                <Settings2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                <Settings2 className="w-4 h-4 text-primary shrink-0" />
                 <div>
                   <span className="text-sm font-semibold uppercase text-accent-ink tracking-wide block">
                     Shift Information
                   </span>
                   {!isShiftOpen && (
-                    <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                       {operator || "No Name"} •{" "}
                       {shift === "day" ? "Day" : "Night"} • Mesh:{" "}
                       {meshType || "---"} • {currentDate || "---"}
@@ -670,14 +670,14 @@ export default function BalesForm({ session }: { session: any }) {
                 </div>
               </div>
               {isShiftOpen ? (
-                <ChevronUp className="w-5 h-5 text-neutral-400 shrink-0" />
+                <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-neutral-400 shrink-0" />
+                <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
               )}
             </button>
 
             {isShiftOpen && (
-              <CardContent className="p-4 pt-2 border-t border-neutral-100/60 space-y-4">
+              <CardContent className="p-4 pt-2 border-t border-border space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="bales-date">Shift Date</Label>
@@ -686,7 +686,7 @@ export default function BalesForm({ session }: { session: any }) {
                       type="date"
                       value={currentDate}
                       readOnly
-                      className="bg-neutral-50 cursor-not-allowed text-neutral-500 select-none"
+                      className="bg-muted cursor-not-allowed text-muted-foreground select-none"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -725,10 +725,10 @@ export default function BalesForm({ session }: { session: any }) {
           </Card>
 
           {/* Cycle Entry Card */}
-          <Card className="shadow-sm border-neutral-200/60">
+          <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
-                <Clock className="w-4 h-4 text-emerald-700" /> Cycle Entry
+                <Clock className="w-4 h-4 text-primary" /> Cycle Entry
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0 space-y-4">
@@ -738,7 +738,7 @@ export default function BalesForm({ session }: { session: any }) {
                   <button
                     type="button"
                     onClick={() => setIsManualStart(!isManualStart)}
-                    className="text-[10px] font-bold text-emerald-700 hover:text-accent-ink transition-colors uppercase tracking-wider"
+                    className="text-[10px] font-bold text-primary hover:text-accent-ink transition-colors uppercase tracking-wider"
                   >
                     {isManualStart ? "● Tap Mode" : "✎ Manual"}
                   </button>
@@ -748,17 +748,17 @@ export default function BalesForm({ session }: { session: any }) {
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="h-12 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
+                    className="h-12 text-center font-mono font-bold text-sm bg-primary/5 border-primary/30 focus-visible:ring-primary"
                   />
                 ) : cycleOpen ? (
-                  <div className="h-12 flex items-center justify-center rounded-md border-2 border-dashed border-emerald-600 bg-accent-chip/50 text-accent-ink font-bold tracking-wide font-mono">
+                  <div className="h-12 flex items-center justify-center rounded-md border-2 border-dashed border-primary bg-accent-chip/50 text-accent-ink font-bold tracking-wide font-mono">
                     {startTime}
                   </div>
                 ) : (
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full h-12 font-bold tracking-wide border-dashed border-2 border-emerald-600 bg-accent-chip/50 text-accent-ink"
+                    className="w-full h-12 font-bold tracking-wide border-dashed border-2 border-primary bg-accent-chip/50 text-accent-ink"
                     onClick={handleStartTap}
                   >
                     TAP TO START
@@ -772,7 +772,7 @@ export default function BalesForm({ session }: { session: any }) {
                     type="button"
                     disabled={!session || isSubmitting || !canFinalize}
                     onClick={handleFinishAndStartNext}
-                    className="w-full h-14 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
+                    className="w-full h-14 bg-primary hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
                   >
                     {isSubmitting && (
                       <Loader2 className="animate-spin" size={20} />
@@ -787,7 +787,7 @@ export default function BalesForm({ session }: { session: any }) {
                     type="button"
                     disabled={!session || isSubmitting}
                     onClick={() => setIsFinishShiftOpen(true)}
-                    className="w-full text-center text-[11px] font-bold text-neutral-500 hover:text-emerald-700 uppercase tracking-wider transition-colors disabled:opacity-40"
+                    className="w-full text-center text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors disabled:opacity-40"
                   >
                     End Shift — Enter Runtime Manually
                   </button>
@@ -857,24 +857,24 @@ export default function BalesForm({ session }: { session: any }) {
 
         <div className="space-y-4">
           {/* Bag Changes Card */}
-          <Card className="shadow-sm border-neutral-200/60">
+          <Card>
             <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
-                <Package className="w-4 h-4 text-emerald-700" /> Bag Changes
+                <Package className="w-4 h-4 text-primary" /> Bag Changes
               </CardTitle>
               <Button
                 type="button"
                 size="sm"
                 disabled={!session}
                 onClick={() => setIsBagDialogOpen(true)}
-                className="h-8 px-3 text-[11px] font-bold bg-emerald-700 hover:bg-emerald-800"
+                className="h-8 px-3 text-[11px] font-bold bg-primary hover:bg-primary/80"
               >
                 Log Bag Change
               </Button>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               {recentBagChanges.length === 0 ? (
-                <p className="text-xs text-neutral-400 italic">
+                <p className="text-xs text-muted-foreground italic">
                   No bag changes logged yet this shift.
                 </p>
               ) : (
@@ -882,16 +882,16 @@ export default function BalesForm({ session }: { session: any }) {
                   {recentBagChanges.map((b) => (
                     <div
                       key={b.id}
-                      className="flex items-center justify-between text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5"
+                      className="flex items-center justify-between text-xs bg-muted border border-border rounded-lg px-2.5 py-1.5"
                     >
-                      <span className="font-bold uppercase text-neutral-700">
+                      <span className="font-bold uppercase text-foreground">
                         {b.side === "east" ? "East" : "West"} #
                         {b.sequence_number}
                       </span>
-                      <span className="font-mono text-neutral-600">
+                      <span className="font-mono text-muted-foreground">
                         {b.weight_kg != null ? `${b.weight_kg}kg` : "—"}
                       </span>
-                      <span className="text-neutral-400">
+                      <span className="text-muted-foreground">
                         {new Intl.DateTimeFormat("en-GB", {
                           timeZone: "Australia/Perth",
                           hour: "2-digit",
@@ -907,10 +907,10 @@ export default function BalesForm({ session }: { session: any }) {
           </Card>
 
           {/* Main Issues / Faults Card */}
-          <Card className="shadow-sm border-neutral-200/60">
+          <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-emerald-700" /> Main
+                <AlertTriangle className="w-4 h-4 text-primary" /> Main
                 Issues / Faults
               </CardTitle>
             </CardHeader>
@@ -958,8 +958,8 @@ export default function BalesForm({ session }: { session: any }) {
                       htmlFor={`bag-side-${side}`}
                       className={`h-10 w-full border rounded flex items-center justify-center text-sm font-bold uppercase cursor-pointer transition-all ${
                         bagSide === side
-                          ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                          : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"
+                          ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                          : "border-border bg-background hover:bg-muted text-foreground"
                       }`}
                     >
                       {side}
@@ -992,7 +992,7 @@ export default function BalesForm({ session }: { session: any }) {
             <Button
               onClick={handleLogBagChange}
               disabled={isLoggingBag}
-              className="bg-emerald-700 hover:bg-emerald-800"
+              className="bg-primary hover:bg-primary/80"
             >
               {isLoggingBag && <Loader2 className="animate-spin" size={16} />}
               Log Bag Change
@@ -1011,7 +1011,7 @@ export default function BalesForm({ session }: { session: any }) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-muted-foreground">
               Closes out the current cycle (started at{" "}
               <strong>{startTime}</strong>) without opening a new one. Use
               this for the last cycle of the shift, where there's no next
@@ -1044,7 +1044,7 @@ export default function BalesForm({ session }: { session: any }) {
               disabled={
                 manualFinishRunTime === "" || !canFinalize || isSubmitting
               }
-              className="bg-emerald-700 hover:bg-emerald-800"
+              className="bg-primary hover:bg-primary/80"
             >
               {isSubmitting && <Loader2 className="animate-spin" size={16} />}
               End Shift
@@ -1062,12 +1062,12 @@ export default function BalesForm({ session }: { session: any }) {
       >
         <DialogContent className="sm:max-w-[380px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5 shrink-0" />
               Leftover Shift Data Found
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-muted-foreground">
             This looks like the start of a new shift, but the live log still
             has <strong>{staleClearConfirm?.count}</strong> cycle
             {staleClearConfirm?.count === 1 ? "" : "s"} left over from a

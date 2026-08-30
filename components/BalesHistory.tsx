@@ -198,30 +198,30 @@ export default function BalesHistory() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-md ipad:max-w-3xl mx-auto p-8 text-center text-xs font-semibold text-neutral-400">
-        <Layers className="w-5 h-5 mx-auto mb-2 text-emerald-700 animate-spin" />
+      <div className="w-full max-w-md ipad:max-w-3xl mx-auto p-8 text-center text-xs font-semibold text-muted-foreground">
+        <Layers className="w-5 h-5 mx-auto mb-2 text-primary animate-spin" />
         <span>Parsing Extracted Bales Production Logs...</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md ipad:max-w-3xl mx-auto p-3 ipad:p-4 space-y-4 pb-12 font-sans text-neutral-800">
-      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center gap-3">
-        <Calendar className="w-5 h-5 text-emerald-300" />
+    <div className="w-full max-w-md ipad:max-w-3xl mx-auto p-3 ipad:p-4 space-y-4 pb-12 font-sans text-foreground">
+      <div className="bg-primary text-primary-foreground p-4 rounded-xl shadow-sm flex items-center gap-3">
+        <Calendar className="w-5 h-5 text-primary-foreground/70" />
         <div>
           <h1 className="text-lg font-bold tracking-wider uppercase">
             Bales Production History
           </h1>
-          <p className="text-[11px] text-emerald-200 leading-none">
+          <p className="text-[11px] text-primary-foreground/80 leading-none">
             Nested Monthly Records &amp; Line Totals
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-sm text-red-800">
-          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl flex items-start gap-2 text-sm text-destructive">
+          <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Database Fetch Failed: </span>
             {error}. Verify that RLS SELECT permissions are correct for
@@ -240,37 +240,37 @@ export default function BalesHistory() {
                 onClick={() => toggleMonth(month.monthName)}
                 className={`w-full p-3.5 flex items-center justify-between rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${
                   isMonthOpen
-                    ? "bg-accent-chip/60 border-emerald-200 text-accent-ink"
-                    : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                    ? "bg-accent-chip/60 border-primary/30 text-accent-ink"
+                    : "bg-card border-border text-foreground/80 hover:bg-accent"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   {isMonthOpen ? (
-                    <FolderOpen className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <FolderOpen className="w-4 h-4 text-primary shrink-0" />
                   ) : (
-                    <Folder className="w-4 h-4 text-neutral-400 shrink-0" />
+                    <Folder className="w-4 h-4 text-muted-foreground shrink-0" />
                   )}
                   <span>{month.monthName}</span>
-                  <span className="normal-case text-[10px] font-sans font-medium text-neutral-400 ml-1">
+                  <span className="normal-case text-[10px] font-sans font-medium text-muted-foreground ml-1">
                     (cycles:{month.totalCycles}{" "}
-                    <span className="font-bold text-black">
+                    <span className="font-bold text-foreground">
                       bales:{month.totalBales}
                     </span>{" "}
-                    <span className="text-red-600 font-semibold">
+                    <span className="text-destructive font-semibold">
                       faulty:{month.totalFaulty}
                     </span>
                     )
                   </span>
                 </div>
                 {isMonthOpen ? (
-                  <ChevronUp className="w-4 h-4 text-emerald-700" />
+                  <ChevronUp className="w-4 h-4 text-primary" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-neutral-400" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 )}
               </button>
 
               {isMonthOpen && (
-                <div className="pl-3 pr-1 py-1 space-y-2 border-l-2 border-emerald-100 ml-5">
+                <div className="pl-3 pr-1 py-1 space-y-2 border-l-2 border-primary/20 ml-5">
                   {month.days.map((day) => {
                     const keyForDay = `${day.dateString}-${day.shift}-${day.id}`;
                     const isDayOpen = expandedDay === keyForDay;
@@ -292,101 +292,101 @@ export default function BalesHistory() {
                           onClick={() => toggleDay(keyForDay)}
                           className={`w-full p-2.5 flex items-center justify-between text-left text-xs font-semibold rounded-lg border transition-all ${
                             isDayOpen
-                              ? "bg-white border-neutral-300 text-neutral-900 shadow-sm"
-                              : "bg-neutral-50/70 border-neutral-200/80 text-neutral-600 hover:bg-neutral-100/50"
+                              ? "bg-card border-border text-foreground shadow-sm"
+                              : "bg-muted/70 border-border/80 text-muted-foreground hover:bg-accent/50"
                           }`}
                         >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="block text-[11px] font-bold text-neutral-800">
+                              <span className="block text-[11px] font-bold text-foreground">
                                 {formatDateLabel(day.dateString)}
                               </span>
-                              <span className="normal-case text-[10px] font-sans font-medium text-neutral-400">
+                              <span className="normal-case text-[10px] font-sans font-medium text-muted-foreground">
                                 (cycles:{day.totalCycles}{" "}
-                                <span className="font-bold text-black">
+                                <span className="font-bold text-foreground">
                                   bales:{day.totalBalesProduced}
                                 </span>{" "}
-                                <span className="text-red-500 font-semibold">
+                                <span className="text-destructive font-semibold">
                                   faulty:{day.totalFaultyBales}
                                 </span>
                                 )
                               </span>
                             </div>
-                            <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wide">
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wide">
                               {day.shift} Shift • Operator: {day.operator}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             {isDayOpen ? (
-                              <ChevronUp className="w-4 h-4 text-neutral-500" />
+                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
                             ) : (
-                              <ChevronDown className="w-4 h-4 text-neutral-400" />
+                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
                             )}
                           </div>
                         </button>
 
                         {isDayOpen && (
-                          <Card className="bg-white border-neutral-200 rounded-lg shadow-inner overflow-hidden mx-0.5 my-1">
+                          <Card className="bg-card border-border rounded-lg shadow-inner overflow-hidden mx-0.5 my-1">
                             <CardContent className="p-3 space-y-3">
-                              <div className="flex items-center gap-1.5 border-b border-neutral-100 pb-1.5">
-                                <Layers className="w-3.5 h-3.5 text-emerald-700" />
-                                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500">
+                              <div className="flex items-center gap-1.5 border-b border-border pb-1.5">
+                                <Layers className="w-3.5 h-3.5 text-primary" />
+                                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                                   Shift Totals
                                 </span>
                               </div>
 
                               <div className="grid grid-cols-2 ipad:grid-cols-4 gap-2">
-                                <div className="border border-neutral-100 rounded-md bg-neutral-50/40 p-2 flex items-center gap-1.5">
-                                  <Layers className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                                <div className="border border-border rounded-md bg-muted/40 p-2 flex items-center gap-1.5">
+                                  <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
                                   <div>
-                                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight leading-none">
+                                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight leading-none">
                                       Bales Produced
                                     </p>
-                                    <p className="text-xs font-black font-mono text-emerald-700">
+                                    <p className="text-xs font-black font-mono text-primary">
                                       {day.totalBalesProduced}
                                     </p>
                                   </div>
                                 </div>
-                                <div className="border border-neutral-100 rounded-md bg-neutral-50/40 p-2 flex items-center gap-1.5">
-                                  <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                                <div className="border border-border rounded-md bg-muted/40 p-2 flex items-center gap-1.5">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-destructive shrink-0" />
                                   <div>
-                                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight leading-none">
+                                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight leading-none">
                                       Faulty Bales
                                     </p>
                                     <p
-                                      className={`text-xs font-black font-mono ${day.totalFaultyBales > 0 ? "text-red-600" : "text-neutral-400"}`}
+                                      className={`text-xs font-black font-mono ${day.totalFaultyBales > 0 ? "text-destructive" : "text-muted-foreground"}`}
                                     >
                                       {day.totalFaultyBales}
                                     </p>
                                   </div>
                                 </div>
-                                <div className="border border-neutral-100 rounded-md bg-neutral-50/40 p-2 flex items-center gap-1.5">
-                                  <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                                <div className="border border-border rounded-md bg-muted/40 p-2 flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                   <div>
-                                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight leading-none">
+                                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight leading-none">
                                       Total Run Time
                                     </p>
-                                    <p className="text-xs font-black font-mono text-neutral-800">
+                                    <p className="text-xs font-black font-mono text-foreground">
                                       {Math.round(day.totalRunTimeMinutes)}m
                                     </p>
                                   </div>
                                 </div>
-                                <div className="border border-neutral-100 rounded-md bg-neutral-50/40 p-2 flex items-center gap-1.5">
-                                  <Hash className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                                <div className="border border-border rounded-md bg-muted/40 p-2 flex items-center gap-1.5">
+                                  <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                   <div>
-                                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-tight leading-none">
+                                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight leading-none">
                                       Cycles Logged
                                     </p>
-                                    <p className="text-xs font-black font-mono text-neutral-800">
+                                    <p className="text-xs font-black font-mono text-foreground">
                                       {day.totalCycles}
                                     </p>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="bg-accent-chip/50 rounded-md p-2 flex items-center justify-between text-[10px] font-semibold text-accent-ink border border-emerald-100/40">
+                              <div className="bg-accent-chip/50 rounded-md p-2 flex items-center justify-between text-[10px] font-semibold text-accent-ink border border-primary/20">
                                 <div className="flex items-center gap-1">
-                                  <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
+                                  <TrendingUp className="w-3.5 h-3.5 text-primary" />
                                   <span>
                                     {day.totalCycles} Total Bag Cycles Logged
                                   </span>
@@ -397,13 +397,13 @@ export default function BalesHistory() {
                               </div>
 
                               {day.mainIssuesFaults && (
-                                <div className="bg-amber-50/60 border border-amber-200/70 rounded-md p-2.5 flex items-start gap-2">
-                                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                                <div className="bg-warning/10 border border-warning/30 rounded-md p-2.5 flex items-start gap-2">
+                                  <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                                   <div>
-                                    <p className="text-[9px] font-black uppercase tracking-wider text-amber-700 mb-0.5">
+                                    <p className="text-[9px] font-black uppercase tracking-wider text-warning mb-0.5">
                                       Main Issues / Faults
                                     </p>
-                                    <p className="text-xs text-neutral-700 font-medium break-words">
+                                    <p className="text-xs text-foreground/80 font-medium break-words">
                                       {day.mainIssuesFaults}
                                     </p>
                                   </div>
@@ -414,8 +414,8 @@ export default function BalesHistory() {
                             {dayCycles.some(
                               (c) => c.notes && c.notes.trim() !== "",
                             ) && (
-                              <div className="space-y-2 border-t border-neutral-100 p-3 pt-2.5 bg-neutral-50/30">
-                                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                              <div className="space-y-2 border-t border-border p-3 pt-2.5 bg-muted/30">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
                                   Cycle Notes / Fault Log
                                 </span>
 
@@ -435,28 +435,28 @@ export default function BalesHistory() {
                                       return (
                                         <div
                                           key={idx}
-                                          className="bg-red-50/40 border border-red-100/80 p-2.5 rounded-xl text-xs flex flex-col sm:flex-row sm:items-start justify-between gap-3"
+                                          className="bg-destructive/10 border border-destructive/20 p-2.5 rounded-xl text-xs flex flex-col sm:flex-row sm:items-start justify-between gap-3"
                                         >
                                           <div className="flex-1 min-w-0">
-                                            <span className="font-bold text-red-700 inline-flex items-center gap-1 mr-1.5">
+                                            <span className="font-bold text-destructive inline-flex items-center gap-1 mr-1.5">
                                               ⚠️ Note:
                                             </span>
-                                            <span className="text-neutral-700 font-medium break-words">
+                                            <span className="text-foreground/80 font-medium break-words">
                                               {cycle.notes}
                                             </span>
                                           </div>
 
-                                          <div className="flex items-center gap-1.5 font-mono text-[10px] text-neutral-500 bg-white border border-neutral-200/70 px-2 py-1 rounded-lg self-start shrink-0 shadow-xs">
-                                            <span className="font-bold text-neutral-800">
+                                          <div className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground bg-card border border-border/70 px-2 py-1 rounded-lg self-start shrink-0 shadow-xs">
+                                            <span className="font-bold text-foreground">
                                               {cycle.start_time || "--:--"}
                                             </span>
-                                            <span className="text-neutral-300">
+                                            <span className="text-muted-foreground/60">
                                               →
                                             </span>
-                                            <span className="font-bold text-neutral-800">
+                                            <span className="font-bold text-foreground">
                                               {cycle.end_time || "--:--"}
                                             </span>
-                                            <span className="text-neutral-400 ml-0.5 bg-neutral-50 px-1.5 py-0.5 rounded border border-neutral-100">
+                                            <span className="text-muted-foreground ml-0.5 bg-muted px-1.5 py-0.5 rounded border border-border">
                                               {durationDisplay}
                                             </span>
                                           </div>

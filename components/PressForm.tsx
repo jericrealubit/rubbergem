@@ -693,9 +693,9 @@ export default function ProductionForm({
   return (
     <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 ipad:space-y-2 pb-12 ipad:pb-4">
       {/* Header Info Banner */}
-      <div className="bg-emerald-800 text-white p-4 rounded-xl shadow-sm flex items-center gap-4">
+      <div className="bg-primary text-primary-foreground p-4 rounded-[var(--radius-card)] shadow-[var(--shadow-card)] flex items-center gap-4">
         <Select value={pressNumber} onValueChange={setPressNumber}>
-          <SelectTrigger className="w-[120px] h-9 bg-emerald-900/60 border-emerald-700/50 text-white font-medium focus:ring-emerald-500">
+          <SelectTrigger className="w-[120px] h-9 bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground font-medium focus:ring-ring">
             <SelectValue placeholder="Select Press" />
           </SelectTrigger>
           <SelectContent>
@@ -715,20 +715,20 @@ export default function ProductionForm({
       >
       <div className="space-y-4 ipad:space-y-3">
         {/* Collapsible Shift / Metadata Card */}
-        <Card className="shadow-sm border-neutral-200/60 overflow-hidden transition-all duration-200">
+        <Card className="overflow-hidden transition-all duration-200">
           <button
             type="button"
             onClick={() => setIsShiftOpen(!isShiftOpen)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-neutral-50/50 transition-colors focus:outline-none"
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-accent transition-colors focus:outline-none"
           >
             <div className="flex items-center gap-2.5">
-              <Settings2 className="w-4 h-4 text-emerald-700 shrink-0" />
+              <Settings2 className="w-4 h-4 text-primary shrink-0" />
               <div>
                 <span className="text-sm font-semibold uppercase text-accent-ink tracking-wide block">
                   Shift Information
                 </span>
                 {!isShiftOpen && (
-                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                     {operator || "No Name"} •{" "}
                     {shift === "day" ? "Day" : "Night"} • Run:{" "}
                     {runTime || "---"}m • {currentDate || "---"}
@@ -737,14 +737,14 @@ export default function ProductionForm({
               </div>
             </div>
             {isShiftOpen ? (
-              <ChevronUp className="w-5 h-5 text-neutral-400 shrink-0" />
+              <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-neutral-400 shrink-0" />
+              <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
             )}
           </button>
 
           {isShiftOpen && (
-            <CardContent className="p-4 pt-2 border-t border-neutral-100/60 space-y-4">
+            <CardContent className="p-4 pt-2 border-t border-border space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="date">Shift Date</Label>
@@ -753,7 +753,7 @@ export default function ProductionForm({
                     type="date"
                     value={currentDate}
                     readOnly
-                    className="bg-neutral-50 cursor-not-allowed text-neutral-500 select-none"
+                    className="bg-muted cursor-not-allowed text-muted-foreground select-none"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -792,8 +792,8 @@ export default function ProductionForm({
               </div>
 
               {/* Table Setup */}
-              <div className="pt-2 border-t border-neutral-100 space-y-2">
-                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider block">
+              <div className="pt-2 border-t border-border space-y-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                   Table Setup (Mat type)
                 </span>
                 <div className="w-full max-w-[440px] flex flex-col gap-2.5">
@@ -802,7 +802,7 @@ export default function ProductionForm({
                       key={tableId}
                       className="flex items-center gap-1.5 w-full"
                     >
-                      <span className="text-xs font-bold text-neutral-500 w-3 shrink-0 text-left">
+                      <span className="text-xs font-bold text-muted-foreground w-3 shrink-0 text-left">
                         {tableId}
                       </span>
 
@@ -824,8 +824,8 @@ export default function ProductionForm({
                               htmlFor={`msetup-${tableId}-${type}`}
                               className={`h-7 w-full px-1 border rounded flex items-center justify-between gap-0.5 text-[10px] font-bold cursor-pointer transition-all select-none ${
                                 tableMatTypes[tableId] === type
-                                  ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                                  : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"
+                                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                                  : "border-border bg-card hover:bg-accent text-foreground"
                               }`}
                             >
                               <span className="font-mono tracking-tighter">
@@ -834,8 +834,8 @@ export default function ProductionForm({
                               <div
                                 className={`w-1 h-1 rounded-full shrink-0 ${
                                   tableMatTypes[tableId] === type
-                                    ? "bg-white"
-                                    : "bg-neutral-300"
+                                    ? "bg-primary-foreground"
+                                    : "bg-border"
                                 }`}
                               />
                             </Label>
@@ -847,12 +847,12 @@ export default function ProductionForm({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-neutral-100">
+              <div className="pt-3 border-t border-border">
                 <button
                   type="button"
                   disabled={!session || isSubmitting || !startTime}
                   onClick={() => setEndShiftConfirmOpen(true)}
-                  className="w-full h-9 flex items-center justify-center gap-1.5 text-[11px] font-bold text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-md uppercase tracking-wider transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+                  className="w-full h-9 flex items-center justify-center gap-1.5 text-[11px] font-bold text-destructive hover:text-destructive hover:bg-destructive/10 border border-destructive/30 rounded-md uppercase tracking-wider transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
                 >
                   End Shift — Close Cycle Chain
                 </button>
@@ -862,10 +862,10 @@ export default function ProductionForm({
         </Card>
 
         {/* Timestamps & Durations */}
-        <Card className="shadow-sm border-neutral-200/60">
+        <Card>
           <CardHeader className="p-4 pb-2 ipad:p-3 ipad:pb-1.5">
             <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
-              <Clock className="w-4 h-4 text-emerald-700" /> Timestamps &
+              <Clock className="w-4 h-4 text-primary" /> Timestamps &
               Durations
             </CardTitle>
           </CardHeader>
@@ -876,7 +876,7 @@ export default function ProductionForm({
                 <button
                   type="button"
                   onClick={() => setIsManualStart(!isManualStart)}
-                  className="text-[10px] font-bold text-emerald-700 hover:text-accent-ink transition-colors uppercase tracking-wider"
+                  className="text-[10px] font-bold text-primary hover:text-accent-ink transition-colors uppercase tracking-wider"
                 >
                   {isManualStart ? "● Tap Mode" : "✎ Manual"}
                 </button>
@@ -886,17 +886,17 @@ export default function ProductionForm({
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="h-12 ipad:h-10 text-center font-mono font-bold text-sm bg-emerald-50/10 border-emerald-200 focus-visible:ring-emerald-600"
+                  className="h-12 ipad:h-10 text-center font-mono font-bold text-sm bg-primary/5 border-primary/30 focus-visible:ring-primary"
                 />
               ) : startTime ? (
-                <div className="h-12 ipad:h-10 flex items-center justify-center rounded-md border-2 border-dashed border-emerald-600 bg-accent-chip/50 text-accent-ink font-bold tracking-wide font-mono">
+                <div className="h-12 ipad:h-10 flex items-center justify-center rounded-md border-2 border-dashed border-primary bg-accent-chip/50 text-accent-ink font-bold tracking-wide font-mono">
                   {startTime}
                 </div>
               ) : (
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 ipad:h-10 font-bold tracking-wide border-dashed border-2 border-emerald-600 bg-accent-chip/50 text-accent-ink"
+                  className="w-full h-12 ipad:h-10 font-bold tracking-wide border-dashed border-2 border-primary bg-accent-chip/50 text-accent-ink"
                   onClick={handleStartTap}
                 >
                   TAP TO START
@@ -904,12 +904,12 @@ export default function ProductionForm({
               )}
               {startTime && liveDurationSeconds !== null && (
                 <div className="flex items-center justify-between pt-1">
-                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                     <span
                       className={`w-1.5 h-1.5 rounded-full animate-pulse ${
                         liveDurationSeconds < 0
-                          ? "bg-amber-500"
-                          : "bg-emerald-500"
+                          ? "bg-warning"
+                          : "bg-success"
                       }`}
                     />
                     Load Time
@@ -917,8 +917,8 @@ export default function ProductionForm({
                   <span
                     className={`font-mono font-bold text-lg tabular-nums ${
                       liveDurationSeconds < 0
-                        ? "text-amber-600"
-                        : "text-emerald-600"
+                        ? "text-warning"
+                        : "text-success"
                     }`}
                   >
                     {formatSigned(liveDurationSeconds)}
@@ -932,10 +932,10 @@ export default function ProductionForm({
 
       <div className="space-y-4 ipad:space-y-3">
         {/* Tables - Short Molding */}
-        <Card className="shadow-sm border-neutral-200/60">
+        <Card>
           <CardHeader className="p-4 pb-2 ipad:p-3 ipad:pb-1.5 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Tables -
+              <CheckCircle2 className="w-4 h-4 text-primary" /> Tables -
               Short Molding
             </CardTitle>
             <Button
@@ -943,7 +943,7 @@ export default function ProductionForm({
               variant="outline"
               size="sm"
               onClick={handleResetShortMolding}
-              className="h-7 px-2 text-[11px] font-medium text-neutral-500 hover:text-red-600 hover:bg-red-50 border-neutral-200 hover:border-red-200 transition-colors gap-1"
+              className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border-border hover:border-destructive/30 transition-colors gap-1"
             >
               <RotateCcw className="w-3 h-3" />
               Reset Matrix
@@ -953,7 +953,7 @@ export default function ProductionForm({
             <div className="grid grid-cols-2 gap-x-6 gap-y-8 ipad:gap-y-3">
               {[1, 2, 3, 4].map((tableNum) => (
                 <div key={tableNum} className="flex items-start gap-2">
-                  <span className="text-2xl font-bold text-neutral-800 pt-1 select-none">
+                  <span className="text-2xl font-bold text-foreground pt-1 select-none">
                     {tableNum}
                   </span>
                   <RadioGroup
@@ -970,7 +970,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tl`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-emerald-600 bg-accent-chip text-accent-ink shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-left" ? "scale-100" : "scale-0"}`}
@@ -985,7 +985,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tr`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-emerald-600 bg-accent-chip text-accent-ink shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-right" ? "scale-100" : "scale-0"}`}
@@ -1000,7 +1000,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-cc`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-emerald-600 bg-accent-chip text-accent-ink shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "center" ? "scale-100" : "scale-0"}`}
@@ -1015,7 +1015,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-bl`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-emerald-600 bg-accent-chip text-accent-ink shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-left" ? "scale-100" : "scale-0"}`}
@@ -1030,7 +1030,7 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-br`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-emerald-600 bg-accent-chip text-accent-ink shadow-sm" : "border-neutral-900 hover:bg-neutral-100"}`}
+                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
                         <div
                           className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-right" ? "scale-100" : "scale-0"}`}
@@ -1046,7 +1046,7 @@ export default function ProductionForm({
                     />
                     <Label
                       htmlFor={`t${tableNum}-bubble`}
-                      className={`h-full w-7 border-2 rounded flex items-center justify-center text-[10px] font-bold uppercase tracking-wide cursor-pointer transition-all [writing-mode:vertical-rl] ${selectedTableSquares[tableNum] === "bubble" ? "border-emerald-600 bg-accent-chip text-accent-ink shadow-sm" : "border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700"}`}
+                      className={`h-full w-7 border-2 rounded flex items-center justify-center text-[10px] font-bold uppercase tracking-wide cursor-pointer transition-all [writing-mode:vertical-rl] ${selectedTableSquares[tableNum] === "bubble" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border bg-card hover:bg-accent text-foreground"}`}
                     >
                       Bubble
                     </Label>
@@ -1061,7 +1061,7 @@ export default function ProductionForm({
       </div>
 
         {/* Freeform Machine Notes */}
-        <Card className="shadow-sm border-neutral-200/60 ipad:col-span-2">
+        <Card className="ipad:col-span-2">
           <CardContent className="p-4 space-y-1.5">
             <Label htmlFor="notes">Mechanical Faults / Cycle Notes</Label>
             <Textarea
@@ -1078,7 +1078,7 @@ export default function ProductionForm({
         <Button
           type="submit"
           disabled={session ? isSubmitting || !startTime : true}
-          className="w-full h-12 ipad:h-10 bg-emerald-700 hover:bg-emerald-800 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
+          className="w-full h-12 ipad:h-10 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
         >
           {isSubmitting && <Loader2 className="animate-spin" size={20} />}
           {session
@@ -1097,12 +1097,12 @@ export default function ProductionForm({
       >
         <DialogContent className="sm:max-w-[380px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5 shrink-0" />
               Leftover Shift Data Found
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-muted-foreground">
             Starting the <strong>{shift === "night" ? "Night" : "Day"}</strong>{" "}
             shift. The live log still has{" "}
             <strong>{staleClearConfirm?.count}</strong> cycle
@@ -1124,12 +1124,12 @@ export default function ProductionForm({
       <Dialog open={endShiftConfirmOpen} onOpenChange={setEndShiftConfirmOpen}>
         <DialogContent className="sm:max-w-[380px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5 shrink-0" />
               End Shift?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-muted-foreground">
             This submits the current cycle (started at{" "}
             <strong>{startTime}</strong>) and closes the chain — you'll need
             to tap Start Time again to begin a new cycle. Use this only for

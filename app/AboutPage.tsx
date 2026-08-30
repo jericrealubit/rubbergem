@@ -20,20 +20,20 @@ import {
 
 export default function AboutPage() {
   return (
-    <div className="w-full max-w-3xl ipad:max-w-4xl mx-auto p-4 ipad:p-6 space-y-6 pb-12 text-neutral-800">
+    <div className="w-full max-w-3xl ipad:max-w-4xl mx-auto p-4 ipad:p-6 space-y-6 pb-12 text-foreground">
       {/* Hero Header Card */}
-      <div className="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white p-6 rounded-2xl shadow-md relative overflow-hidden">
+      <div className="bg-primary text-primary-foreground p-6 rounded-2xl shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
           <Cpu className="w-40 h-40" />
         </div>
         <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-700/50 text-emerald-200 text-xs font-semibold tracking-wide uppercase">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-foreground/10 text-primary-foreground/80 text-xs font-semibold tracking-wide uppercase">
             <Sparkles className="w-3.5 h-3.5" /> About This App
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-primary-foreground">
             Rubber — Shift Logging Made Simple
           </h1>
-          <p className="text-emerald-100 text-sm sm:text-base max-w-xl leading-relaxed font-medium">
+          <p className="text-primary-foreground/90 text-sm sm:text-base max-w-xl leading-relaxed font-medium">
             A simple app operators use on the shop floor to record every press
             cycle, defect, and downtime as it happens — so shift records stay
             accurate and the boss can see real production numbers without
@@ -44,53 +44,53 @@ export default function AboutPage() {
 
       {/* Technical Stack Architecture Ribbon */}
       <div className="space-y-2">
-        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
+        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-muted-foreground">
           <Layers className="w-3.5 h-3.5" /> Built With
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-neutral-400">
+          <div className="p-3 bg-card border border-border/80 rounded-xl shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">
               Framework
             </p>
-            <p className="text-xs font-bold mt-0.5 text-neutral-800">
+            <p className="text-xs font-bold mt-0.5 text-foreground">
               Next.js
             </p>
-            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+            <p className="text-[10px] mt-1 text-muted-foreground leading-snug">
               The engine that makes the app fast and reliable on any device.
             </p>
           </div>
-          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-neutral-400">
+          <div className="p-3 bg-card border border-border/80 rounded-xl shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">
               Database & Sync
             </p>
-            <p className="text-xs font-bold mt-0.5 text-neutral-800">
+            <p className="text-xs font-bold mt-0.5 text-foreground">
               Supabase
             </p>
-            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+            <p className="text-[10px] mt-1 text-muted-foreground leading-snug">
               Where shift data is safely stored and shared instantly across
               devices.
             </p>
           </div>
-          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-neutral-400">
+          <div className="p-3 bg-card border border-border/80 rounded-xl shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">
               Styling
             </p>
-            <p className="text-xs font-bold mt-0.5 text-neutral-800">
+            <p className="text-xs font-bold mt-0.5 text-foreground">
               Tailwind CSS
             </p>
-            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+            <p className="text-[10px] mt-1 text-muted-foreground leading-snug">
               Keeps the app looking clean and working well on phones and
               tablets.
             </p>
           </div>
-          <div className="p-3 bg-white border border-neutral-200/80 rounded-xl shadow-sm">
-            <p className="text-[10px] uppercase font-bold text-neutral-400">
+          <div className="p-3 bg-card border border-border/80 rounded-xl shadow-sm">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">
               State & Cache
             </p>
-            <p className="text-xs font-bold mt-0.5 text-neutral-800">
+            <p className="text-xs font-bold mt-0.5 text-foreground">
               Local Browser Storage
             </p>
-            <p className="text-[10px] mt-1 text-neutral-500 leading-snug">
+            <p className="text-[10px] mt-1 text-muted-foreground leading-snug">
               Remembers what you were typing even if the page refreshes.
             </p>
           </div>
@@ -99,38 +99,38 @@ export default function AboutPage() {
 
       {/* Main Application Modules */}
       <div className="space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
+        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-muted-foreground">
           <Layers className="w-3.5 h-3.5" /> How the System Works
         </h2>
 
         {/* Feature 1: Quick Entry Form */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Smartphone className="w-4 h-4" />
               </div>
               1. Quick Entry Form{" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 components/PressForm.tsx
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>What the operator fills in on the floor, one cycle at a time:</p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Switch presses in one tap:
                 </strong>{" "}
                 Jump between{" "}
-                <span className="font-semibold text-neutral-900">Press #1</span>{" "}
+                <span className="font-semibold text-foreground">Press #1</span>{" "}
                 and{" "}
-                <span className="font-semibold text-neutral-900">Press #2</span>{" "}
+                <span className="font-semibold text-foreground">Press #2</span>{" "}
                 instantly.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Stays out of the way:
                 </strong>{" "}
                 The shift details panel (operator, shift, date) can be
@@ -138,7 +138,7 @@ export default function AboutPage() {
                 showing a short summary so you always know what&apos;s set.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Does the time math for you:
                 </strong>{" "}
                 Just enter a start and end time — the app works out how long
@@ -147,19 +147,19 @@ export default function AboutPage() {
                 not a negative number).
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Mark defects on a diagram:
                 </strong>{" "}
                 Tap the exact spot on an on-screen diagram (matching the real
                 sheet layout) to record a short mold, and check off bubble
                 defects by position (
-                <span className="italic text-neutral-700">
+                <span className="italic text-foreground/80">
                   Left, Middle, Right
                 </span>
                 ) and size.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Can&apos;t accidentally double-submit:
                 </strong>{" "}
                 The Submit button locks itself while an entry is saving, so a
@@ -170,33 +170,33 @@ export default function AboutPage() {
         </Card>
 
         {/* Feature 2: Saves Instantly to the Cloud */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Database className="w-4 h-4" />
               </div>
               2. Saves Instantly to the Cloud{" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 Supabase database
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
               Every cycle you submit is sent straight to a secure online
               database — nothing lives only on the terminal:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   No waiting, no lost entries:
                 </strong>{" "}
                 Cycle data is saved the moment you submit, so it&apos;s safe even
                 if the terminal is turned off right after.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Everything stays together:
                 </strong>{" "}
                 Reject details, bubble sizes, and positions are all saved as
@@ -207,33 +207,33 @@ export default function AboutPage() {
         </Card>
 
         {/* Feature 3: Only Logged-In Operators Can Make Changes */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <ShieldAlert className="w-4 h-4" />
               </div>
               3. Only Logged-In Operators Can Make Changes{" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 Supabase Auth
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
               This keeps the records trustworthy — anyone can view the live
               board, but only signed-in operators can change it:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Editing requires login:
                 </strong>{" "}
                 Submitting a cycle, changing shift settings, or resetting the
                 log all require an active, logged-in session.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Clear warnings, not silent failures:
                 </strong>{" "}
                 If your session drops, the app shows you a clear warning
@@ -244,33 +244,33 @@ export default function AboutPage() {
         </Card>
 
         {/* Feature 4: Nothing Is Lost If the Page Closes */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Save className="w-4 h-4" />
               </div>
               4. Nothing Is Lost If the Page Closes{" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 local browser backup
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
               A safety net for accidental refreshes, closed tabs, or a
               terminal that loses power mid-entry:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Auto-backup while you type:
                 </strong>{" "}
                 Whatever you&apos;re filling in — times, defect selections, notes —
                 is quietly backed up on that device as you go.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Recently logged cycles:
                 </strong>{" "}
                 Kept in a simple, browsable list for quick reference on the
@@ -281,33 +281,33 @@ export default function AboutPage() {
         </Card>
 
         {/* Feature 5: The Live Shift Log Table */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <LayoutDashboard className="w-4 h-4" />
               </div>
               5. The Live Shift Log Table{" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 app/ProductionTable.tsx
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
               The audit sheet the whole shift&apos;s cycles get logged onto,
               designed to print cleanly:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Shift details shown once:
                 </strong>{" "}
                 Operator, press, and date appear in one card at the top
                 instead of being repeated on every row.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Always 15 rows:
                 </strong>{" "}
                 The sheet always shows exactly 15 rows, whether the shift had
@@ -315,7 +315,7 @@ export default function AboutPage() {
                 fits one page.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Fair reject counting:
                 </strong>{" "}
                 A cycle only ever counts as one reject per table, even if it
@@ -323,7 +323,7 @@ export default function AboutPage() {
                 double-counted.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Runtime column:
                 </strong>{" "}
                 Records the target run time that was set at the moment each
@@ -332,7 +332,7 @@ export default function AboutPage() {
                 true when they happened.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Total Downtime (default: 17m):
                 </strong>{" "}
                 Automatically adds up, across the whole shift, how many extra
@@ -340,7 +340,7 @@ export default function AboutPage() {
                 17-minute target — shown in red so it stands out at a glance.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   One-tap PDF/print:
                 </strong>{" "}
                 &quot;Print PDF&quot; automatically formats the full 15-row sheet to
@@ -351,19 +351,19 @@ export default function AboutPage() {
         </Card>
 
         {/* Feature 6: Simple Menu Navigation */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <Menu className="w-4 h-4" />
               </div>
               6. Simple Menu Navigation{" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 app/page.tsx
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm leading-relaxed text-muted-foreground">
             <p>
               A single slide-out menu lets you move between the entry form,
               the live shift table, and shift history — without losing
@@ -373,32 +373,32 @@ export default function AboutPage() {
         </Card>
 
         {/* Feature 7: Production History (Past Shifts) */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <History className="w-4 h-4" />
               </div>
               7. Production History (Past Shifts){" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 components/ProductionHistory.tsx
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
               Every completed shift is automatically archived so past
               performance can be reviewed any time:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Organized by month and day:
                 </strong>{" "}
                 Browse past shifts in a simple, expandable list.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Full shift breakdown:
                 </strong>{" "}
                 Each day expands to show good/reject counts per table, plus
@@ -406,14 +406,14 @@ export default function AboutPage() {
                 shift — the same numbers you&apos;d have seen live at the time.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Day and Night shifts open independently:
                 </strong>{" "}
                 If both a Day and Night shift happened on the same date,
                 opening one no longer forces the other closed.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Clear error messages:
                 </strong>{" "}
                 If history can&apos;t load for any reason, a clear warning banner
@@ -424,26 +424,26 @@ export default function AboutPage() {
         </Card>
 
         {/* Feature 8: Resetting a Shift Safely */}
-        <Card className="bg-white border border-neutral-200/60 shadow-sm">
-          <CardHeader className="p-4 pb-2 bg-neutral-50/50 border-b border-neutral-100">
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <RotateCcw className="w-4 h-4" />
               </div>
               8. Resetting a Shift Safely{" "}
-              <span className="font-mono text-[10px] text-neutral-300 lowercase font-normal">
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
                 app/ProductionTable.tsx
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-neutral-600">
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
               When a shift ends, &quot;Reset Shift Log&quot; clears the live table so
               the next shift starts clean:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Already archived first:
                 </strong>{" "}
                 By the time you reset, that shift&apos;s data has already been
@@ -451,7 +451,7 @@ export default function AboutPage() {
                 working table.
               </li>
               <li>
-                <strong className="text-neutral-800 font-bold">
+                <strong className="text-foreground font-bold">
                   Double-checked before saying &quot;done&quot;:
                 </strong>{" "}
                 The app now verifies the clear actually happened before
@@ -465,12 +465,12 @@ export default function AboutPage() {
 
       {/* Contact & Collaboration / Profile Card */}
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-neutral-400">
+        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-muted-foreground">
           <User className="w-3.5 h-3.5" /> Contact & Developer Profile
         </h2>
-        <Card className="overflow-hidden shadow-sm border border-neutral-200/60 bg-gradient-to-b from-white to-neutral-50/40">
+        <Card className="overflow-hidden shadow-sm border border-border/60 bg-gradient-to-b from-card to-muted/40">
           <CardContent className="p-5 space-y-5">
-            <p className="text-xs sm:text-sm leading-relaxed text-neutral-600">
+            <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
               Are you an engineering hiring manager looking for a versatile
               Full-Stack Web Developer with practical AI implementation skills,
               or a business owner looking to deploy optimized, zero-overhead
@@ -479,36 +479,36 @@ export default function AboutPage() {
             </p>
 
             {/* Profile Grid */}
-            <div className="p-4 bg-white border border-neutral-200/80 rounded-xl shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 bg-card border border-border/80 rounded-xl shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3 text-xs sm:text-sm">
                 <div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider block text-neutral-400">
+                  <span className="text-[10px] uppercase font-bold tracking-wider block text-muted-foreground">
                     Name
                   </span>
-                  <span className="font-bold text-base text-neutral-900">
+                  <span className="font-bold text-base text-foreground">
                     Jeric Realubit
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider block text-neutral-400">
+                  <span className="text-[10px] uppercase font-bold tracking-wider block text-muted-foreground">
                     Role
                   </span>
                   <span className="font-semibold text-accent-ink">
                     Full-Stack Web Developer & AI Solutions Engineer
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-neutral-600">
-                  <MapPin className="w-4 h-4 text-neutral-400" />
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
                   <span>Perth, Western Australia</span>
                 </div>
               </div>
 
               {/* Action Interactive Connectors */}
-              <div className="flex flex-col justify-end gap-2 sm:pl-4 sm:border-l border-neutral-100">
+              <div className="flex flex-col justify-end gap-2 sm:pl-4 sm:border-l border-border">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-between font-medium border border-neutral-300 hover:bg-neutral-50 text-neutral-700"
+                  className="w-full justify-between font-medium border border-input hover:bg-accent text-foreground/80"
                   asChild
                 >
                   <a
@@ -526,14 +526,14 @@ export default function AboutPage() {
                       </svg>
                       LinkedIn
                     </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                   </a>
                 </Button>
 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-between font-medium border border-neutral-300 hover:bg-neutral-50 text-neutral-700"
+                  className="w-full justify-between font-medium border border-input hover:bg-accent text-foreground/80"
                   asChild
                 >
                   <a
@@ -543,7 +543,7 @@ export default function AboutPage() {
                   >
                     <span className="flex items-center gap-2">
                       <svg
-                        className="w-4 h-4 text-neutral-900 fill-current"
+                        className="w-4 h-4 text-foreground fill-current"
                         viewBox="0 0 24 24"
                         aria-hidden="true"
                       >
@@ -555,25 +555,25 @@ export default function AboutPage() {
                       </svg>
                       GitHub
                     </span>
-                    <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                   </a>
                 </Button>
 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start font-mono text-[11px] sm:text-xs border border-neutral-300 hover:bg-neutral-50 text-neutral-700"
+                  className="w-full justify-start font-mono text-[11px] sm:text-xs border border-input hover:bg-accent text-foreground/80"
                   asChild
                 >
                   <a href="tel:+61491098073">
-                    <Phone className="w-4 h-4 shrink-0 mr-2 text-emerald-600" />{" "}
+                    <Phone className="w-4 h-4 shrink-0 mr-2 text-primary" />{" "}
                     +61 491 098 073
                   </a>
                 </Button>
               </div>
             </div>
 
-            <p className="text-[11px] text-center font-medium text-neutral-400">
+            <p className="text-[11px] text-center font-medium text-muted-foreground">
               Open to local, hybrid, and global remote opportunities.
             </p>
           </CardContent>
