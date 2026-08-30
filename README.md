@@ -15,7 +15,7 @@ Live: https://waai.au/rubber
 - **Framework:** Next.js 16 (App Router), deployed as a **static export** (`output: "export"` in `next.config.ts`, served from `https://waai.au/rubber`)
 - **Library:** React 19 (hooks, `localStorage`-backed state)
 - **Database & Realtime:** Supabase (Postgres + Row Level Security + Realtime subscriptions)
-- **Styling:** Tailwind CSS v4 & a custom `@media print` stylesheet for the audit sheet
+- **Styling:** Tailwind CSS v4, semantic CSS custom-property design tokens (`--background`, `--primary`, `--card`, `--border`, `--radius-card`, `--shadow-card`, etc.) driving a 9-theme system, & a custom `@media print` stylesheet for the audit sheet
 - **Icons:** Lucide React
 - **UI Components:** shadcn/ui (`radix-nova` style) primitives — Card, Button, Input, Select, Checkbox, RadioGroup
 
@@ -54,6 +54,13 @@ Live: https://waai.au/rubber
 ### 5. Shell Navigation (`app/page.tsx`)
 - Slide-out burger menu switching between the entry form, live table, history, and about views without losing in-progress form state.
 - Handles Supabase Auth session state and a global per-cycle countdown timer (started from the shift's target run time on each submit).
+
+### 6. Theme System (`components/theme/`)
+- **9 selectable themes** (`theme-config.ts`): Classic, Editorial Minimal, Dark Glass, Organic Wellness, Cobalt Brutalist, Soft 3D, Retro Future, Neutral Elegance, and Tropical Jade Sunrise — each a `[data-theme="..."]` block in `app/globals.css` defining the same set of semantic tokens (`--background`, `--card`, `--primary`, `--muted`, `--border`, `--radius-card`, `--shadow-card`, ...).
+- **One component system, not six+ copies:** every page and shared component (including the `Card` family in `components/ui/card.tsx`, now token-driven instead of hardcoded `rounded-xl`/`ring-1` values) consumes these semantic tokens, so a theme swap re-skins the whole app without per-component branching.
+- **`ThemeProvider`** (`components/theme/ThemeProvider.tsx`): sets `data-theme` on `<html>`, persists the choice to `localStorage` (`app-theme` key), and syncs the `<meta name="theme-color">` tag for mobile browser chrome.
+- **FOUC-free load:** `app/layout.tsx` inlines a small blocking script (`buildThemeInitScript` in `theme-config.ts`) that applies the stored theme — or the system's light/dark preference on first visit — before the page paints. The user's explicit pick always wins after that; it's never overwritten by a later system-preference change.
+- **`ThemeSwitcher`** (`components/theme/ThemeSwitcher.tsx`): a WAI-ARIA radio group in the burger menu with live color-swatch previews per theme and full arrow-key/Home/End keyboard navigation.
 
 ---
 ## 📦 Getting Started
@@ -116,12 +123,16 @@ rubber/
 │   ├── page.tsx                    # View switcher shell, auth/session, global cycle timer
 │   ├── ProductionTable.tsx         # Live audit table, print/PDF layout, Reset Shift Log
 │   ├── AboutPage.tsx               # In-app plain-language system overview
-│   ├── layout.tsx                  # Root layout / viewport config
-│   └── globals.css                 # Base styling layer
+│   ├── layout.tsx                  # Root layout, viewport config, blocking theme-init script
+│   └── globals.css                 # Base styling layer + one [data-theme="..."] token block per theme
 ├── components/
 │   ├── PressForm.tsx               # Entry terminal: cycle capture, live_log/production_logs writes
 │   ├── ProductionHistory.tsx       # Archived shift browser (production_logs)
-│   └── ui/                         # shadcn/ui primitives (Card, Button, Input, Select, etc.)
+│   ├── theme/
+│   │   ├── theme-config.ts         # Theme IDs/labels, storage key, FOUC-prevention init script
+│   │   ├── ThemeProvider.tsx       # data-theme + localStorage + meta theme-color sync
+│   │   └── ThemeSwitcher.tsx       # Keyboard-accessible theme picker (burger menu)
+│   └── ui/                         # shadcn/ui primitives (Card, Button, Input, Select, etc.) — token-driven, theme-agnostic
 ├── lib/
 │   └── supabase.ts                 # Supabase client (anon key)
 ├── shift_config.sql                # Manual SQL: shift_config table + RLS

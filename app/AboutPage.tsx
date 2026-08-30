@@ -16,6 +16,7 @@ import {
   History,
   Save,
   RotateCcw,
+  Palette,
 } from "lucide-react";
 
 export default function AboutPage() {
@@ -80,7 +81,7 @@ export default function AboutPage() {
             </p>
             <p className="text-[10px] mt-1 text-muted-foreground leading-snug">
               Keeps the app looking clean and working well on phones and
-              tablets.
+              tablets, with 9 switchable themes built on the same styling.
             </p>
           </div>
           <div className="p-3 bg-card border border-border/80 rounded-xl shadow-sm">
@@ -457,6 +458,59 @@ export default function AboutPage() {
                 The app now verifies the clear actually happened before
                 showing a success message, instead of ever showing a false
                 &quot;success&quot; if something went wrong.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Feature 9: Pick Your Own Look */}
+        <Card className="bg-card border border-border/60 shadow-sm">
+          <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
+            <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
+                <Palette className="w-4 h-4" />
+              </div>
+              9. Pick Your Own Look{" "}
+              <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
+                components/theme/
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
+            <p>
+              Everyone can choose how the app looks without changing how it
+              works underneath:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>
+                <strong className="text-foreground font-bold">
+                  9 built-in looks:
+                </strong>{" "}
+                From a clean, minimal paper style to a bold neon dashboard
+                look — pick whichever is easiest to read on the shop floor or
+                in a dim control room.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  Remembers your choice:
+                </strong>{" "}
+                Whatever you pick stays selected on that device, even after
+                closing the browser or refreshing the page.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  Matches your device at first:
+                </strong>{" "}
+                The very first time you open the app it follows your phone or
+                tablet&apos;s light/dark setting — after that, your own pick
+                always wins.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  Keyboard friendly:
+                </strong>{" "}
+                The theme picker in the menu works with arrow keys, not just
+                a mouse or touchscreen.
               </li>
             </ul>
           </CardContent>
