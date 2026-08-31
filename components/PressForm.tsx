@@ -583,10 +583,10 @@ export default function ProductionForm({
       setIsShiftOpen(false);
       setIsSubmitting(false);
 
-      alert(
-        continueChain
-          ? "Cycle saved! Next cycle started."
-          : "Cycle saved! Shift closed.",
+      toast.success(
+        `Cycle saved! Load time: ${formatSigned(durationMinutes * 60)}${
+          continueChain ? " — next cycle started." : " — shift closed."
+        }`,
       );
       const minutes = parseInt(String(runTime), 10);
       if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
