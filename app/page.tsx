@@ -200,7 +200,7 @@ export default function Home() {
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-6">
           <div className="border-b border-[var(--chrome-border)] pb-3">
             <p className="text-xs font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
               Navigation
@@ -306,7 +306,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-[var(--chrome-border)] space-y-2">
+        <div className="shrink-0 p-4 border-t border-[var(--chrome-border)] space-y-2">
           {session ? (
             <div className="text-center space-y-2">
               <p className="text-[10px] text-[var(--chrome-accent)] font-bold truncate">
