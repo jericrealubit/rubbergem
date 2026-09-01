@@ -7,7 +7,7 @@ import {
   tableYieldsFromCycles,
 } from "@/lib/shift-log";
 import type { ArchivedCycle } from "@/lib/shift-log";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,13 @@ export default function ProductionForm({
   onNavigateToTable?: () => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- HOLD-TO-CONFIRM SUBMIT ---
+  const [holdProgress, setHoldProgress] = useState(0); // 0-100
+  const holdStartRef = useRef<number | null>(null);
+  const holdRafRef = useRef<number | null>(null);
+  const HOLD_DURATION_MS = 700;
+
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
     count: number;
   } | null>(null);
@@ -677,9 +684,49 @@ export default function ProductionForm({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+    // Actual submission is gated behind the press-and-hold confirm on the
+    // Submit button itself — this only exists to stop native form submission
+    // (e.g. Enter in a text field) from bypassing that hold.
     e.preventDefault();
-    finalizeCycle(true);
   };
+
+  const cancelHold = () => {
+    if (holdRafRef.current) cancelAnimationFrame(holdRafRef.current);
+    holdRafRef.current = null;
+    holdStartRef.current = null;
+    setHoldProgress(0);
+  };
+
+  const tickHold = (timestamp: number) => {
+    if (holdStartRef.current === null) return;
+    const pct = Math.min(
+      100,
+      ((timestamp - holdStartRef.current) / HOLD_DURATION_MS) * 100,
+    );
+    setHoldProgress(pct);
+    if (pct >= 100) {
+      cancelHold();
+      finalizeCycle(true);
+      return;
+    }
+    holdRafRef.current = requestAnimationFrame(tickHold);
+  };
+
+  const startHold = () => {
+    if (isSubmitting || !startTime || !session) return;
+    holdStartRef.current = performance.now();
+    holdRafRef.current = requestAnimationFrame(tickHold);
+  };
+
+  useEffect(() => {
+    if (isSubmitting || !startTime || !session) cancelHold();
+  }, [isSubmitting, startTime, session]);
+
+  useEffect(() => {
+    return () => {
+      if (holdRafRef.current) cancelAnimationFrame(holdRafRef.current);
+    };
+  }, []);
 
   const handleEndShift = () => finalizeCycle(false);
 
@@ -1123,17 +1170,40 @@ export default function ProductionForm({
 
         {/* Global Submit Trigger */}
         <Button
-          type="submit"
+          type="button"
           disabled={session ? isSubmitting || !startTime : true}
-          className="w-full h-12 ipad:h-10 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
+          onPointerDown={startHold}
+          onPointerUp={cancelHold}
+          onPointerLeave={cancelHold}
+          onPointerCancel={cancelHold}
+          onKeyDown={(e) => {
+            if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
+              e.preventDefault();
+              startHold();
+            }
+          }}
+          onKeyUp={(e) => {
+            if (e.key === "Enter" || e.key === " ") cancelHold();
+          }}
+          className="relative overflow-hidden w-full h-12 ipad:h-10 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
         >
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 bg-primary-foreground/25"
+            style={{ width: `${holdProgress}%` }}
+          />
           {isSubmitting && <Loader2 className="animate-spin" size={20} />}
-          {session
-            ? startTime
-              ? "Submit Cycle Entry"
-              : "Tap Start Time to Submit"
-            : "Login to submit cycle"}
+          {holdProgress > 0 && !isSubmitting
+            ? "Hold to Confirm…"
+            : session
+              ? startTime
+                ? "Submit Cycle Entry"
+                : "Tap Start Time to Submit"
+              : "Login to submit cycle"}
         </Button>
+        <p className="text-center text-[10px] text-muted-foreground pt-0.5 ipad:col-span-2">
+          Press and hold to confirm submission
+        </p>
       </form>
 
       <Dialog
