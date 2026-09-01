@@ -403,7 +403,7 @@ export default function ProductionTablePage({
                   onClick={handleResetLog}
                   disabled={!session || isResetting}
                   variant="destructive"
-                  className="gap-2 h-9 text-xs font-bold shadow-sm"
+                  className="gap-2 h-9 text-xs font-bold shadow-sm bg-primary-foreground text-destructive hover:bg-primary-foreground/90"
                 >
                   {isResetting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
