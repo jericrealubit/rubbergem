@@ -307,6 +307,11 @@ export default function ProductionForm({
     setSelectedTableSquares({});
   };
 
+  const handleResetStartTime = () => {
+    setStartTime("");
+    setIsManualStart(false);
+  };
+
   // production_logs holds exactly ONE row per (date, shift group).
   // localStorage["production_log_id"] is only a per-browser fast path, so on
   // its own a second terminal, a cleared browser store or a mid-shift reset
@@ -895,11 +900,21 @@ export default function ProductionForm({
 
         {/* Timestamps & Durations */}
         <Card>
-          <CardHeader className="p-4 pb-2 ipad:p-3 ipad:pb-1.5">
+          <CardHeader className="p-4 pb-2 ipad:p-3 ipad:pb-1.5 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
               <Clock className="w-4 h-4 text-primary" /> Timestamps &
               Durations
             </CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResetStartTime}
+              className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border-border hover:border-destructive/30 transition-colors gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset
+            </Button>
           </CardHeader>
           <CardContent className="p-4 pt-0 ipad:p-3 ipad:pt-0 space-y-4 ipad:space-y-3">
             <div className="space-y-1.5">
