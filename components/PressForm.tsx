@@ -38,6 +38,7 @@ import {
   Settings2,
   RotateCcw,
   Loader2,
+  FileText,
 } from "lucide-react";
 
 /** The production_logs columns read back when resolving a shift's archive row. */
@@ -50,9 +51,11 @@ interface ShiftLogRowRef {
 export default function ProductionForm({
   session,
   onStartTimer,
+  onNavigateToTable,
 }: {
   session: any;
   onStartTimer?: (minutes: number) => void;
+  onNavigateToTable?: () => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
@@ -725,9 +728,17 @@ export default function ProductionForm({
           </SelectContent>
         </Select>
 
-        <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
-          Production
-        </h1>
+        {onNavigateToTable && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onNavigateToTable}
+            className="ml-auto gap-1.5 h-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground text-xs"
+          >
+            <FileText className="w-4 h-4" /> Table
+          </Button>
+        )}
       </div>
 
       <form

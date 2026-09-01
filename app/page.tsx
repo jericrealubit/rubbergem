@@ -366,7 +366,11 @@ export default function Home() {
       {/* Main Container View Frame */}
       <main className="flex-1 w-full p-2 sm:p-4 ipad:p-6">
         {currentView === "form" && (
-          <ProductionForm session={session} onStartTimer={handleStartTimer} />
+          <ProductionForm
+            session={session}
+            onStartTimer={handleStartTimer}
+            onNavigateToTable={() => navigateTo("table")}
+          />
         )}
 
         {currentView === "table" && (

@@ -19,6 +19,20 @@ import {
   Loader2,
 } from "lucide-react";
 
+const MONTH_ABBR = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// isoDate is already Perth-local YYYY-MM-DD; split it directly instead of
+// re-parsing via `new Date(...)`, which reinterprets it as UTC and can shift
+// the displayed day depending on the browser's local offset.
+const formatDateShort = (isoDate: string) => {
+  const [, month, day] = isoDate.split("-");
+  const monthIndex = Number(month) - 1;
+  return MONTH_ABBR[monthIndex] ? `${MONTH_ABBR[monthIndex]}-${day}` : isoDate;
+};
+
 interface CycleEntry {
   id: string;
   cycleNumber: number;
@@ -349,42 +363,6 @@ export default function ProductionTablePage({
         }
       `}</style>
 
-      {/* Control Actions Panel */}
-      <div className="flex items-center justify-between no-print bg-card p-2 rounded-xl border border-border">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="gap-2 h-9 text-muted-foreground text-xs"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </Button>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleResetLog}
-            disabled={!session || isResetting}
-            variant="destructive"
-            className="gap-2 h-9 text-xs font-bold shadow-sm"
-          >
-            {isResetting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}
-            {!session
-              ? "Login to Reset"
-              : isResetting
-                ? "Archiving..."
-                : "Reset Shift Log"}
-          </Button>
-          <Button
-            onClick={handlePrintPDF}
-            className="bg-primary hover:bg-primary/90 gap-2 h-9 text-xs font-bold shadow-sm text-primary-foreground"
-          >
-            <Printer className="w-4 h-4" /> Print PDF
-          </Button>
-        </div>
-      </div>
-
       {/* Error Alert Banner */}
       {fetchError && (
         <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl flex items-start gap-2 text-sm text-destructive no-print">
@@ -400,17 +378,54 @@ export default function ProductionTablePage({
       {/* Main Document Content Area */}
       <Card className="overflow-hidden">
         <CardHeader className="bg-primary text-primary-foreground p-3 header-compact">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-base font-bold tracking-wider uppercase">
-                Press Live Log Table
-              </CardTitle>
-              <p className="text-[10px] text-primary-foreground/70">
-                Shift Execution & Defect Matrix
-              </p>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+            <div className="flex justify-between items-center md:contents">
+              <div>
+                <CardTitle className="text-base font-bold tracking-wider uppercase">
+                  Press Live Log Table
+                </CardTitle>
+                <p className="text-[10px] text-primary-foreground/70">
+                  Shift Execution & Defect Matrix
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={onBack}
+                className="no-print ml-auto md:ml-0 md:order-last gap-1.5 h-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground text-xs"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back
+              </Button>
             </div>
-            <div className="text-[10px] bg-primary-foreground/10 border border-primary-foreground/20 px-2.5 py-0.5 rounded font-mono">
-              Date: {latestEntry?.date || "---"}
+
+            <div className="flex items-center justify-between gap-2 md:contents">
+              <div className="flex items-center gap-2 no-print md:ml-auto">
+                <Button
+                  onClick={handleResetLog}
+                  disabled={!session || isResetting}
+                  variant="destructive"
+                  className="gap-2 h-9 text-xs font-bold shadow-sm"
+                >
+                  {isResetting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  {!session
+                    ? "Login to Reset"
+                    : isResetting
+                      ? "Archiving..."
+                      : "Reset Shift Log"}
+                </Button>
+                <Button
+                  onClick={handlePrintPDF}
+                  className="bg-primary-foreground hover:bg-primary-foreground/90 gap-2 h-9 text-xs font-bold shadow-sm text-primary"
+                >
+                  <Printer className="w-4 h-4" /> Print PDF
+                </Button>
+              </div>
+              <div className="text-[10px] bg-primary-foreground/10 border border-primary-foreground/20 px-2.5 py-0.5 rounded font-mono">
+                Date: {latestEntry?.date ? formatDateShort(latestEntry.date) : "---"}
+              </div>
             </div>
           </div>
         </CardHeader>
