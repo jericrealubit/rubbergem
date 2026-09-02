@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase"; // Ensure this import matches your project setup
-import { shiftGroupOf } from "@/lib/shift-log";
+import {
+  shiftGroupOf,
+  cycleKey,
+  formatShortMolds,
+  type ArchivedCycle,
+} from "@/lib/shift-log";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertCircle,
@@ -31,7 +36,7 @@ interface RawProductionLog {
     table_3: { type: string; good: number; reject: number };
     table_4: { type: string; good: number; reject: number };
   };
-  cycles: any[];
+  cycles: ArchivedCycle[];
 }
 
 interface DayYield {
@@ -41,7 +46,7 @@ interface DayYield {
   operator: string;
   tables: Record<number, { matType: string; good: number; reject: number }>;
   totalCycles: number;
-  cycles: any[]; // <-- FIX 1: Added cycles array to interface
+  cycles: ArchivedCycle[]; // <-- FIX 1: Added cycles array to interface
 }
 
 interface MonthGroup {
@@ -59,6 +64,9 @@ export default function ProductionHistory() {
 
   const [expandedMonth, setExpandedMonth] = useState<string | null>("");
   const [expandedDay, setExpandedDay] = useState<string | null>("");
+  const [dayViewMode, setDayViewMode] = useState<"summary" | "table">(
+    "summary",
+  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -212,6 +220,7 @@ export default function ProductionHistory() {
 
   const toggleDay = (dateString: string) => {
     setExpandedDay(expandedDay === dateString ? null : dateString);
+    setDayViewMode("summary");
   };
 
   const formatDateLabel = (str: string) => {
@@ -391,13 +400,117 @@ export default function ProductionHistory() {
 
                         {isDayOpen && (
                           <Card className="bg-card border-border rounded-lg shadow-inner overflow-hidden mx-0.5 my-1">
-                            <CardContent className="p-3 space-y-3">
-                              <div className="flex items-center gap-1.5 border-b border-border pb-1.5">
+                            <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1.5 border-b border-border">
+                              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                                 <Layers className="w-3.5 h-3.5 text-primary" />
-                                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
-                                  Table Line Output Yields
-                                </span>
+                                {dayViewMode === "summary"
+                                  ? "Table Line Output Yields"
+                                  : "Cycle Log"}
+                              </span>
+                              <div className="flex items-center gap-0.5 bg-muted rounded-md p-0.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setDayViewMode("summary")}
+                                  className={`h-6 px-2 text-[9px] font-bold uppercase tracking-wide rounded transition-colors ${
+                                    dayViewMode === "summary"
+                                      ? "bg-primary text-primary-foreground"
+                                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                  }`}
+                                >
+                                  Summary
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDayViewMode("table")}
+                                  className={`h-6 px-2 text-[9px] font-bold uppercase tracking-wide rounded transition-colors ${
+                                    dayViewMode === "table"
+                                      ? "bg-primary text-primary-foreground"
+                                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                  }`}
+                                >
+                                  Table
+                                </button>
                               </div>
+                            </div>
+
+                            {dayViewMode === "table" && (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-[10px] border-collapse">
+                                  <thead>
+                                    <tr className="bg-muted text-muted-foreground uppercase tracking-wide">
+                                      <th className="p-1.5 border-b border-border text-center font-bold w-10">
+                                        #
+                                      </th>
+                                      <th className="p-1.5 border-b border-border text-center font-bold whitespace-nowrap">
+                                        Start → End (Load)
+                                      </th>
+                                      <th className="p-1.5 border-b border-border text-center font-bold w-16">
+                                        Runtime
+                                      </th>
+                                      <th className="p-1.5 border-b border-border text-left font-bold">
+                                        Short Mold
+                                      </th>
+                                      <th className="p-1.5 border-b border-border text-left font-bold">
+                                        Notes
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {dayCycles
+                                      .slice()
+                                      .sort((a, b) =>
+                                        (a.start_time || "").localeCompare(
+                                          b.start_time || "",
+                                        ),
+                                      )
+                                      .map((cycle, idx) => (
+                                        <tr
+                                          key={cycleKey(cycle)}
+                                          className="border-b border-border/60 hover:bg-accent/40 text-foreground"
+                                        >
+                                          <td className="p-1.5 text-center font-mono font-bold bg-muted/50 text-muted-foreground">
+                                            {cycle.cycle_number ?? idx + 1}
+                                          </td>
+                                          <td className="p-1.5 text-center font-mono whitespace-nowrap">
+                                            {cycle.start_time || "--:--"}
+                                            <span className="mx-0.5 text-muted-foreground">
+                                              →
+                                            </span>
+                                            {cycle.end_time || "--:--"}
+                                            <span className="ml-1 text-muted-foreground">
+                                              (
+                                              {Math.round(
+                                                (cycle.load_duration_seconds ||
+                                                  0) / 60,
+                                              )}
+                                              m)
+                                            </span>
+                                          </td>
+                                          <td className="p-1.5 text-center font-mono">
+                                            {cycle.run_time_minutes ?? "-"}
+                                          </td>
+                                          <td className="p-1.5 font-mono tracking-tight text-muted-foreground">
+                                            {formatShortMolds(cycle)}
+                                          </td>
+                                          <td
+                                            className="p-1.5 text-muted-foreground"
+                                            title={cycle.notes || undefined}
+                                          >
+                                            {cycle.notes || (
+                                              <span className="text-muted-foreground/50 italic">
+                                                None
+                                              </span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {dayViewMode === "summary" && (
+                            <CardContent className="p-3 pt-2 space-y-3">
                               <div className="grid grid-cols-2 ipad:grid-cols-4 gap-2">
                                 {[1, 2, 3, 4].map((tableId) => {
                                   const tableData = day.tables[tableId] || {
@@ -487,9 +600,11 @@ export default function ProductionHistory() {
                                 </div>
                               </div>
                             </CardContent>
+                            )}
 
                             {/* --- FIX 3: Replaced "log.cycles" with "day.cycles" and added inline card padding layout --- */}
-                            {day.cycles &&
+                            {dayViewMode === "summary" &&
+                              day.cycles &&
                               Array.isArray(day.cycles) &&
                               day.cycles.some(
                                 (c) => c.notes && c.notes.trim() !== "",

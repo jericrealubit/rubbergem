@@ -35,6 +35,27 @@ export interface ArchivedCycle {
 }
 
 /**
+ * Human-readable "T1: position | T3: Short Mold" summary of a cycle's
+ * rejects, or "-" if none -- mirrors the formatting used by the live
+ * Press Live Log Table (app/ProductionTable.tsx) so History's table view
+ * reads identically to the live grid for the same cycles.
+ */
+export function formatShortMolds(
+  cycle: Pick<ArchivedCycle, "short_mold_json">,
+): string {
+  const activeMolds = [1, 2, 3, 4]
+    .map((id) => {
+      const cell = cycle.short_mold_json?.[`table_${id}`];
+      if (!cell) return null;
+      if (cell.position) return `T${id}: ${cell.position}`;
+      if (cell.reject) return `T${id}: Short Mold`;
+      return null;
+    })
+    .filter((v): v is string => v !== null);
+  return activeMolds.length > 0 ? activeMolds.join(" | ") : "-";
+}
+
+/**
  * The minimal shape cycleKey/mergeCycles need to identify a cycle -- shared
  * across every production line's own cycle type (Press's ArchivedCycle,
  * Bales' BalesArchivedCycle, ...) so the dedupe/merge logic has one source of
