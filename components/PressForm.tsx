@@ -71,8 +71,6 @@ export default function ProductionForm({
   const [pendingProceed, setPendingProceed] = useState<
     (() => Promise<void>) | null
   >(null);
-  const [endShiftConfirmOpen, setEndShiftConfirmOpen] = useState(false);
-
   // --- LAYOUT & CONFIGURATION PERSISTENCE ---
   const [pressNumber, setPressNumber] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -345,7 +343,7 @@ export default function ProductionForm({
     return matches.find((r) => String(r.id) === cachedId) || matches[0] || null;
   };
 
-  // Shared by the stale-clear dialog and End Shift's own post-archive clear.
+  // Used by the stale-clear confirm dialog to wipe leftover live_log rows.
   // Throws on failure — callers decide how to surface that.
   const clearLiveLog = async () => {
     const { error: rpcError } = await supabase.rpc("reset_shift_log", {
@@ -371,7 +369,6 @@ export default function ProductionForm({
   const submitCycle = async (
     endTimeHHMM: string,
     durationMinutes: number,
-    continueChain: boolean,
   ) => {
     try {
       const { data: latestEntry, error: fetchError } = await supabase
@@ -541,21 +538,6 @@ export default function ProductionForm({
         localStorage.setItem("production_log_id", savedLogId);
       }
 
-      // End Shift: the final cycle is now safely archived above, so clear
-      // live_log (+ shift_messages) so the Press Live Log Table is empty and
-      // ready for the next shift. Isolated try/catch — a failure here must
-      // not make this look like the cycle itself failed to save.
-      if (!continueChain) {
-        try {
-          await clearLiveLog();
-        } catch (clearErr) {
-          console.error("Error clearing live log after End Shift:", clearErr);
-          toast.error(
-            `Shift closed and saved, but the live log table could not be cleared automatically: ${clearErr instanceof Error ? clearErr.message : String(clearErr)}. Clear it manually from Press Live Log Table.`,
-          );
-        }
-      }
-
       const newCycleEntry = {
         id: Math.random().toString(36).substring(2, 9),
         pressNumber,
@@ -581,12 +563,7 @@ export default function ProductionForm({
         JSON.stringify(existingRecords),
       );
 
-      if (continueChain) {
-        setStartTime(endTimeHHMM);
-      } else {
-        setStartTime("");
-        localStorage.removeItem("ws_start_time");
-      }
+      setStartTime(endTimeHHMM);
       setIsManualStart(false);
       setSelectedTableSquares({});
       setNotes("");
@@ -599,9 +576,7 @@ export default function ProductionForm({
       setIsSubmitting(false);
 
       toast.success(
-        `Cycle saved! Load time: ${formatSigned(durationMinutes * 60)}${
-          continueChain ? " — next cycle started." : " — shift closed."
-        }`,
+        `Cycle saved! Load time: ${formatSigned(durationMinutes * 60)} — next cycle started.`,
       );
       const minutes = parseInt(String(runTime), 10);
       if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
@@ -616,11 +591,9 @@ export default function ProductionForm({
     }
   };
 
-  // Shared by the regular per-cycle submit (auto-chains into the next cycle)
-  // and End Shift (closes the chain instead) — mirrors BalesForm's
-  // runWithStaleCheck, since both finalize paths need the same
-  // stale-live_log guard with only the chain behavior differing.
-  const finalizeCycle = async (continueChain: boolean) => {
+  // Mirrors BalesForm's runWithStaleCheck — validates duration and checks for
+  // stale live_log rows before handing off to submitCycle.
+  const finalizeCycle = async () => {
     if (!startTime) return;
 
     // Captured once, at the moment of submit, so the eventual end time
@@ -666,14 +639,14 @@ export default function ProductionForm({
         if (!openShiftRow) {
           setStaleClearConfirm({ count });
           setPendingProceed(
-            () => () => submitCycle(endTimeHHMM, durationMinutes, continueChain),
+            () => () => submitCycle(endTimeHHMM, durationMinutes),
           );
           setIsSubmitting(false);
           return;
         }
       }
 
-      await submitCycle(endTimeHHMM, durationMinutes, continueChain);
+      await submitCycle(endTimeHHMM, durationMinutes);
     } catch (err) {
       console.error("Error checking for leftover shift data:", err);
       toast.error(
@@ -706,7 +679,7 @@ export default function ProductionForm({
     setHoldProgress(pct);
     if (pct >= 100) {
       cancelHold();
-      finalizeCycle(true);
+      finalizeCycle();
       return;
     }
     holdRafRef.current = requestAnimationFrame(tickHold);
@@ -727,8 +700,6 @@ export default function ProductionForm({
       if (holdRafRef.current) cancelAnimationFrame(holdRafRef.current);
     };
   }, []);
-
-  const handleEndShift = () => finalizeCycle(false);
 
   const handleCancelClearStale = () => {
     setStaleClearConfirm(null);
@@ -931,16 +902,6 @@ export default function ProductionForm({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-border">
-                <button
-                  type="button"
-                  disabled={!session || isSubmitting || !startTime}
-                  onClick={() => setEndShiftConfirmOpen(true)}
-                  className="w-full h-9 flex items-center justify-center gap-1.5 text-[11px] font-bold text-destructive hover:text-destructive hover:bg-destructive/10 border border-destructive/30 rounded-md uppercase tracking-wider transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
-                >
-                  End Shift — Close Cycle Chain
-                </button>
-              </div>
             </CardContent>
           )}
         </Card>
@@ -1238,40 +1199,6 @@ export default function ProductionForm({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={endShiftConfirmOpen} onOpenChange={setEndShiftConfirmOpen}>
-        <DialogContent className="sm:max-w-[380px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5 shrink-0" />
-              End Shift?
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This submits the current cycle (started at{" "}
-            <strong>{startTime}</strong>), closes the chain, and clears the
-            Press Live Log Table so it's ready for the next shift — you'll
-            need to tap Start Time again to begin a new cycle. Use this only
-            for the last cycle of the shift.
-          </p>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setEndShiftConfirmOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setEndShiftConfirmOpen(false);
-                handleEndShift();
-              }}
-            >
-              End Shift
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
