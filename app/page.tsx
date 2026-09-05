@@ -18,6 +18,8 @@ import {
   HelpCircle,
   Boxes,
   Table2,
+  FlaskConical,
+  ListChecks,
 } from "lucide-react";
 import ProductionForm from "@/components/PressForm";
 import ProductionTablePage from "./ProductionTable";
@@ -27,6 +29,9 @@ import ChatPanel from "@/components/ChatPanel";
 import BalesForm from "@/components/BalesForm";
 import BalesProductionTable from "./BalesProductionTable";
 import BalesHistory from "@/components/BalesHistory";
+import BanburyForm from "@/components/BanburyForm";
+import BanburyTablePage from "./BanburyTable";
+import BanburyHistory from "@/components/BanburyHistory";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
@@ -38,7 +43,10 @@ type ViewType =
   | "about"
   | "balesForm"
   | "balesTable"
-  | "balesHistory";
+  | "balesHistory"
+  | "banburyForm"
+  | "banburyTable"
+  | "banburyHistory";
 
 export default function Home() {
   const [session, setSession] = useState<any>(null);
@@ -296,6 +304,48 @@ export default function Home() {
               <History className="w-4 h-4 shrink-0" />
               <span>Bales History</span>
             </button>
+
+            <div className="pt-2 mt-2 border-t border-[var(--chrome-border)]">
+              <p className="px-3 pb-1.5 text-[10px] font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
+                Banbury
+              </p>
+            </div>
+
+            <button
+              onClick={() => navigateTo("banburyForm")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "banburyForm"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
+              }`}
+            >
+              <FlaskConical className="w-4 h-4 shrink-0" />
+              <span>Banbury Entry Form</span>
+            </button>
+
+            <button
+              onClick={() => navigateTo("banburyTable")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "banburyTable"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
+              }`}
+            >
+              <ListChecks className="w-4 h-4 shrink-0" />
+              <span>Banbury Live Log Table</span>
+            </button>
+
+            <button
+              onClick={() => navigateTo("banburyHistory")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                currentView === "banburyHistory"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
+              }`}
+            >
+              <History className="w-4 h-4 shrink-0" />
+              <span>Banbury History</span>
+            </button>
           </nav>
 
           <div className="pt-2 border-t border-[var(--chrome-border)] space-y-2">
@@ -394,6 +444,22 @@ export default function Home() {
         )}
 
         {currentView === "balesHistory" && <BalesHistory />}
+
+        {currentView === "banburyForm" && (
+          <BanburyForm
+            session={session}
+            onNavigateToTable={() => navigateTo("banburyTable")}
+          />
+        )}
+
+        {currentView === "banburyTable" && (
+          <BanburyTablePage
+            onBack={() => setCurrentView("banburyForm")}
+            session={session}
+          />
+        )}
+
+        {currentView === "banburyHistory" && <BanburyHistory />}
       </main>
     </div>
   );

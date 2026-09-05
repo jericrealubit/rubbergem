@@ -1,0 +1,28 @@
+CREATE OR REPLACE FUNCTION reset_banbury_shift_log(p_shift_id TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Clear the Banbury live_log checklist rows for this shift. Archiving to
+  -- banbury_production_logs happens live on each checklist entry (see
+  -- components/BanburyForm.tsx), so this function only wipes the one
+  -- shift-scoped live table (there is no Banbury equivalent of Bales'
+  -- bag_changes side table).
+  --
+  -- SECURITY DEFINER: banbury_live_log RLS has no DELETE policy for the
+  -- authenticated role, so a plain SECURITY INVOKER delete here would
+  -- silently match 0 rows (no error, no rows deleted) -- same footgun
+  -- documented in reset_shift_log.txt / reset_bales_shift_log.txt. Running
+  -- as the function owner bypasses RLS for this deliberate, gated
+  -- destructive action.
+  DELETE FROM public.banbury_live_log
+  WHERE shift_id::text = p_shift_id;
+END;
+$$;
+
+-- Lock execution down to logged-in operators only (mirrors the UI gating in
+-- app/BanburyTable.tsx, which disables the button unless a session exists).
+REVOKE ALL ON FUNCTION reset_banbury_shift_log(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION reset_banbury_shift_log(TEXT) TO authenticated;
