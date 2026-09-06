@@ -35,6 +35,7 @@ import BanburyHistory from "@/components/BanburyHistory";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
+import { activeLineFor, type LineKey } from "@/lib/line-accounts";
 
 type ViewType =
   | "form"
@@ -47,6 +48,44 @@ type ViewType =
   | "banburyForm"
   | "banburyTable"
   | "banburyHistory";
+
+// One entry per production line's login account -- app/page.tsx reorders
+// these so whichever account is logged in shows first in the burger menu
+// (see lib/line-accounts.ts / PressForm.tsx / BalesForm.tsx / BanburyForm.tsx's
+// matching isAuthorized gates).
+const NAV_SECTIONS: {
+  key: LineKey;
+  label: string;
+  items: { view: ViewType; label: string; icon: typeof FileText }[];
+}[] = [
+  {
+    key: "press",
+    label: "Press",
+    items: [
+      { view: "form", label: "Press Entry Form", icon: ClipboardList },
+      { view: "table", label: "Press Live Log Table", icon: FileText },
+      { view: "history", label: "Press History", icon: History },
+    ],
+  },
+  {
+    key: "bales",
+    label: "Bales",
+    items: [
+      { view: "balesForm", label: "Bales Entry Form", icon: Boxes },
+      { view: "balesTable", label: "Bales Live Log Table", icon: Table2 },
+      { view: "balesHistory", label: "Bales History", icon: History },
+    ],
+  },
+  {
+    key: "banbury",
+    label: "Banbury",
+    items: [
+      { view: "banburyForm", label: "Banbury Entry Form", icon: FlaskConical },
+      { view: "banburyTable", label: "Banbury Live Log Table", icon: ListChecks },
+      { view: "banburyHistory", label: "Banbury History", icon: History },
+    ],
+  },
+];
 
 export default function Home() {
   const [session, setSession] = useState<any>(null);
@@ -154,6 +193,17 @@ export default function Home() {
     setIsMenuOpen(false);
   };
 
+  // Whichever line's account is logged in gets its nav section moved to the
+  // top of the burger menu; logged out (or a non-line account) keeps the
+  // default Press/Bales/Banbury order.
+  const activeLine = activeLineFor(session?.user?.email);
+  const orderedNavSections = activeLine
+    ? [
+        ...NAV_SECTIONS.filter((s) => s.key === activeLine),
+        ...NAV_SECTIONS.filter((s) => s.key !== activeLine),
+      ]
+    : NAV_SECTIONS;
+
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
       {/* Global Top Header with Persistent Countdown Timer */}
@@ -215,137 +265,37 @@ export default function Home() {
             </p>
           </div>
           <nav className="space-y-1.5">
-            <button
-              onClick={() => navigateTo("form")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "form"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <ClipboardList className="w-4 h-4 shrink-0" />
-              <span>Press Entry Form</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("table")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "table"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <FileText className="w-4 h-4 shrink-0" />
-              <span>Press Live Log Table</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("history")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "history"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <History className="w-4 h-4 shrink-0" />
-              <span>Press History</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("about")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "about"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <HelpCircle className="w-4 h-4 shrink-0" />
-              <span>About System</span>
-            </button>
-
-            <div className="pt-2 mt-2 border-t border-[var(--chrome-border)]">
-              <p className="px-3 pb-1.5 text-[10px] font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
-                Bales
-              </p>
-            </div>
-
-            <button
-              onClick={() => navigateTo("balesForm")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "balesForm"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <Boxes className="w-4 h-4 shrink-0" />
-              <span>Bales Entry Form</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("balesTable")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "balesTable"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <Table2 className="w-4 h-4 shrink-0" />
-              <span>Bales Live Log Table</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("balesHistory")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "balesHistory"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <History className="w-4 h-4 shrink-0" />
-              <span>Bales History</span>
-            </button>
-
-            <div className="pt-2 mt-2 border-t border-[var(--chrome-border)]">
-              <p className="px-3 pb-1.5 text-[10px] font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
-                Banbury
-              </p>
-            </div>
-
-            <button
-              onClick={() => navigateTo("banburyForm")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "banburyForm"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <FlaskConical className="w-4 h-4 shrink-0" />
-              <span>Banbury Entry Form</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("banburyTable")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "banburyTable"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <ListChecks className="w-4 h-4 shrink-0" />
-              <span>Banbury Live Log Table</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo("banburyHistory")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                currentView === "banburyHistory"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
-              }`}
-            >
-              <History className="w-4 h-4 shrink-0" />
-              <span>Banbury History</span>
-            </button>
+            {orderedNavSections.map((section, sectionIndex) => (
+              <div key={section.key}>
+                <div
+                  className={
+                    sectionIndex > 0
+                      ? "pt-2 mt-2 border-t border-[var(--chrome-border)]"
+                      : ""
+                  }
+                >
+                  <p className="px-3 pb-1.5 text-[10px] font-bold text-[var(--drawer-text-muted)] uppercase tracking-widest">
+                    {section.label}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  {section.items.map((item) => (
+                    <button
+                      key={item.view}
+                      onClick={() => navigateTo(item.view)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                        currentView === item.view
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
+                      }`}
+                    >
+                      <item.icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </nav>
 
           <div className="pt-2 border-t border-[var(--chrome-border)] space-y-2">
@@ -354,6 +304,20 @@ export default function Home() {
             </p>
             <ThemeSwitcher />
           </div>
+
+          <div className="pt-2 border-t border-[var(--chrome-border)]" />
+
+          <button
+            onClick={() => navigateTo("about")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              currentView === "about"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "hover:bg-[var(--drawer-hover-bg)] text-[var(--drawer-text-muted)] hover:text-[var(--drawer-text)]"
+            }`}
+          >
+            <HelpCircle className="w-4 h-4 shrink-0" />
+            <span>About System</span>
+          </button>
         </div>
 
         <div className="shrink-0 p-4 border-t border-[var(--chrome-border)] space-y-2">
@@ -434,7 +398,12 @@ export default function Home() {
 
         {currentView === "about" && <AboutPage />}
 
-        {currentView === "balesForm" && <BalesForm session={session} />}
+        {currentView === "balesForm" && (
+          <BalesForm
+            session={session}
+            onNavigateToTable={() => navigateTo("balesTable")}
+          />
+        )}
 
         {currentView === "balesTable" && (
           <BalesProductionTable

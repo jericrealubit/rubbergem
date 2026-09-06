@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -57,6 +58,7 @@ export default function ProductionTablePage({
   onBack?: () => void;
   session: any;
 }) {
+  const isAuthorized = session?.user?.email === LINE_ACCOUNTS.press;
   const [entries, setEntries] = useState<CycleEntry[]>([]);
   const [matTypes, setMatTypes] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -401,7 +403,7 @@ export default function ProductionTablePage({
               <div className="flex items-center gap-2 no-print md:ml-auto">
                 <Button
                   onClick={handleResetLog}
-                  disabled={!session || isResetting}
+                  disabled={!isAuthorized || isResetting}
                   variant="destructive"
                   className="gap-2 h-9 text-xs font-bold shadow-sm bg-primary-foreground text-destructive hover:bg-primary-foreground/90"
                 >
@@ -410,8 +412,10 @@ export default function ProductionTablePage({
                   ) : (
                     <Trash2 className="w-4 h-4" />
                   )}
-                  {!session
-                    ? "Login to Reset"
+                  {!isAuthorized
+                    ? session
+                      ? "Press account required"
+                      : "Login to Reset"
                     : isResetting
                       ? "Archiving..."
                       : "Reset Shift Log"}

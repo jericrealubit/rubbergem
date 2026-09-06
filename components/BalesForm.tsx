@@ -7,6 +7,7 @@ import {
   balesTotalsFromCycles,
 } from "@/lib/bales-log";
 import type { BalesArchivedCycle } from "@/lib/bales-log";
+import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ import {
   ChevronUp,
   Settings2,
   Loader2,
+  FileText,
 } from "lucide-react";
 
 /** The bales_production_logs columns read back when resolving a shift's archive row. */
@@ -63,7 +65,14 @@ function addMinutesToTime(time: string, minutes: number): string {
   return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
 }
 
-export default function BalesForm({ session }: { session: any }) {
+export default function BalesForm({
+  session,
+  onNavigateToTable,
+}: {
+  session: any;
+  onNavigateToTable?: () => void;
+}) {
+  const isAuthorized = session?.user?.email === LINE_ACCOUNTS.bales;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
     count: number;
@@ -223,7 +232,7 @@ export default function BalesForm({ session }: { session: any }) {
   // the live shift. Debounced; only logged-in operators write. mesh_type is
   // preserved on reset (see BalesProductionTable's handleResetLog).
   useEffect(() => {
-    if (!session) return;
+    if (!isAuthorized) return;
     const t = setTimeout(() => {
       supabase
         .from("bales_shift_config")
@@ -242,7 +251,7 @@ export default function BalesForm({ session }: { session: any }) {
         });
     }, 600);
     return () => clearTimeout(t);
-  }, [session, operator, shift, meshType]);
+  }, [isAuthorized, operator, shift, meshType]);
 
   useEffect(() => {
     localStorage.setItem("bales_ws_start_time", startTime);
@@ -295,7 +304,7 @@ export default function BalesForm({ session }: { session: any }) {
   };
 
   const handleLogBagChange = async () => {
-    if (!session) return;
+    if (!isAuthorized) return;
     setIsLoggingBag(true);
     try {
       const { data: existing, error: seqError } = await supabase
@@ -558,7 +567,7 @@ export default function BalesForm({ session }: { session: any }) {
   };
 
   const handleFinishAndStartNext = async () => {
-    if (!session || !cycleOpen || !canFinalize) return;
+    if (!isAuthorized || !cycleOpen || !canFinalize) return;
     const nextHHMM = nowHHMM();
     const startIso = toTimestampIso(startTime);
     const endIso = toTimestampIso(nextHHMM);
@@ -574,7 +583,7 @@ export default function BalesForm({ session }: { session: any }) {
   };
 
   const handleFinishShiftManual = async () => {
-    if (!session || !cycleOpen || manualFinishRunTime === "" || !canFinalize)
+    if (!isAuthorized || !cycleOpen || manualFinishRunTime === "" || !canFinalize)
       return;
     const startIso = toTimestampIso(startTime);
     const endHHMM = addMinutesToTime(startTime, Number(manualFinishRunTime));
@@ -639,10 +648,22 @@ export default function BalesForm({ session }: { session: any }) {
 
   return (
     <div className="w-full max-w-md ipad:max-w-5xl mx-auto p-3 ipad:p-4 space-y-4 pb-12">
-      <div className="relative bg-primary text-primary-foreground p-4 rounded-[var(--radius-card)] shadow-[var(--shadow-card)]">
+      <div className="bg-primary text-primary-foreground p-4 rounded-[var(--radius-card)] shadow-[var(--shadow-card)] flex items-center gap-4">
         <h1 className="text-xl font-bold tracking-wider uppercase whitespace-nowrap">
           Bales Production
         </h1>
+
+        {onNavigateToTable && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onNavigateToTable}
+            className="ml-auto gap-1.5 h-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground text-xs"
+          >
+            <FileText className="w-4 h-4" /> Table
+          </Button>
+        )}
       </div>
 
       <div className="space-y-4 ipad:space-y-0 ipad:grid ipad:grid-cols-2 ipad:gap-4 ipad:items-start">
@@ -770,22 +791,24 @@ export default function BalesForm({ session }: { session: any }) {
                 <div className="space-y-2">
                   <Button
                     type="button"
-                    disabled={!session || isSubmitting || !canFinalize}
+                    disabled={!isAuthorized || isSubmitting || !canFinalize}
                     onClick={handleFinishAndStartNext}
                     className="w-full h-14 bg-primary hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
                   >
                     {isSubmitting && (
                       <Loader2 className="animate-spin" size={20} />
                     )}
-                    {!session
-                      ? "Login to finish cycle"
+                    {!isAuthorized
+                      ? session
+                        ? "Bales account required"
+                        : "Login to finish cycle"
                       : !canFinalize
                         ? "Enter Bales Produced to Finish"
                         : "Finish Cycle & Start Next"}
                   </Button>
                   <button
                     type="button"
-                    disabled={!session || isSubmitting}
+                    disabled={!isAuthorized || isSubmitting}
                     onClick={() => setIsFinishShiftOpen(true)}
                     className="w-full text-center text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors disabled:opacity-40"
                   >
@@ -865,7 +888,7 @@ export default function BalesForm({ session }: { session: any }) {
               <Button
                 type="button"
                 size="sm"
-                disabled={!session}
+                disabled={!isAuthorized}
                 onClick={() => setIsBagDialogOpen(true)}
                 className="h-8 px-3 text-[11px] font-bold bg-primary hover:bg-primary/80"
               >

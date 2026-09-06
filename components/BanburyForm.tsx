@@ -3,6 +3,7 @@
 import { supabase } from "@/lib/supabase";
 import { mergeCycles, shiftGroupOf } from "@/lib/banbury-log";
 import type { BanburyCheckEntry } from "@/lib/banbury-log";
+import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -82,6 +83,7 @@ export default function BanburyForm({
   session: any;
   onNavigateToTable?: () => void;
 }) {
+  const isAuthorized = session?.user?.email === LINE_ACCOUNTS.banbury;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
     count: number;
@@ -259,7 +261,7 @@ export default function BanburyForm({
   // DB so any viewer sees the live shift. Debounced; only logged-in
   // operators write.
   useEffect(() => {
-    if (!session) return;
+    if (!isAuthorized) return;
     const t = setTimeout(() => {
       supabase
         .from("banbury_shift_config")
@@ -282,7 +284,7 @@ export default function BanburyForm({
         });
     }, 600);
     return () => clearTimeout(t);
-  }, [session, operator, shift, product, bagWeight, batchesMade, bagsCount, runTimeHours]);
+  }, [isAuthorized, operator, shift, product, bagWeight, batchesMade, bagsCount, runTimeHours]);
 
   useEffect(() => {
     localStorage.setItem("banbury_ws_ticks", JSON.stringify(ticks));
@@ -495,7 +497,7 @@ export default function BanburyForm({
   // Checks for leftover live_log rows from an already-closed shift before
   // logging -- mirrors PressForm/BalesForm's stale-clear guard.
   const handleLogCheck = async () => {
-    if (!session) return;
+    if (!isAuthorized) return;
     setIsSubmitting(true);
     try {
       const { count, error: countError } = await supabase
@@ -827,13 +829,15 @@ export default function BanburyForm({
 
               <Button
                 type="button"
-                disabled={!session || isSubmitting}
+                disabled={!isAuthorized || isSubmitting}
                 onClick={handleLogCheck}
                 className="w-full h-12 font-bold tracking-wide uppercase text-sm shadow-md transition-colors disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
                 {isSubmitting && <Loader2 className="animate-spin" size={20} />}
-                {!session
-                  ? "Login to log check"
+                {!isAuthorized
+                  ? session
+                    ? "Banbury account required"
+                    : "Login to log check"
                   : isSubmitting
                     ? "Logging..."
                     : "Log Check"}

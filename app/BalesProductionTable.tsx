@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,9 +20,24 @@ import {
   Loader2,
 } from "lucide-react";
 
+const MONTH_ABBR = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// isoDate is already Perth-local YYYY-MM-DD; split it directly instead of
+// re-parsing via `new Date(...)`, which reinterprets it as UTC and can shift
+// the displayed day depending on the browser's local offset.
+const formatDateShort = (isoDate: string) => {
+  const [, month, day] = isoDate.split("-");
+  const monthIndex = Number(month) - 1;
+  return MONTH_ABBR[monthIndex] ? `${MONTH_ABBR[monthIndex]}-${day}` : isoDate;
+};
+
 interface BalesCycleEntry {
   id: string;
   cycleNumber: number;
+  date: string;
   startTime: string;
   endTime: string;
   runTime: number | "";
@@ -47,6 +63,7 @@ export default function BalesProductionTable({
   onBack?: () => void;
   session: any;
 }) {
+  const isAuthorized = session?.user?.email === LINE_ACCOUNTS.bales;
   const [entries, setEntries] = useState<BalesCycleEntry[]>([]);
   const [bagChanges, setBagChanges] = useState<BagChangeRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +114,11 @@ export default function BalesProductionTable({
           (row: any, index: number) => ({
             id: row.bales_id.toString(),
             cycleNumber: row.cycle_number ?? index + 1,
+            date: row.start_time
+              ? new Intl.DateTimeFormat("en-CA", {
+                  timeZone: "Australia/Perth",
+                }).format(new Date(row.start_time))
+              : "---",
             startTime: row.start_time
               ? new Date(row.start_time).toLocaleTimeString([], {
                   hour: "2-digit",
@@ -220,6 +242,7 @@ export default function BalesProductionTable({
   };
 
   // --- UI Computation Logic ---
+  const latestEntry = entries[entries.length - 1] || null;
   const totalDisplayRows = 22;
   const rows = Array.from(
     { length: totalDisplayRows },
@@ -293,42 +316,7 @@ export default function BalesProductionTable({
         }
       `}</style>
 
-      {/* Control Actions Panel */}
-      <div className="flex items-center justify-between no-print bg-card p-2 rounded-xl border border-border">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="gap-2 h-9 text-muted-foreground text-xs"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </Button>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleResetLog}
-            disabled={!session || isResetting}
-            variant="destructive"
-            className="gap-2 h-9 text-xs font-bold shadow-sm"
-          >
-            {isResetting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}
-            {!session
-              ? "Login to Reset"
-              : isResetting
-                ? "Archiving..."
-                : "Reset Shift Log"}
-          </Button>
-          <Button
-            onClick={handlePrintPDF}
-            className="bg-primary hover:bg-primary/90 gap-2 h-9 text-xs font-bold shadow-sm text-primary-foreground"
-          >
-            <Printer className="w-4 h-4" /> Print PDF
-          </Button>
-        </div>
-      </div>
-
+      {/* Error Alert Banner */}
       {fetchError && (
         <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl flex items-start gap-2 text-sm text-destructive no-print">
           <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
@@ -342,14 +330,56 @@ export default function BalesProductionTable({
 
       <Card className="overflow-hidden">
         <CardHeader className="bg-primary text-primary-foreground p-3 header-compact">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-base font-bold tracking-wider uppercase">
-                Bales Live Log Table
-              </CardTitle>
-              <p className="text-[10px] text-primary-foreground/70">
-                Baling Line Execution Log
-              </p>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+            <div className="flex justify-between items-center md:contents">
+              <div>
+                <CardTitle className="text-base font-bold tracking-wider uppercase">
+                  Bales Live Log Table
+                </CardTitle>
+                <p className="text-[10px] text-primary-foreground/70">
+                  Baling Line Execution Log
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={onBack}
+                className="no-print ml-auto md:ml-0 md:order-last gap-1.5 h-9 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground text-xs"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 md:contents">
+              <div className="flex items-center gap-2 no-print md:ml-auto">
+                <Button
+                  onClick={handleResetLog}
+                  disabled={!isAuthorized || isResetting}
+                  variant="destructive"
+                  className="gap-2 h-9 text-xs font-bold shadow-sm bg-primary-foreground text-destructive hover:bg-primary-foreground/90"
+                >
+                  {isResetting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  {!isAuthorized
+                    ? session
+                      ? "Bales account required"
+                      : "Login to Reset"
+                    : isResetting
+                      ? "Archiving..."
+                      : "Reset Shift Log"}
+                </Button>
+                <Button
+                  onClick={handlePrintPDF}
+                  className="bg-primary-foreground hover:bg-primary-foreground/90 gap-2 h-9 text-xs font-bold shadow-sm text-primary"
+                >
+                  <Printer className="w-4 h-4" /> Print PDF
+                </Button>
+              </div>
+              <div className="text-[10px] bg-primary-foreground/10 border border-primary-foreground/20 px-2.5 py-0.5 rounded font-mono">
+                Date: {latestEntry?.date ? formatDateShort(latestEntry.date) : "---"}
+              </div>
             </div>
           </div>
         </CardHeader>

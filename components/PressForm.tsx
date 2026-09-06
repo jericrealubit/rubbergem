@@ -7,6 +7,7 @@ import {
   tableYieldsFromCycles,
 } from "@/lib/shift-log";
 import type { ArchivedCycle } from "@/lib/shift-log";
+import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -57,6 +58,7 @@ export default function ProductionForm({
   onStartTimer?: (minutes: number) => void;
   onNavigateToTable?: () => void;
 }) {
+  const isAuthorized = session?.user?.email === LINE_ACCOUNTS.press;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- HOLD-TO-CONFIRM SUBMIT ---
@@ -203,7 +205,7 @@ export default function ProductionForm({
   // Broadcast the current shift config to the DB so other terminals / the boss's
   // ProductionTable see the live shift. Debounced; only logged-in operators write.
   useEffect(() => {
-    if (!session) return;
+    if (!isAuthorized) return;
     const t = setTimeout(() => {
       supabase
         .from("shift_config")
@@ -224,7 +226,7 @@ export default function ProductionForm({
         });
     }, 600);
     return () => clearTimeout(t);
-  }, [session, operator, shift, pressNumber, runTime, tableMatTypes]);
+  }, [isAuthorized, operator, shift, pressNumber, runTime, tableMatTypes]);
 
   useEffect(() => {
     localStorage.setItem("ws_start_time", startTime);
@@ -686,14 +688,14 @@ export default function ProductionForm({
   };
 
   const startHold = () => {
-    if (isSubmitting || !startTime || !session) return;
+    if (isSubmitting || !startTime || !isAuthorized) return;
     holdStartRef.current = performance.now();
     holdRafRef.current = requestAnimationFrame(tickHold);
   };
 
   useEffect(() => {
-    if (isSubmitting || !startTime || !session) cancelHold();
-  }, [isSubmitting, startTime, session]);
+    if (isSubmitting || !startTime || !isAuthorized) cancelHold();
+  }, [isSubmitting, startTime, isAuthorized]);
 
   useEffect(() => {
     return () => {
@@ -1132,7 +1134,7 @@ export default function ProductionForm({
         {/* Global Submit Trigger */}
         <Button
           type="button"
-          disabled={session ? isSubmitting || !startTime : true}
+          disabled={isAuthorized ? isSubmitting || !startTime : true}
           onPointerDown={startHold}
           onPointerUp={cancelHold}
           onPointerLeave={cancelHold}
@@ -1156,11 +1158,13 @@ export default function ProductionForm({
           {isSubmitting && <Loader2 className="animate-spin" size={20} />}
           {holdProgress > 0 && !isSubmitting
             ? "Hold to Confirm…"
-            : session
+            : isAuthorized
               ? startTime
                 ? "Submit Cycle Entry"
                 : "Tap Start Time to Submit"
-              : "Login to submit cycle"}
+              : session
+                ? "Press account required"
+                : "Login to submit cycle"}
         </Button>
         <p className="text-center text-[10px] text-muted-foreground pt-0.5 ipad:col-span-2">
           Press and hold to confirm submission

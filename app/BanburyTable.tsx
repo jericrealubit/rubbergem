@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -64,6 +65,7 @@ export default function BanburyTablePage({
   onBack?: () => void;
   session: any;
 }) {
+  const isAuthorized = session?.user?.email === LINE_ACCOUNTS.banbury;
   const [entries, setEntries] = useState<CheckEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -338,7 +340,7 @@ export default function BanburyTablePage({
               <div className="flex items-center gap-2 no-print md:ml-auto">
                 <Button
                   onClick={handleResetLog}
-                  disabled={!session || isResetting}
+                  disabled={!isAuthorized || isResetting}
                   variant="destructive"
                   className="gap-2 h-9 text-xs font-bold shadow-sm bg-primary-foreground text-destructive hover:bg-primary-foreground/90"
                 >
@@ -347,8 +349,10 @@ export default function BanburyTablePage({
                   ) : (
                     <Trash2 className="w-4 h-4" />
                   )}
-                  {!session
-                    ? "Login to Reset"
+                  {!isAuthorized
+                    ? session
+                      ? "Banbury account required"
+                      : "Login to Reset"
                     : isResetting
                       ? "Archiving..."
                       : "Reset Shift Log"}
