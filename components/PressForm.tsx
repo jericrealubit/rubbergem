@@ -5,6 +5,7 @@ import {
   mergeCycles,
   shiftGroupOf,
   tableYieldsFromCycles,
+  describeError,
 } from "@/lib/shift-log";
 import type { ArchivedCycle } from "@/lib/shift-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
@@ -587,7 +588,7 @@ export default function ProductionForm({
     } catch (err) {
       console.error("Error submitting:", err);
       alert(
-        `Failed to submit entry: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to submit entry: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }
@@ -652,7 +653,7 @@ export default function ProductionForm({
     } catch (err) {
       console.error("Error checking for leftover shift data:", err);
       toast.error(
-        `Could not check for leftover shift data. Submit cancelled: ${err instanceof Error ? err.message : String(err)}`,
+        `Could not check for leftover shift data. Submit cancelled: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }
@@ -733,7 +734,7 @@ export default function ProductionForm({
     } catch (err) {
       console.error("Error clearing leftover live log data:", err);
       toast.error(
-        `Failed to clear leftover live log data. Submit cancelled: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to clear leftover live log data. Submit cancelled: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }

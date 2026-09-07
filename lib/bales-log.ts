@@ -3,7 +3,7 @@
 // mergeCycles are line-agnostic and re-exported directly from there rather
 // than duplicated -- see lib/shift-log.ts's CycleIdentity generic.
 
-export { shiftGroupOf, cycleKey, mergeCycles } from "./shift-log";
+export { shiftGroupOf, cycleKey, mergeCycles, describeError } from "./shift-log";
 export type { ShiftGroup } from "./shift-log";
 
 /** A cycle as stored in the bales_production_logs `cycles` JSON array. */

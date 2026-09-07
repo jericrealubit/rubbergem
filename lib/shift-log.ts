@@ -7,6 +7,29 @@
 // (components/ProductionHistory.tsx) have to derive the shift group from that
 // string, and they have to agree, so the derivation lives here once.
 
+/**
+ * Turn a caught `unknown` into a readable string for toasts/alerts.
+ *
+ * Supabase client calls reject with a `PostgrestError`-shaped plain object
+ * (`{ message, details, hint, code }`), not an `Error` instance, so the old
+ * `err instanceof Error ? err.message : String(err)` pattern used across the
+ * forms fell through to `String(err)` for every Supabase failure and printed
+ * the useless "[object Object]" instead of the actual message.
+ */
+export function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err) {
+    const message = (err as { message?: unknown }).message;
+    if (typeof message === "string" && message) return message;
+  }
+  if (typeof err === "string") return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
 export type ShiftGroup = "day" | "night";
 
 /**

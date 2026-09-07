@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { describeError } from "@/lib/shift-log";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -129,7 +130,7 @@ export default function ChatPanel({ session }: { session: any }) {
     } catch (err) {
       console.error("Error sending message:", err);
       alert(
-        `Failed to send message: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to send message: ${describeError(err)}`,
       );
     } finally {
       setIsSending(false);

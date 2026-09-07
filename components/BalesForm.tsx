@@ -5,6 +5,7 @@ import {
   mergeCycles,
   shiftGroupOf,
   balesTotalsFromCycles,
+  describeError,
 } from "@/lib/bales-log";
 import type { BalesArchivedCycle } from "@/lib/bales-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
@@ -340,7 +341,7 @@ export default function BalesForm({
     } catch (err) {
       console.error("Error logging bag change:", err);
       toast.error(
-        `Failed to log bag change: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to log bag change: ${describeError(err)}`,
       );
     } finally {
       setIsLoggingBag(false);
@@ -527,7 +528,7 @@ export default function BalesForm({
     } catch (err) {
       console.error("Error submitting:", err);
       alert(
-        `Failed to submit entry: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to submit entry: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }
@@ -560,7 +561,7 @@ export default function BalesForm({
     } catch (err) {
       console.error("Error checking for leftover shift data:", err);
       toast.error(
-        `Could not check for leftover shift data. Action cancelled: ${err instanceof Error ? err.message : String(err)}`,
+        `Could not check for leftover shift data. Action cancelled: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }
@@ -640,7 +641,7 @@ export default function BalesForm({
     } catch (err) {
       console.error("Error clearing leftover live log data:", err);
       toast.error(
-        `Failed to clear leftover live log data. Action cancelled: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to clear leftover live log data. Action cancelled: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }

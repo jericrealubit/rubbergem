@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { mergeCycles, shiftGroupOf } from "@/lib/banbury-log";
+import { mergeCycles, shiftGroupOf, describeError } from "@/lib/banbury-log";
 import type { BanburyCheckEntry } from "@/lib/banbury-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useState } from "react";
@@ -488,7 +488,7 @@ export default function BanburyForm({
     } catch (err) {
       console.error("Error logging check:", err);
       toast.error(
-        `Failed to log check: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to log check: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }
@@ -520,7 +520,7 @@ export default function BanburyForm({
     } catch (err) {
       console.error("Error checking for leftover shift data:", err);
       toast.error(
-        `Could not check for leftover shift data. Log cancelled: ${err instanceof Error ? err.message : String(err)}`,
+        `Could not check for leftover shift data. Log cancelled: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }
@@ -571,7 +571,7 @@ export default function BanburyForm({
     } catch (err) {
       console.error("Error clearing leftover live log data:", err);
       toast.error(
-        `Failed to clear leftover live log data. Log cancelled: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to clear leftover live log data. Log cancelled: ${describeError(err)}`,
       );
       setIsSubmitting(false);
     }
