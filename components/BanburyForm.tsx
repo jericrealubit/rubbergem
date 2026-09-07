@@ -40,7 +40,7 @@ import {
 interface BanburyShiftLogRowRef {
   id: number;
   operator_shift: string;
-  cycles: unknown;
+  checks: unknown;
 }
 
 /** The six material/chemical checks on the paper sheet, default-checked since
@@ -330,7 +330,7 @@ export default function BanburyForm({
   const findShiftLogRow = async (): Promise<BanburyShiftLogRowRef | null> => {
     const { data: sameDateRows, error: lookupError } = await supabase
       .from("banbury_production_logs")
-      .select("id, operator_shift, cycles")
+      .select("id, operator_shift, checks")
       .eq("date", currentDate)
       .order("id", { ascending: true });
     if (lookupError) throw lookupError;
@@ -435,7 +435,7 @@ export default function BanburyForm({
       if (targetRow) {
         const { data: updated, error: updateError } = await supabase
           .from("banbury_production_logs")
-          .update(buildLogRow(targetRow.cycles))
+          .update(buildLogRow(targetRow.checks))
           .eq("id", targetRow.id)
           .select("id");
         if (updateError) throw updateError;
@@ -461,7 +461,7 @@ export default function BanburyForm({
 
           const { error: retryError } = await supabase
             .from("banbury_production_logs")
-            .update(buildLogRow(racedRow.cycles))
+            .update(buildLogRow(racedRow.checks))
             .eq("id", racedRow.id);
           if (retryError) throw retryError;
 
@@ -477,10 +477,14 @@ export default function BanburyForm({
 
       // Tank levels are intentionally left as-is (not cleared) so the next
       // check starts from the last reading -- the operator only edits what
-      // changed, matching the "optimize input on mobile" goal. Only the
-      // freeform notes reset per entry.
+      // changed, matching the "optimize input on mobile" goal. Notes and
+      // ticks reset per entry: ticks default to all-checked (see
+      // DEFAULT_TICKS above), so leaving a prior un-tick in place would
+      // silently mis-mark the next check too.
       setNotes("");
       localStorage.removeItem("banbury_ws_notes");
+      setTicks(DEFAULT_TICKS);
+      localStorage.removeItem("banbury_ws_ticks");
 
       setIsSubmitting(false);
       toast.success(`Check #${nextCheckNumber} logged.`);
