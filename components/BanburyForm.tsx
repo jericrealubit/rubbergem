@@ -324,6 +324,14 @@ export default function BanburyForm({
     setTicks((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Log Check is gated the same way PressForm gates its submit button
+  // (a plain disabled condition, PressForm.tsx:1138) -- every tick must be
+  // pressed and both tank levels must have a value before a check can be
+  // logged.
+  const allTicksPressed = TICK_FIELDS.every((f) => ticks[f.key]);
+  const tanksFilled = rightTank.trim() !== "" && leftTank.trim() !== "";
+  const canLogCheck = allTicksPressed && tanksFilled;
+
   // banbury_production_logs holds exactly ONE row per (date, shift group),
   // same resolution strategy as Press/Bales' findShiftLogRow -- the database
   // is the authority, localStorage is only a per-browser fast path.
@@ -475,16 +483,18 @@ export default function BanburyForm({
         localStorage.setItem("banbury_production_log_id", savedLogId);
       }
 
-      // Tank levels are intentionally left as-is (not cleared) so the next
-      // check starts from the last reading -- the operator only edits what
-      // changed, matching the "optimize input on mobile" goal. Notes and
-      // ticks reset per entry: ticks default to all-checked (see
-      // DEFAULT_TICKS above), so leaving a prior un-tick in place would
-      // silently mis-mark the next check too.
+      // Notes, ticks, and tank levels all reset per entry: ticks default
+      // to all-checked (see DEFAULT_TICKS above) and both tank levels are
+      // required on every check, so leaving a prior value in place would
+      // either silently mis-mark or silently pre-fill the next check.
       setNotes("");
       localStorage.removeItem("banbury_ws_notes");
       setTicks(DEFAULT_TICKS);
       localStorage.removeItem("banbury_ws_ticks");
+      setRightTank("");
+      localStorage.removeItem("banbury_ws_right_tank");
+      setLeftTank("");
+      localStorage.removeItem("banbury_ws_left_tank");
 
       setIsSubmitting(false);
       toast.success(`Check #${nextCheckNumber} logged.`);
@@ -833,7 +843,7 @@ export default function BanburyForm({
 
               <Button
                 type="button"
-                disabled={!isAuthorized || isSubmitting}
+                disabled={!isAuthorized || isSubmitting || !canLogCheck}
                 onClick={handleLogCheck}
                 className="w-full h-12 font-bold tracking-wide uppercase text-sm shadow-md transition-colors disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
@@ -844,7 +854,9 @@ export default function BanburyForm({
                     : "Login to log check"
                   : isSubmitting
                     ? "Logging..."
-                    : "Log Check"}
+                    : !canLogCheck
+                      ? "Check all items & tank levels"
+                      : "Log Check"}
               </Button>
             </CardContent>
           </Card>
