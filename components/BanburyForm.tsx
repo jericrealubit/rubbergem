@@ -1027,9 +1027,9 @@ export default function BanburyForm({
                       type="button"
                       aria-pressed={!checked}
                       onClick={() => toggleTick(field.key)}
-                      className={`h-11 rounded-md border text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                      className={`h-11 rounded-[var(--radius-card)] border-[length:var(--border-width-card)] text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                         checked
-                          ? "border-success bg-success text-success-foreground shadow-sm hover:bg-success/90"
+                          ? "border-success bg-success text-success-foreground shadow-[var(--shadow-card)] hover:bg-success/90"
                           : "border-muted-foreground/40 bg-muted text-muted-foreground shadow-inner hover:bg-muted/70"
                       }`}
                     >
