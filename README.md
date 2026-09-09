@@ -48,7 +48,7 @@ All three archives hold **exactly one row per `(date, shift group)`**, written l
 - **One-reject-per-table-per-cycle rule:** a table counts as a reject if *either* a short-mold position or a bubble checkbox is set, never more than once per cycle. Computed identically in three places (`PressForm`'s submit handler, `tableYieldsFromCycles`, `ProductionTable`'s footer stats) — keep them in sync.
 - **Runtime column:** records the target run time (minutes) active *when each cycle was submitted*, persisted per-row so later changes to the target don't rewrite earlier rows.
 - **Total Downtime (17m):** load time is the cycle's elapsed time minus the press's configured run time; the shift total sums every minute past the 17-minute target (clamped at 0 per cycle), shown in red.
-- **Wallboard:** `/tv` — the one extra route in the app, a Press-only read-only dashboard (KPI row, defect-location heatmap, cycle sequence grid, historical trend heatmap) for a control-room screen.
+- **Wallboard:** `/tv` — the one extra route in the app, a read-only control-room dashboard covering all three lines. A header switcher picks the line (the choice is remembered per screen and synced across tabs) and each line gets its own KPI row, main visual and 14-day trend heatmap: Press a defect-location heatmap and per-table cycle strip, Bales a bales-per-cycle chart with the live bag-change log, Banbury a material-check matrix, check cycle times and tank levels. Every line's header also replays any archived shift from that line's history.
 
 ### 2. Banbury (`BanburyForm` · `BanburyTable` · `BanburyHistory`)
 - **Chemical/tank checklist:** six material ticks (Crumb Rubber, Other Rubbers, Powdered Chemicals, RPO, Sulphur, Liquid Chemicals) that **default to ticked** — the paper sheet is overwhelmingly all-ticked, so the operator only un-ticks the exceptions. Logging a check is deliberately *not* gated on all six being green.
@@ -182,7 +182,7 @@ rubbergem/
 │   ├── BanburyTable.tsx            # Banbury live check log, downtime totals, print/PDF layout
 │   ├── BalesProductionTable.tsx    # Bales live cycle table + bag-change mini-log
 │   ├── AboutPage.tsx               # In-app plain-language overview of the three lines
-│   ├── tv/page.tsx                 # Press-only wallboard dashboard (/tv)
+│   ├── tv/page.tsx                 # Wallboard shell (/tv) — picks the line, remembers the choice
 │   ├── layout.tsx                  # Root layout, viewport config, blocking theme-init script
 │   ├── manifest.ts, icon.tsx…      # PWA manifest and generated icons
 │   └── globals.css                 # Base styling layer + one [data-theme="..."] token block per theme
@@ -194,7 +194,7 @@ rubbergem/
 │   ├── BanburyHistory.tsx          # Banbury archived-shift browser
 │   ├── BalesHistory.tsx            # Bales archived-shift browser
 │   ├── ChatPanel.tsx               # Shift-scoped two-way chat (shift_messages)
-│   ├── tv/                         # Wallboard widgets: KPI row, heatmaps, cycle sequence grid
+│   ├── tv/                         # Wallboard: one panel per line + shared header, KPI row, sequence grid, heatmaps
 │   ├── theme/
 │   │   ├── theme-config.ts         # Theme IDs/labels, storage key, FOUC-prevention init script
 │   │   ├── ThemeProvider.tsx       # data-theme + localStorage + meta theme-color sync
