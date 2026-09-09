@@ -365,6 +365,9 @@ export default function BanburyHistory() {
                                         #
                                       </th>
                                       <th className="p-1.5 border-b border-border text-center font-bold whitespace-nowrap">
+                                        Start
+                                      </th>
+                                      <th className="p-1.5 border-b border-border text-center font-bold whitespace-nowrap">
                                         Time
                                       </th>
                                       {TICK_COLUMNS.map((col) => (
@@ -402,8 +405,21 @@ export default function BanburyHistory() {
                                           <td className="p-1.5 text-center font-mono font-bold bg-muted/50 text-muted-foreground">
                                             {check.cycle_number ?? idx + 1}
                                           </td>
+                                          {/* Entries archived before checks
+                                              had a start time carry the older
+                                              shape -- start_time is the check's
+                                              own clock time and there is no
+                                              end_time -- so end_time is what
+                                              tells the two apart. */}
+                                          <td className="p-1.5 text-center font-mono whitespace-nowrap text-muted-foreground">
+                                            {check.end_time
+                                              ? check.start_time || "--:--"
+                                              : "—"}
+                                          </td>
                                           <td className="p-1.5 text-center font-mono whitespace-nowrap">
-                                            {check.start_time || "--:--"}
+                                            {check.end_time ||
+                                              check.start_time ||
+                                              "--:--"}
                                           </td>
                                           {TICK_COLUMNS.map((col) => (
                                             <td
@@ -541,7 +557,9 @@ export default function BanburyHistory() {
                                           <div className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground bg-card border border-border/70 px-2 py-1 rounded-lg self-start shrink-0 shadow-xs">
                                             <Clock className="w-3 h-3" />
                                             <span className="font-bold text-foreground">
-                                              {check.start_time || "--:--"}
+                                              {check.end_time ||
+                                                check.start_time ||
+                                                "--:--"}
                                             </span>
                                           </div>
                                         </div>

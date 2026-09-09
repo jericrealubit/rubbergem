@@ -34,6 +34,7 @@ import {
   ChevronUp,
   Settings2,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 
 /** The banbury_production_logs columns read back when resolving a shift's archive row. */
@@ -45,7 +46,14 @@ interface BanburyShiftLogRowRef {
 
 /** The six material/chemical checks on the paper sheet, default-checked since
  *  the sheet is overwhelmingly all-ticked on every row -- the operator only
- *  has to un-tick what wasn't actually checked this pass. */
+ *  has to un-tick what wasn't actually checked this pass.
+ *
+ *  That "un-tick the exceptions" flow is what drives the buttons' inverted
+ *  colouring in the grid below: an untouched button is GREEN (checked, the
+ *  default), and tapping SELECTS it as an exception, turning it grey. So
+ *  green is the resting state and grey is the deliberate one -- the opposite
+ *  of a normal toggle, and the reason logging a check is NOT gated on all
+ *  six being green (a grey tick is a legitimate thing to record). */
 const TICK_FIELDS = [
   { key: "crumbRubber", label: "Crumb Rubber" },
   { key: "otherRubbers", label: "Other Rubbers" },
@@ -71,6 +79,7 @@ interface RecentCheckRow {
   banbury_id: number;
   check_number: number;
   check_time: string | null;
+  run_time_minutes: number | null;
   right_tank_level: string | null;
   left_tank_level: string | null;
   notes: string | null;
@@ -161,6 +170,24 @@ export default function BanburyForm({
     return DEFAULT_TICKS;
   });
 
+  // --- ACTIVE CHECK-CYCLE VALUES ---
+  // The currently OPEN check cycle's start time (HH:MM Perth), or "" when no
+  // cycle is running -- its presence is the "is a check cycle open" flag,
+  // exactly as in PressForm/BalesForm. The operator taps to open the cycle,
+  // works through the checklist and the tank levels, then logs it; logging
+  // stamps the cycle's end and immediately opens the next one, so the elapsed
+  // readout doubles as "time since the last check".
+  const [startTime, setStartTime] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("banbury_ws_start_time") || "";
+    }
+    return "";
+  });
+
+  // Manual input switch, for back-filling a check cycle that was started away
+  // from the terminal (mirrors PressForm's lunch/break override).
+  const [isManualStart, setIsManualStart] = useState<boolean>(false);
+
   const [rightTank, setRightTank] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("banbury_ws_right_tank") || "";
@@ -217,6 +244,7 @@ export default function BanburyForm({
         savedRunTime !== null ? (savedRunTime === "" ? "" : Number(savedRunTime)) : "",
       );
 
+      setStartTime(localStorage.getItem("banbury_ws_start_time") || "");
       const savedTicks = localStorage.getItem("banbury_ws_ticks");
       setTicks(savedTicks ? { ...DEFAULT_TICKS, ...JSON.parse(savedTicks) } : DEFAULT_TICKS);
       setRightTank(localStorage.getItem("banbury_ws_right_tank") || "");
@@ -287,6 +315,9 @@ export default function BanburyForm({
   }, [isAuthorized, operator, shift, product, bagWeight, batchesMade, bagsCount, runTimeHours]);
 
   useEffect(() => {
+    localStorage.setItem("banbury_ws_start_time", startTime);
+  }, [startTime]);
+  useEffect(() => {
     localStorage.setItem("banbury_ws_ticks", JSON.stringify(ticks));
   }, [ticks]);
   useEffect(() => {
@@ -309,7 +340,9 @@ export default function BanburyForm({
   const fetchRecentChecks = async () => {
     const { data } = await supabase
       .from("banbury_live_log")
-      .select("banbury_id, check_number, check_time, right_tank_level, left_tank_level, notes")
+      .select(
+        "banbury_id, check_number, check_time, run_time_minutes, right_tank_level, left_tank_level, notes",
+      )
       .eq("shift_id", 1)
       .order("check_number", { ascending: false })
       .limit(5);
@@ -324,13 +357,73 @@ export default function BanburyForm({
     setTicks((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Log Check is gated the same way PressForm gates its submit button
-  // (a plain disabled condition, PressForm.tsx:1138) -- every tick must be
-  // pressed and both tank levels must have a value before a check can be
-  // logged.
-  const allTicksPressed = TICK_FIELDS.every((f) => ticks[f.key]);
+  const nowHHMM = () =>
+    new Date().toTimeString().split(" ")[0].substring(0, 5);
+
+  const toTimestampIso = (hhmm: string) =>
+    new Date(`${currentDate}T${hhmm}:00+08:00`).toISOString();
+
+  const handleStartTap = () => {
+    setStartTime(nowHHMM());
+  };
+
+  const handleResetStartTime = () => {
+    setStartTime("");
+    setIsManualStart(false);
+  };
+
+  // Elapsed minutes between the open cycle's start and the moment it's
+  // logged. Unlike PressForm there is no configured per-cycle run time to
+  // subtract -- a Banbury check has no machine cycle behind it, so the whole
+  // interval is the figure worth keeping. Midnight crossover is handled the
+  // same way PressForm's computeDurationMinutes does it.
+  const computeDurationMinutes = (endTimeHHMM: string) => {
+    const [startHours, startMinutes] = startTime.split(":").map(Number);
+    const [endHours, endMinutes] = endTimeHHMM.split(":").map(Number);
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    let endTotalMinutes = endHours * 60 + endMinutes;
+
+    if (endTotalMinutes < startTotalMinutes) endTotalMinutes += 24 * 60;
+    return Math.max(0, endTotalMinutes - startTotalMinutes);
+  };
+
+  // Live 1-second ticker driving the elapsed readout while a check cycle is
+  // open (PressForm's Load Time counter, without the run-time offset).
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!startTime) return;
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const elapsedSeconds = (() => {
+    if (!startTime) return null;
+    const [startHours, startMinutes] = startTime.split(":").map(Number);
+    const startTotalSeconds = (startHours * 60 + startMinutes) * 60;
+    const now = new Date(nowTick);
+    let nowTotalSeconds =
+      now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    if (nowTotalSeconds < startTotalSeconds) nowTotalSeconds += 24 * 3600;
+    return nowTotalSeconds - startTotalSeconds;
+  })();
+
+  const formatElapsed = (totalSeconds: number) => {
+    const abs = Math.max(0, totalSeconds);
+    const hh = Math.floor(abs / 3600);
+    const mm = String(Math.floor((abs % 3600) / 60)).padStart(2, "0");
+    const ss = String(Math.floor(abs % 60)).padStart(2, "0");
+    return hh > 0 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+  };
+
+  // Log Check is gated the same way PressForm gates its submit button (a
+  // plain disabled condition): a check cycle has to be open and both tank
+  // levels have to carry a value. The six ticks are deliberately NOT part of
+  // this -- they default to green/checked and turning one grey is a finding
+  // the operator needs to be able to record, not something to block on.
+  const cycleOpen = startTime !== "";
   const tanksFilled = rightTank.trim() !== "" && leftTank.trim() !== "";
-  const canLogCheck = allTicksPressed && tanksFilled;
+  const canLogCheck = cycleOpen && tanksFilled;
+  const flaggedCount = TICK_FIELDS.filter((f) => !ticks[f.key]).length;
 
   // banbury_production_logs holds exactly ONE row per (date, shift group),
   // same resolution strategy as Press/Bales' findShiftLogRow -- the database
@@ -352,12 +445,13 @@ export default function BanburyForm({
   };
 
   // Logs one checklist entry and re-aggregates the shift's archive row --
-  // mirrors PressForm/BalesForm's submitCycle, but there is no start/end
-  // duration or per-entry output here: a Banbury "cycle" is a single
-  // point-in-time check, and the shift's output totals (Batches Made, #
-  // Bags, Tonnes, Run Time, Average Output P/H) are scalars snapshotted
-  // straight from banbury_shift_config, not derived from the checks array.
-  const logCheck = async () => {
+  // mirrors PressForm/BalesForm's submitCycle. A check cycle spans the tap
+  // that opened it to the moment it's logged, so the row carries start_time,
+  // check_time (the end) and the minutes between them; there is still no
+  // per-entry output, because the shift's totals (Batches Made, # Bags,
+  // Tonnes, Run Time, Average Output P/H) are scalars snapshotted straight
+  // from banbury_shift_config, not derived from the checks array.
+  const logCheck = async (endTimeHHMM: string, durationMinutes: number) => {
     try {
       const { data: latestEntry, error: fetchError } = await supabase
         .from("banbury_live_log")
@@ -369,11 +463,15 @@ export default function BanburyForm({
 
       const nextCheckNumber = (latestEntry?.check_number || 0) + 1;
       const nowIso = new Date().toISOString();
+      const startTimestamp = toTimestampIso(startTime);
+      const endTimestamp = toTimestampIso(endTimeHHMM);
 
       const payload = {
         shift_id: 1,
         check_number: nextCheckNumber,
-        check_time: nowIso,
+        start_time: startTimestamp,
+        check_time: endTimestamp,
+        run_time_minutes: durationMinutes,
         crumb_rubber: ticks.crumbRubber,
         other_rubbers: ticks.otherRubbers,
         powdered_chemicals: ticks.powderedChemicals,
@@ -405,20 +503,32 @@ export default function BanburyForm({
             }).format(new Date(iso))
           : null;
 
+      // Rows logged before the check cycle gained a start time carry no
+      // start_time at all. Those keep their original archive shape --
+      // start_time = the check's own clock time, no end_time -- so
+      // cycleKey/mergeCycles still match the entry already sitting in
+      // banbury_production_logs.checks instead of appending a duplicate of
+      // it under a new key.
       const aggregatedChecks: BanburyCheckEntry[] = (shiftRows || []).map(
-        (r: any) => ({
-          cycle_number: r.check_number,
-          start_time: fmtPerth(r.check_time),
-          crumb_rubber: r.crumb_rubber,
-          other_rubbers: r.other_rubbers,
-          powdered_chemicals: r.powdered_chemicals,
-          rpo: r.rpo,
-          sulphur: r.sulphur,
-          liquid_chemicals: r.liquid_chemicals,
-          right_tank_level: r.right_tank_level,
-          left_tank_level: r.left_tank_level,
-          notes: r.notes,
-        }),
+        (r: any) => {
+          const startPerth = fmtPerth(r.start_time);
+          const checkPerth = fmtPerth(r.check_time);
+          return {
+            cycle_number: r.check_number,
+            start_time: startPerth ?? checkPerth,
+            end_time: startPerth ? checkPerth : null,
+            run_time_minutes: r.run_time_minutes ?? null,
+            crumb_rubber: r.crumb_rubber,
+            other_rubbers: r.other_rubbers,
+            powdered_chemicals: r.powdered_chemicals,
+            rpo: r.rpo,
+            sulphur: r.sulphur,
+            liquid_chemicals: r.liquid_chemicals,
+            right_tank_level: r.right_tank_level,
+            left_tank_level: r.left_tank_level,
+            notes: r.notes,
+          };
+        },
       );
 
       const operatorShift = `${operator} (${shift})`;
@@ -496,8 +606,16 @@ export default function BanburyForm({
       setLeftTank("");
       localStorage.removeItem("banbury_ws_left_tank");
 
+      // Chain straight into the next check cycle, the way PressForm rolls a
+      // finished cycle's end time into the next one's start -- the elapsed
+      // readout then measures the gap since this check.
+      setStartTime(endTimeHHMM);
+      setIsManualStart(false);
+
       setIsSubmitting(false);
-      toast.success(`Check #${nextCheckNumber} logged.`);
+      toast.success(
+        `Check #${nextCheckNumber} logged (${durationMinutes} min) — next check cycle started.`,
+      );
       fetchRecentChecks();
     } catch (err) {
       console.error("Error logging check:", err);
@@ -511,7 +629,15 @@ export default function BanburyForm({
   // Checks for leftover live_log rows from an already-closed shift before
   // logging -- mirrors PressForm/BalesForm's stale-clear guard.
   const handleLogCheck = async () => {
-    if (!isAuthorized) return;
+    if (!isAuthorized || !canLogCheck) return;
+
+    // Captured once, here, so the check's end time is when the operator
+    // actually tapped Log Check -- not whenever a stale-clear confirmation
+    // dialog happens to get dismissed (same reason PressForm captures it in
+    // finalizeCycle rather than inside submitCycle).
+    const endTimeHHMM = nowHHMM();
+    const durationMinutes = computeDurationMinutes(endTimeHHMM);
+
     setIsSubmitting(true);
     try {
       const { count, error: countError } = await supabase
@@ -524,13 +650,15 @@ export default function BanburyForm({
         const openShiftRow = await findShiftLogRow();
         if (!openShiftRow) {
           setStaleClearConfirm({ count });
-          setPendingProceed(() => logCheck);
+          setPendingProceed(
+            () => () => logCheck(endTimeHHMM, durationMinutes),
+          );
           setIsSubmitting(false);
           return;
         }
       }
 
-      await logCheck();
+      await logCheck(endTimeHHMM, durationMinutes);
     } catch (err) {
       console.error("Error checking for leftover shift data:", err);
       toast.error(
@@ -759,6 +887,71 @@ export default function BanburyForm({
             )}
           </Card>
 
+          {/* Check Cycle Card */}
+          <Card>
+            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-semibold uppercase text-accent-ink tracking-wide flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary" /> Check Cycle
+              </CardTitle>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetStartTime}
+                className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border-border hover:border-destructive/30 transition-colors gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset
+              </Button>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label>{cycleOpen ? "Cycle Started At" : "Start Time"}</Label>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualStart(!isManualStart)}
+                    className="text-[10px] font-bold text-primary hover:text-accent-ink transition-colors uppercase tracking-wider rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    {isManualStart ? "● Tap Mode" : "✎ Manual"}
+                  </button>
+                </div>
+                {isManualStart ? (
+                  <Input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="h-12 text-center font-mono font-bold text-sm bg-primary/5 border-primary/30 focus-visible:ring-primary"
+                  />
+                ) : cycleOpen ? (
+                  <div className="h-12 flex items-center justify-center rounded-md border-2 border-dashed border-primary bg-accent-chip/50 text-accent-ink font-bold tracking-wide font-mono">
+                    {startTime}
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 font-bold tracking-wide border-dashed border-2 border-primary bg-accent-chip/50 text-accent-ink"
+                    onClick={handleStartTap}
+                  >
+                    TAP TO START
+                  </Button>
+                )}
+                {cycleOpen && elapsedSeconds !== null && (
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-success" />
+                      {recentChecks.length > 0 ? "Since Last Check" : "Elapsed"}
+                    </span>
+                    <span className="font-mono font-bold text-lg tabular-nums text-success">
+                      {formatElapsed(elapsedSeconds)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Log Check Card */}
           <Card>
             <CardHeader className="p-4 pb-2">
@@ -768,22 +961,42 @@ export default function BanburyForm({
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0 space-y-4">
+              {/* Inverted toggles: all six start GREEN (checked, the paper
+                  sheet's normal row) and tapping one SELECTS it as grey --
+                  the operator only marks what wasn't actually done. */}
               <div className="grid grid-cols-2 gap-2">
-                {TICK_FIELDS.map((field) => (
-                  <button
-                    key={field.key}
-                    type="button"
-                    onClick={() => toggleTick(field.key)}
-                    className={`h-11 rounded-md border text-[11px] font-bold uppercase tracking-wide transition-colors px-1 ${
-                      ticks[field.key]
-                        ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                        : "border-border bg-background text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {field.label}
-                  </button>
-                ))}
+                {TICK_FIELDS.map((field) => {
+                  const checked = ticks[field.key];
+                  return (
+                    <button
+                      key={field.key}
+                      type="button"
+                      aria-pressed={!checked}
+                      onClick={() => toggleTick(field.key)}
+                      className={`h-11 rounded-md border text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                        checked
+                          ? "border-success bg-success text-success-foreground shadow-sm hover:bg-success/90"
+                          : "border-muted-foreground/40 bg-muted text-muted-foreground shadow-inner hover:bg-muted/70"
+                      }`}
+                    >
+                      <span aria-hidden="true" className="text-xs leading-none">
+                        {checked ? "✓" : "✗"}
+                      </span>
+                      <span>{field.label}</span>
+                    </button>
+                  );
+                })}
               </div>
+              <p className="text-[10px] text-muted-foreground leading-snug -mt-2">
+                All six start green (checked). Tap any that weren&apos;t done —
+                it turns grey and is logged as unchecked.
+                {flaggedCount > 0 && (
+                  <span className="font-bold text-foreground">
+                    {" "}
+                    {flaggedCount} marked unchecked.
+                  </span>
+                )}
+              </p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -854,9 +1067,11 @@ export default function BanburyForm({
                     : "Login to log check"
                   : isSubmitting
                     ? "Logging..."
-                    : !canLogCheck
-                      ? "Check all items & tank levels"
-                      : "Log Check"}
+                    : !cycleOpen
+                      ? "Tap Start to open a check cycle"
+                      : !tanksFilled
+                        ? "Enter both tank levels"
+                        : "Log Check & Start Next"}
               </Button>
             </CardContent>
           </Card>
@@ -894,6 +1109,12 @@ export default function BanburyForm({
                               hour12: false,
                             }).format(new Date(c.check_time))
                           : "--:--"}
+                        {c.run_time_minutes !== null && (
+                          <span className="text-muted-foreground/70">
+                            {" "}
+                            ({c.run_time_minutes}m)
+                          </span>
+                        )}
                       </span>
                       <span className="font-mono text-muted-foreground truncate">
                         R:{c.right_tank_level || "—"} L:
