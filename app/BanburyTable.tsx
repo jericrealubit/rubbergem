@@ -37,6 +37,10 @@ interface CheckEntry {
   id: string;
   checkNumber: number;
   date: string;
+  /** When the check cycle was opened (TAP TO START); "—" on rows logged
+   *  before checks had a start time. */
+  startTime: string;
+  /** When the check itself was logged -- the paper sheet's "Time" column. */
   time: string;
   crumbRubber: boolean;
   otherRubbers: boolean;
@@ -115,6 +119,12 @@ export default function BanburyTablePage({
                 timeZone: "Australia/Perth",
               }).format(new Date(row.check_time))
             : "---",
+          startTime: row.start_time
+            ? new Date(row.start_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—",
           time: row.check_time
             ? new Date(row.check_time).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -224,6 +234,8 @@ export default function BanburyTablePage({
       localStorage.removeItem("banbury_shift_bags_count");
       localStorage.removeItem("banbury_shift_run_time");
       localStorage.removeItem("banbury_production_log_id");
+      // Any check cycle left open belonged to the shift just cleared.
+      localStorage.removeItem("banbury_ws_start_time");
 
       alert("Live log cleared. A new shift will start a fresh history entry.");
     } catch (err: any) {
@@ -480,11 +492,14 @@ export default function BanburyTablePage({
             </div>
           )}
 
-          <table className="w-full text-left border-collapse print-compact min-w-[900px]">
+          <table className="w-full text-left border-collapse print-compact min-w-[960px]">
             <thead>
               <tr className="bg-muted border-b border-border text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
                 <th className="p-2 border-r border-border text-center w-[40px]">
                   No.
+                </th>
+                <th className="p-2 border-r border-border text-center w-[60px]">
+                  Start
                 </th>
                 <th className="p-2 border-r border-border text-center w-[70px]">
                   Time
@@ -519,6 +534,9 @@ export default function BanburyTablePage({
                       <td className="p-1 border-r border-border text-center text-muted-foreground/40 font-mono">
                         —
                       </td>
+                      <td className="p-1 border-r border-border text-center text-muted-foreground/40 font-mono">
+                        —
+                      </td>
                       {TICK_COLUMNS.map((col) => (
                         <td
                           key={col.key as string}
@@ -545,6 +563,9 @@ export default function BanburyTablePage({
                   >
                     <td className="p-1 border-r border-border text-center font-mono font-bold bg-muted text-muted-foreground">
                       {index + 1}
+                    </td>
+                    <td className="p-1 border-r border-border text-center font-mono text-[10px] whitespace-nowrap text-muted-foreground">
+                      {entry.startTime}
                     </td>
                     <td className="p-1 border-r border-border text-center font-mono text-[10px] whitespace-nowrap">
                       {entry.time}
