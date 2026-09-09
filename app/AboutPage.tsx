@@ -17,7 +17,104 @@ import {
   Save,
   RotateCcw,
   Palette,
+  Factory,
+  ClipboardList,
+  FlaskConical,
+  Boxes,
 } from "lucide-react";
+
+/**
+ * The three production lines the app keeps shift logs for. Each one owns its
+ * own entry form, live table and history view, and is gated on its own login
+ * account (lib/line-accounts.ts).
+ *
+ * Held as data rather than three near-identical JSX blocks so every line's
+ * card renders through one component in one shape -- the same reason the rest
+ * of the app is a single token-driven component system.
+ */
+const PRODUCTION_LINES = [
+  {
+    key: "press",
+    name: "Press",
+    icon: ClipboardList,
+    account: "press@rubbergem.com",
+    sheet: "Rubber press shift sheet",
+    summary:
+      "One entry per press cycle across four tables, with where each defect happened and how long the load took.",
+    points: [
+      {
+        label: "Two presses, four tables",
+        text: "Switch between Press #1 and Press #2 in one tap, with a mat type (DF, DD, CF, CD, SG) set per table.",
+      },
+      {
+        label: "Defects marked on a diagram",
+        text: "Tap the exact spot on an on-screen grid to record a short mold, and tick bubble defects by position (Left, Middle, Right) and size.",
+      },
+      {
+        label: "Fair reject counting",
+        text: "A table counts as one reject per cycle whether it has a short mold, a bubble, or both — the numbers can never be double-counted.",
+      },
+      {
+        label: "Downtime past 17 minutes",
+        text: "Load time is the cycle minus the press's own run time; every minute past the 17-minute target is added up as downtime for the shift.",
+      },
+    ],
+  },
+  {
+    key: "banbury",
+    name: "Banbury",
+    icon: FlaskConical,
+    account: "banbury@rubbergem.com",
+    sheet: "30 mesh production & chemical check log",
+    summary:
+      "One entry per chemical and tank check, plus the shift-wide output totals from the bottom of the paper sheet.",
+    points: [
+      {
+        label: "Un-tick the exceptions",
+        text: "All six materials (Crumb Rubber, Other Rubbers, Powdered Chemicals, RPO, Sulphur, Liquid Chemicals) start ticked, because that is the normal row — you only mark what wasn't done.",
+      },
+      {
+        label: "Both tank levels every check",
+        text: "Right and left tank levels are required on every check, and accept either a number or the word \u201cFull\u201d, exactly like the paper cell.",
+      },
+      {
+        label: "Downtime past 14 minutes",
+        text: "A check cycle is timed from the moment you tap start to the moment you log it; every minute past the standard 14-minute cycle is added up as downtime for the shift.",
+      },
+      {
+        label: "Shift output does the maths",
+        text: "Batches, bags and bag weight give Tonnes and Average Output P/H automatically, using the sheet's own formulas.",
+      },
+    ],
+  },
+  {
+    key: "bales",
+    name: "Bales",
+    icon: Boxes,
+    account: "bales@rubbergem.com",
+    sheet: "Baling shift sheet",
+    summary:
+      "One entry per bag-run, with how many bales came out, how many were faulty, and every bag change on either side.",
+    points: [
+      {
+        label: "Counts, not diagrams",
+        text: "Bales produced, bale type and faulty bale count per cycle — there is no four-table or short-mold concept on this line.",
+      },
+      {
+        label: "East and West bag changes",
+        text: "Bag changes are logged separately as they happen, with the side and weight in kg, and numbered automatically per side.",
+      },
+      {
+        label: "Mesh type locked to the row",
+        text: "The shift's mesh type is saved onto each cycle as it is logged, so changing it later never rewrites rows already recorded.",
+      },
+      {
+        label: "Shift-level fault summary",
+        text: "A Main Issues / Faults note is kept for the shift as a whole, alongside the per-cycle notes.",
+      },
+    ],
+  },
+] as const;
 
 export default function AboutPage() {
   return (
@@ -35,10 +132,11 @@ export default function AboutPage() {
             Rubber — Shift Logging Made Simple
           </h1>
           <p className="text-primary-foreground/90 text-sm sm:text-base max-w-xl leading-relaxed font-medium">
-            A simple app operators use on the shop floor to record every press
-            cycle, defect, and downtime as it happens — so shift records stay
-            accurate and the boss can see real production numbers without
-            walking the floor.
+            A simple app operators use on the shop floor to record every
+            cycle, check, defect and minute of downtime across the three
+            production lines — Press, Banbury and Bales — as it happens, so
+            shift records stay accurate and the boss can see real production
+            numbers without walking the floor.
           </p>
         </div>
       </div>
@@ -98,10 +196,77 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Main Application Modules */}
+      {/* The Three Production Lines */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-muted-foreground">
+          <Factory className="w-3.5 h-3.5" /> The Three Production Lines
+        </h2>
+        <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground px-1">
+          One app, three separate shift logs. Each line has its own entry
+          form, its own live table and its own history, and each is signed
+          into with its own account — so the Banbury operator can never
+          accidentally write onto the Press sheet. Everything below the line
+          cards works the same way on all three.
+        </p>
+
+        <div className="space-y-3">
+          {PRODUCTION_LINES.map((line) => {
+            const LineIcon = line.icon;
+            return (
+              <Card
+                key={line.key}
+                className="bg-card border border-border/60 shadow-sm"
+              >
+                <CardHeader className="p-4 pb-2 bg-muted/50 border-b border-border">
+                  <CardTitle className="text-sm font-bold uppercase text-accent-ink tracking-wide flex flex-wrap items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
+                      <LineIcon className="w-4 h-4" />
+                    </div>
+                    {line.name} Line
+                    <span className="font-sans text-[10px] text-muted-foreground/70 normal-case font-medium">
+                      {line.sheet}
+                    </span>
+                    <span className="ml-auto font-mono text-[10px] text-muted-foreground/70 lowercase font-normal border border-border rounded-full px-2 py-0.5 bg-card">
+                      {line.account}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
+                  <p>{line.summary}</p>
+                  <ul className="list-disc pl-5 space-y-1.5">
+                    {line.points.map((point) => (
+                      <li key={point.label}>
+                        <strong className="text-foreground font-bold">
+                          {point.label}:
+                        </strong>{" "}
+                        {point.text}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70 mr-0.5">
+                      Its own screens:
+                    </span>
+                    {["Entry Form", "Live Table", "History"].map((view) => (
+                      <span
+                        key={view}
+                        className="text-[10px] font-bold uppercase tracking-wide rounded-md border border-border bg-muted/60 text-muted-foreground px-2 py-1"
+                      >
+                        {view}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Shared behaviour across all three lines */}
       <div className="space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 px-1 text-muted-foreground">
-          <Layers className="w-3.5 h-3.5" /> How the System Works
+          <Layers className="w-3.5 h-3.5" /> What Every Line Shares
         </h2>
 
         {/* Feature 1: Quick Entry Form */}
@@ -113,22 +278,23 @@ export default function AboutPage() {
               </div>
               1. Quick Entry Form{" "}
               <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
-                components/PressForm.tsx
+                PressForm · BanburyForm · BalesForm
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
-            <p>What the operator fills in on the floor, one cycle at a time:</p>
+            <p>
+              What the operator fills in on the floor, one cycle at a time.
+              Each line has its own form, but all three behave the same way:
+            </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-foreground font-bold">
-                  Switch presses in one tap:
+                  Tap to start, tap to log:
                 </strong>{" "}
-                Jump between{" "}
-                <span className="font-semibold text-foreground">Press #1</span>{" "}
-                and{" "}
-                <span className="font-semibold text-foreground">Press #2</span>{" "}
-                instantly.
+                Open a cycle with one tap and log it with another — logging
+                stamps the end time and immediately opens the next cycle, so
+                nothing has to be typed twice and no gap goes unrecorded.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
@@ -149,15 +315,19 @@ export default function AboutPage() {
               </li>
               <li>
                 <strong className="text-foreground font-bold">
-                  Mark defects on a diagram:
+                  Laid out like the paper sheet:
                 </strong>{" "}
-                Tap the exact spot on an on-screen diagram (matching the real
-                sheet layout) to record a short mold, and check off bubble
-                defects by position (
-                <span className="italic text-foreground/80">
-                  Left, Middle, Right
-                </span>
-                ) and size.
+                Each form records exactly what its own sheet asks for — press
+                defects on a diagram, Banbury chemical ticks and tank levels,
+                Bales counts and bag changes (see the three line cards above).
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  Warns about leftover data:
+                </strong>{" "}
+                If the live log still holds entries from a shift that already
+                closed, the form asks before continuing instead of quietly
+                mixing two shifts together.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
@@ -185,23 +355,36 @@ export default function AboutPage() {
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
-              Every cycle you submit is sent straight to a secure online
-              database — nothing lives only on the terminal:
+              Every entry you log — on any of the three lines — is sent
+              straight to a secure online database; nothing lives only on the
+              terminal:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-foreground font-bold">
                   No waiting, no lost entries:
                 </strong>{" "}
-                Cycle data is saved the moment you submit, so it&apos;s safe even
-                if the terminal is turned off right after.
+                Data is saved the moment you log it, so it&apos;s safe even if
+                the terminal is turned off right after.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
                   Everything stays together:
                 </strong>{" "}
-                Reject details, bubble sizes, and positions are all saved as
-                one record, so nothing gets mixed up between cycles.
+                All of an entry&apos;s detail — press defect positions and
+                sizes, Banbury chemical ticks and tank levels, Bales counts
+                and bag changes — is saved as one record, so nothing gets
+                mixed up between cycles.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  History written as the shift runs:
+                </strong>{" "}
+                Each line keeps exactly one history record per date and shift,
+                updated on every entry — so a shift is already archived long
+                before anyone resets the live table, and a second terminal
+                joining mid-shift adds to the same record instead of starting
+                a rival one.
               </li>
             </ul>
           </CardContent>
@@ -214,9 +397,9 @@ export default function AboutPage() {
               <div className="p-1.5 rounded-lg bg-accent-chip text-accent-ink">
                 <ShieldAlert className="w-4 h-4" />
               </div>
-              3. Only Logged-In Operators Can Make Changes{" "}
+              3. Each Line Has Its Own Login{" "}
               <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
-                Supabase Auth
+                Supabase Auth · lib/line-accounts.ts
               </span>
             </CardTitle>
           </CardHeader>
@@ -230,8 +413,24 @@ export default function AboutPage() {
                 <strong className="text-foreground font-bold">
                   Editing requires login:
                 </strong>{" "}
-                Submitting a cycle, changing shift settings, or resetting the
+                Logging an entry, changing shift settings, or resetting the
                 log all require an active, logged-in session.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  One account per line:
+                </strong>{" "}
+                Press, Banbury and Bales each sign in with their own account,
+                and a line&apos;s form only saves for its own account — so one
+                line&apos;s operator can never write onto another line&apos;s
+                sheet by mistake.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  Your line comes first:
+                </strong>{" "}
+                Signing in moves your own line to the top of the menu, so the
+                screens you actually use are the ones you land on.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
@@ -290,34 +489,44 @@ export default function AboutPage() {
               </div>
               5. The Live Shift Log Table{" "}
               <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
-                app/ProductionTable.tsx
+                ProductionTable · BanburyTable · BalesProductionTable
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
-              The audit sheet the whole shift&apos;s cycles get logged onto,
-              designed to print cleanly:
+              Every line has its own audit sheet — the whole shift on one
+              screen, designed to print cleanly, and readable by anyone
+              without logging in:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
                 <strong className="text-foreground font-bold">
+                  Updates without a refresh:
+                </strong>{" "}
+                Entries appear on the sheet the moment they are logged, on
+                every screen showing it — so the office can watch a shift run
+                without touching anything.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
                   Shift details shown once:
                 </strong>{" "}
-                Operator, press, and date appear in one card at the top
-                instead of being repeated on every row.
+                Operator, shift, setup and the shift&apos;s running totals sit
+                in one strip at the top instead of being repeated on every
+                row.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
-                  Always 15 rows:
+                  Always the same number of rows:
                 </strong>{" "}
-                The sheet always shows exactly 15 rows, whether the shift had
-                3 cycles or 15, so every printed sheet looks the same and
-                fits one page.
+                Each sheet fills to a fixed height — 16 rows for Press, 22 for
+                Bales, 32 for Banbury — whether the shift had 3 entries or a
+                full page, so every printed sheet looks the same.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
-                  Fair reject counting:
+                  Fair reject counting (Press):
                 </strong>{" "}
                 A cycle only ever counts as one reject per table, even if it
                 has more than one type of defect — so the numbers can&apos;t be
@@ -325,27 +534,29 @@ export default function AboutPage() {
               </li>
               <li>
                 <strong className="text-foreground font-bold">
-                  Runtime column:
+                  Settings frozen onto each row:
                 </strong>{" "}
-                Records the target run time that was set at the moment each
-                cycle was logged, permanently — so if the target gets changed
-                later in the shift, earlier rows still show what was actually
-                true when they happened.
+                The press run time, the Bales mesh type and the Banbury shift
+                totals are recorded as they were at the moment each entry was
+                logged — so changing a setting later in the shift never
+                rewrites what was true earlier.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
-                  Total Downtime (default: 17m):
+                  Total Downtime:
                 </strong>{" "}
-                Automatically adds up, across the whole shift, how many extra
-                minutes were spent loading/unloading beyond the standard
-                17-minute target — shown in red so it stands out at a glance.
+                Adds up, across the whole shift, every minute run past the
+                standard cycle — beyond the 17-minute load target on Press,
+                and beyond the 14-minute check cycle on Banbury. Overrunning
+                entries and the shift total are both shown in red, so a slow
+                shift stands out at a glance.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
                   One-tap PDF/print:
                 </strong>{" "}
-                &quot;Print PDF&quot; automatically formats the full 15-row sheet to
-                fit neatly on a single landscape page.
+                &quot;Print PDF&quot; automatically formats the full sheet to fit
+                neatly on a single landscape page.
               </li>
             </ul>
           </CardContent>
@@ -366,9 +577,11 @@ export default function AboutPage() {
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm leading-relaxed text-muted-foreground">
             <p>
-              A single slide-out menu lets you move between the entry form,
-              the live shift table, and shift history — without losing
-              whatever you were in the middle of typing.
+              A single slide-out menu holds all nine screens — an entry form,
+              a live table and a history for each of the three lines —
+              grouped under Press, Banbury and Bales headings. Signing in
+              moves your own line to the top, and switching screens never
+              loses whatever you were in the middle of typing.
             </p>
           </CardContent>
         </Card>
@@ -382,14 +595,15 @@ export default function AboutPage() {
               </div>
               7. Production History (Past Shifts){" "}
               <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
-                components/ProductionHistory.tsx
+                ProductionHistory · BanburyHistory · BalesHistory
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
-              Every completed shift is automatically archived so past
-              performance can be reviewed any time:
+              Every completed shift on every line is automatically archived,
+              in its own history, so past performance can be reviewed any
+              time:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>
@@ -402,9 +616,18 @@ export default function AboutPage() {
                 <strong className="text-foreground font-bold">
                   Full shift breakdown:
                 </strong>{" "}
-                Each day expands to show good/reject counts per table, plus
-                Accumulated Load Time and Total Downtime for that exact
-                shift — the same numbers you&apos;d have seen live at the time.
+                Each day expands to show that line&apos;s own numbers for that
+                exact shift — good/reject per table and Total Downtime on
+                Press, output totals and Total Downtime on Banbury, bales and
+                faulty bales on Bales — the same figures you&apos;d have seen
+                live at the time.
+              </li>
+              <li>
+                <strong className="text-foreground font-bold">
+                  Summary or full sheet:
+                </strong>{" "}
+                Each shift can be read as a totals summary or switched to the
+                full entry-by-entry table, with any notes the operator left.
               </li>
               <li>
                 <strong className="text-foreground font-bold">
@@ -433,14 +656,15 @@ export default function AboutPage() {
               </div>
               8. Resetting a Shift Safely{" "}
               <span className="font-mono text-[10px] text-muted-foreground/60 lowercase font-normal">
-                app/ProductionTable.tsx
+                one reset per line
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 text-xs sm:text-sm space-y-3 leading-relaxed text-muted-foreground">
             <p>
-              When a shift ends, &quot;Reset Shift Log&quot; clears the live table so
-              the next shift starts clean:
+              When a shift ends, &quot;Reset Shift Log&quot; clears that line&apos;s
+              live table so the next shift starts clean. Each line resets on
+              its own — clearing Banbury never touches Press or Bales:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>

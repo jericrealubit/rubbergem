@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { shiftGroupOf, cycleKey, type BanburyCheckEntry } from "@/lib/banbury-log";
+import {
+  shiftGroupOf,
+  cycleKey,
+  BANBURY_DEFAULT_RUN_TIME_MINUTES,
+  isCheckOverrun,
+  totalDowntimeMinutes,
+  type BanburyCheckEntry,
+} from "@/lib/banbury-log";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertCircle,
@@ -14,6 +21,7 @@ import {
   Folder,
   FolderOpen,
   Layers,
+  Timer,
   TrendingUp,
 } from "lucide-react";
 
@@ -283,6 +291,10 @@ export default function BanburyHistory() {
                       ? day.checks
                       : [];
                     const runTimeHours = day.runTimeMinutes / 60;
+                    // Same computation as BanburyTable's live figure, run over
+                    // the archived checks -- the minutes each check cycle ran
+                    // past the standard 14-minute cycle, summed.
+                    const totalDowntime = totalDowntimeMinutes(dayChecks);
 
                     return (
                       <div key={keyForDay} className="space-y-1">
@@ -368,7 +380,7 @@ export default function BanburyHistory() {
                                         Start
                                       </th>
                                       <th className="p-1.5 border-b border-border text-center font-bold whitespace-nowrap">
-                                        Time
+                                        Time (Cycle)
                                       </th>
                                       {TICK_COLUMNS.map((col) => (
                                         <th
@@ -420,6 +432,22 @@ export default function BanburyHistory() {
                                             {check.end_time ||
                                               check.start_time ||
                                               "--:--"}
+                                            {check.run_time_minutes !==
+                                              null &&
+                                              check.run_time_minutes !==
+                                                undefined && (
+                                                <span
+                                                  className={`ml-1 font-sans font-semibold ${
+                                                    isCheckOverrun(
+                                                      check.run_time_minutes,
+                                                    )
+                                                      ? "text-destructive"
+                                                      : "text-muted-foreground"
+                                                  }`}
+                                                >
+                                                  ({check.run_time_minutes}m)
+                                                </span>
+                                              )}
                                           </td>
                                           {TICK_COLUMNS.map((col) => (
                                             <td
@@ -512,12 +540,22 @@ export default function BanburyHistory() {
                                     </p>
                                   </div>
                                 </div>
-                                <div className="bg-accent-chip/50 rounded-md p-2 flex items-center justify-between text-[10px] font-semibold text-accent-ink border border-primary/20">
+                                <div className="bg-accent-chip/50 rounded-md p-2 flex items-center justify-between gap-2 text-[10px] font-semibold text-accent-ink border border-primary/20">
                                   <div className="flex items-center gap-1">
                                     <TrendingUp className="w-3.5 h-3.5 text-primary" />
                                     <span>
                                       {day.totalChecks} Chemical/Tank Checks
                                       Logged
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Timer className="w-3.5 h-3.5 text-primary" />
+                                    <span>
+                                      Total Downtime (Run:
+                                      {BANBURY_DEFAULT_RUN_TIME_MINUTES}m):
+                                    </span>
+                                    <span className="font-mono font-black text-destructive">
+                                      {Math.round(totalDowntime)}m
                                     </span>
                                   </div>
                                 </div>
