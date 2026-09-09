@@ -1,65 +1,57 @@
 "use client";
 
-import { useMemo } from "react";
-import { tableYieldsFromCycles } from "@/lib/shift-log";
-import type { LiveLogRow } from "./types";
+import type { ReactNode } from "react";
 
-interface TvKpiRowProps {
-  liveLogRows: LiveLogRow[];
+/**
+ * One wallboard stat tile. `tone` is a *status* colour (the value is good or
+ * bad), never a series identity — Press yield, Bales faults and Banbury
+ * downtime all carry the same meaning of red, and a neutral figure such as
+ * "cycles logged" stays in plain foreground ink.
+ */
+export interface KpiTile {
+  label: string;
+  value: string;
+  tone?: "neutral" | "good" | "bad" | "warn";
 }
+
+const TONE_CLASS: Record<NonNullable<KpiTile["tone"]>, string> = {
+  neutral: "text-foreground",
+  good: "text-success",
+  bad: "text-destructive",
+  warn: "text-warning",
+};
 
 function Tile({
   label,
   value,
-  valueClassName = "text-foreground",
-}: {
-  label: string;
-  value: string;
-  valueClassName?: string;
-}) {
+  tone = "neutral",
+  compact,
+}: KpiTile & { compact: boolean }) {
   return (
-    <div className="bg-card rounded-xl border border-border p-3 flex flex-col justify-center">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="bg-card rounded-xl border border-border p-3 flex flex-col justify-center min-w-0">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
         {label}
       </span>
-      <span className={`text-5xl font-bold font-sans ${valueClassName}`}>
+      {/* Proportional figures on purpose: tabular-nums makes a big standalone
+          number look loose. Alignment only matters in columns, not here. */}
+      <span
+        className={`${compact ? "text-4xl" : "text-5xl"} font-bold font-sans truncate ${TONE_CLASS[tone]}`}
+      >
         {value}
       </span>
     </div>
   );
 }
 
-export default function TvKpiRow({ liveLogRows }: TvKpiRowProps) {
-  const { totalCycles, totalMats, totalRejects, yieldPct } = useMemo(() => {
-    const yields = tableYieldsFromCycles(liveLogRows as any);
-    let rejects = 0;
-    Object.values(yields).forEach((y) => {
-      rejects += y.reject;
-    });
-    const cycles = liveLogRows.length;
-    const mats = cycles * 4;
-    return {
-      totalCycles: cycles,
-      totalMats: mats,
-      totalRejects: rejects,
-      yieldPct: mats > 0 ? ((mats - rejects) / mats) * 100 : 0,
-    };
-  }, [liveLogRows]);
-
+export default function TvKpiRow({ tiles }: { tiles: KpiTile[] }): ReactNode {
   return (
-    <div className="h-24 shrink-0 grid grid-cols-4 gap-3">
-      <Tile label="Total Cycles" value={String(totalCycles)} />
-      <Tile label="Mats Produced" value={String(totalMats)} />
-      <Tile
-        label="Rejects"
-        value={String(totalRejects)}
-        valueClassName={totalRejects > 0 ? "text-destructive" : "text-foreground"}
-      />
-      <Tile
-        label="Yield"
-        value={`${yieldPct.toFixed(1)}%`}
-        valueClassName={yieldPct >= 95 ? "text-success" : "text-destructive"}
-      />
+    <div
+      className="h-24 shrink-0 grid gap-3"
+      style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}
+    >
+      {tiles.map((tile) => (
+        <Tile key={tile.label} {...tile} compact={tiles.length > 4} />
+      ))}
     </div>
   );
 }

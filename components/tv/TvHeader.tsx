@@ -1,15 +1,23 @@
-import type { ShiftHistoryOption } from "./types";
+"use client";
 
-interface ShiftConfig {
-  operator: string | null;
-  shift_group: string | null;
-  press_number: string | null;
+import { TV_LINES, TV_LINE_TITLES, type ShiftPickerOption, type TvLine } from "./types";
+
+/**
+ * One line-appropriate fact in the header strip — Press shows Operator /
+ * Shift / Press, Bales swaps Press for Mesh, Banbury for Product. Panels
+ * supply their own list rather than the header knowing each line's schema.
+ */
+export interface HeaderMeta {
+  label: string;
+  value: string;
 }
 
 interface TvHeaderProps {
-  shiftConfig: ShiftConfig | null;
+  line: TvLine;
+  onSelectLine: (line: TvLine) => void;
+  meta: HeaderMeta[];
   isConnected: boolean;
-  historyOptions: ShiftHistoryOption[];
+  historyOptions: ShiftPickerOption[];
   selectedShiftId: number | "live";
   onSelectShift: (id: number | "live") => void;
 }
@@ -19,7 +27,7 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-function optionLabel(opt: ShiftHistoryOption): string {
+function optionLabel(opt: ShiftPickerOption): string {
   const d = new Date(`${opt.date}T00:00:00`);
   const weekday = d.toLocaleDateString("en-AU", { weekday: "short" });
   const monthDay = d.toLocaleDateString("en-AU", { month: "short", day: "numeric" });
@@ -28,7 +36,9 @@ function optionLabel(opt: ShiftHistoryOption): string {
 }
 
 export default function TvHeader({
-  shiftConfig,
+  line,
+  onSelectLine,
+  meta,
   isConnected,
   historyOptions,
   selectedShiftId,
@@ -36,7 +46,7 @@ export default function TvHeader({
 }: TvHeaderProps) {
   const mode: "live" | "history" = selectedShiftId === "live" ? "live" : "history";
 
-  const monthGroups = new Map<string, ShiftHistoryOption[]>();
+  const monthGroups = new Map<string, ShiftPickerOption[]>();
   historyOptions.forEach((opt) => {
     const [year, month] = opt.date.split("-");
     const label = `${MONTH_NAMES[parseInt(month, 10) - 1]} ${year}`;
@@ -45,45 +55,62 @@ export default function TvHeader({
   });
 
   return (
-    <header className="h-16 shrink-0 flex items-center justify-between px-5 rounded-xl bg-card border border-border">
-      <h1 className="text-xl font-black uppercase tracking-widest text-foreground">
-        Press Floor{mode === "history" ? " — History" : " — Live Production"}
-      </h1>
+    <header className="h-16 shrink-0 flex items-center justify-between gap-4 px-5 rounded-xl bg-card border border-border">
+      <div className="flex items-center gap-5 min-w-0">
+        <h1 className="text-xl font-black uppercase tracking-widest text-foreground whitespace-nowrap">
+          {TV_LINE_TITLES[line]}
+          {mode === "history" ? " — History" : " — Live Production"}
+        </h1>
+
+        {/* Line switcher — the wallboard shows one line at a time. */}
+        <div
+          role="group"
+          aria-label="Production line"
+          className="flex items-center gap-1 p-1 rounded-lg bg-muted"
+        >
+          {TV_LINES.map((option) => {
+            const active = option.id === line;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSelectLine(option.id)}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="flex items-center gap-6">
-        <div className="text-center">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Operator
-          </p>
-          <p className="text-sm font-bold text-foreground">
-            {shiftConfig?.operator || "—"}
-          </p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Shift
-          </p>
-          <p className="text-sm font-bold text-foreground capitalize">
-            {shiftConfig?.shift_group || "—"}
-          </p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Press
-          </p>
-          <p className="text-sm font-bold text-foreground">
-            {shiftConfig?.press_number
-              ? `#${shiftConfig.press_number}`
-              : "—"}
-          </p>
-        </div>
+        {meta.map((item) => (
+          <div key={item.label} className="text-center">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {item.label}
+            </p>
+            <p className="text-sm font-bold text-foreground capitalize">
+              {item.value || "—"}
+            </p>
+          </div>
+        ))}
 
+        <label className="sr-only" htmlFor="tv-shift-picker">
+          Shift to display
+        </label>
         <select
+          id="tv-shift-picker"
           value={String(selectedShiftId)}
           onChange={(e) =>
             onSelectShift(e.target.value === "live" ? "live" : Number(e.target.value))
           }
-          className="h-8 pl-2 pr-1 text-xs font-bold rounded-md bg-muted border border-border text-foreground uppercase tracking-wide focus:outline-none focus:ring-1 focus:ring-primary"
+          className="h-8 pl-2 pr-1 text-xs font-bold rounded-md bg-muted border border-border text-foreground uppercase tracking-wide focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="live">Live</option>
           {Array.from(monthGroups.entries()).map(([label, opts]) => (

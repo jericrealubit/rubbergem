@@ -1,237 +1,88 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { shiftGroupOf, type ArchivedCycle } from "@/lib/shift-log";
-import TvHeader from "@/components/tv/TvHeader";
-import TvKpiRow from "@/components/tv/TvKpiRow";
-import DefectLocationHeatmap from "@/components/tv/DefectLocationHeatmap";
-import CycleSequenceGrid from "@/components/tv/CycleSequenceGrid";
-import HistoricalTrendHeatmap from "@/components/tv/HistoricalTrendHeatmap";
-import type { LiveLogRow, ShiftHistoryOption } from "@/components/tv/types";
+import { useSyncExternalStore } from "react";
+import PressPanel from "@/components/tv/PressPanel";
+import BalesPanel from "@/components/tv/BalesPanel";
+import BanburyPanel from "@/components/tv/BanburyPanel";
+import { TV_LINES, type TvLine } from "@/components/tv/types";
 
-interface ShiftConfig {
-  operator: string | null;
-  shift_group: string | null;
-  press_number: string | null;
-  mat_types: Record<number, string> | null;
+const LINE_STORAGE_KEY = "tv-line";
+const DEFAULT_LINE: TvLine = "press";
+
+function isTvLine(value: string | null): value is TvLine {
+  return !!value && TV_LINES.some((option) => option.id === value);
 }
 
-interface RawProductionLogRow {
-  id: number;
-  date: string;
-  operator_shift: string;
-  machine_press: string | null;
-  cycles: unknown;
-  table_line_output_yields: Record<
-    string,
-    { type?: string; good?: number; reject?: number }
-  > | null;
+// The remembered line is read through useSyncExternalStore rather than a
+// useState initialiser: /tv is prerendered by the static export, so the
+// server snapshot is always DEFAULT_LINE while the client's is whatever the
+// screen was left on. That is exactly the mismatch this hook exists to
+// resolve — React hydrates against the server snapshot and then re-renders
+// with the stored one, instead of the hydration error a localStorage read
+// during render would raise. Subscribing to `storage` on top of it keeps two
+// tabs of the wallboard on the same line, matching how the forms sync.
+
+const listeners = new Set<() => void>();
+
+/** Set when localStorage is unavailable, so the switcher still works. */
+let sessionLine: TvLine | null = null;
+
+function subscribeLine(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    listeners.delete(onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
 }
 
+function getLineSnapshot(): TvLine {
+  try {
+    const stored = window.localStorage.getItem(LINE_STORAGE_KEY);
+    if (isTvLine(stored)) return stored;
+  } catch {
+    // Private mode / storage disabled — fall through to the session value.
+  }
+  return sessionLine ?? DEFAULT_LINE;
+}
+
+function getServerLineSnapshot(): TvLine {
+  return DEFAULT_LINE;
+}
+
+function selectLine(next: TvLine) {
+  sessionLine = next;
+  try {
+    window.localStorage.setItem(LINE_STORAGE_KEY, next);
+  } catch {
+    // Non-fatal: sessionLine still drives this tab.
+  }
+  listeners.forEach((listener) => listener());
+}
+
+/**
+ * The wallboard route — one read-only screen per production line, switched
+ * from the header.
+ *
+ * Each line's panel owns its own Supabase reads, shift-history selection and
+ * layout, so switching lines unmounts the previous line's realtime channels
+ * rather than holding all three lines' subscriptions open on a screen showing
+ * one. The shell here is only the viewport frame and the remembered choice.
+ */
 export default function TvPage() {
-  const [liveLogRows, setLiveLogRows] = useState<LiveLogRow[]>([]);
-  const [shiftConfig, setShiftConfig] = useState<ShiftConfig | null>(null);
-  const [liveLogConnected, setLiveLogConnected] = useState(false);
-  const [shiftConfigConnected, setShiftConfigConnected] = useState(false);
-  const [historyOptions, setHistoryOptions] = useState<ShiftHistoryOption[]>(
-    [],
+  const line = useSyncExternalStore(
+    subscribeLine,
+    getLineSnapshot,
+    getServerLineSnapshot,
   );
-  const [selectedShiftId, setSelectedShiftId] = useState<number | "live">(
-    "live",
-  );
-
-  useEffect(() => {
-    const fetchLiveLog = async () => {
-      const { data } = await supabase
-        .from("live_log")
-        .select("*")
-        .eq("shift_id", 1)
-        .order("cycle_number", { ascending: true });
-      if (data) setLiveLogRows(data as LiveLogRow[]);
-    };
-
-    const fetchShiftConfig = async () => {
-      const { data } = await supabase
-        .from("shift_config")
-        .select("*")
-        .eq("shift_id", 1)
-        .maybeSingle();
-      if (data) setShiftConfig(data as ShiftConfig);
-    };
-
-    fetchLiveLog();
-    fetchShiftConfig();
-
-    const liveLogChannel = supabase
-      .channel("tv-live-log-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "live_log" },
-        () => fetchLiveLog(),
-      )
-      .subscribe((status) => {
-        setLiveLogConnected(status === "SUBSCRIBED");
-      });
-
-    const shiftConfigChannel = supabase
-      .channel("tv-shift-config-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "shift_config" },
-        () => fetchShiftConfig(),
-      )
-      .subscribe((status) => {
-        setShiftConfigConnected(status === "SUBSCRIBED");
-      });
-
-    return () => {
-      supabase.removeChannel(liveLogChannel);
-      supabase.removeChannel(shiftConfigChannel);
-    };
-  }, []);
-
-  // Shift-history dropdown: fetch the full production_logs archive and
-  // collapse duplicate (date, shift group) rows down to the richest one —
-  // same dedupe already duplicated in ProductionHistory.tsx and
-  // HistoricalTrendHeatmap.tsx; kept as a third local copy here rather than a
-  // shared helper so this change doesn't touch those unrelated files.
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const { data } = await supabase
-        .from("production_logs")
-        .select(
-          "id, date, operator_shift, machine_press, cycles, table_line_output_yields",
-        )
-        .order("date", { ascending: false })
-        .order("id", { ascending: false });
-      if (!data) return;
-
-      const rows = data as RawProductionLogRow[];
-      const byShift = new Map<string, RawProductionLogRow>();
-      rows.forEach((row) => {
-        const key = `${row.date}|${shiftGroupOf(row.operator_shift)}`;
-        const held = byShift.get(key);
-        const rowCycles = Array.isArray(row.cycles) ? row.cycles.length : 0;
-        const heldCycles =
-          held && Array.isArray(held.cycles) ? held.cycles.length : -1;
-        if (
-          !held ||
-          rowCycles > heldCycles ||
-          (rowCycles === heldCycles && row.id > held.id)
-        ) {
-          byShift.set(key, row);
-        }
-      });
-
-      const options: ShiftHistoryOption[] = Array.from(byShift.values())
-        .map((row) => {
-          const yields = row.table_line_output_yields || {};
-          const matTypes: Record<number, string> = {};
-          [1, 2, 3, 4].forEach((id) => {
-            const type = yields[`table_${id}`]?.type;
-            if (type) matTypes[id] = type;
-          });
-
-          return {
-            id: row.id,
-            date: row.date,
-            shiftGroup: shiftGroupOf(row.operator_shift),
-            operator: row.operator_shift.split("(")[0].trim(),
-            machinePress: row.machine_press,
-            cycles: Array.isArray(row.cycles)
-              ? (row.cycles as ArchivedCycle[])
-              : [],
-            matTypes,
-          };
-        })
-        .sort((a, b) => {
-          const byDate = b.date.localeCompare(a.date);
-          if (byDate !== 0) return byDate;
-          if (a.shiftGroup === b.shiftGroup) return 0;
-          return a.shiftGroup === "night" ? -1 : 1;
-        });
-
-      setHistoryOptions(options);
-    };
-
-    fetchHistory();
-
-    const channel = supabase
-      .channel("tv-history-picker-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "production_logs" },
-        () => fetchHistory(),
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const isConnected = liveLogConnected && shiftConfigConnected;
-
-  const selectedOption =
-    selectedShiftId === "live"
-      ? null
-      : historyOptions.find((o) => o.id === selectedShiftId) || null;
-
-  const displayLogRows: LiveLogRow[] = useMemo(() => {
-    if (selectedShiftId === "live") return liveLogRows;
-    if (!selectedOption) return [];
-    return selectedOption.cycles.map((c, i) => ({
-      live_id: i,
-      cycle_number: c.cycle_number ?? i + 1,
-      start_time: c.start_time ?? null,
-      end_time: c.end_time ?? null,
-      short_mold_json: (c.short_mold_json as LiveLogRow["short_mold_json"]) ?? null,
-      bubble_json: (c.bubble_json as LiveLogRow["bubble_json"]) ?? null,
-    }));
-  }, [selectedShiftId, liveLogRows, selectedOption]);
-
-  const displayShiftConfig: ShiftConfig | null =
-    selectedShiftId === "live"
-      ? shiftConfig
-      : selectedOption
-        ? {
-            operator: selectedOption.operator,
-            shift_group: selectedOption.shiftGroup,
-            press_number: selectedOption.machinePress?.match(/\d+/)?.[0] ?? null,
-            mat_types: selectedOption.matTypes,
-          }
-        : null;
-
-  const periodLabel =
-    selectedShiftId === "live" || !selectedOption
-      ? "This Shift"
-      : `${new Date(`${selectedOption.date}T00:00:00`).toLocaleDateString("en-AU", { month: "short", day: "numeric" })} — ${
-          selectedOption.shiftGroup === "night" ? "Night" : "Day"
-        }`;
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-background text-foreground flex flex-col p-4 gap-3">
-      <TvHeader
-        shiftConfig={displayShiftConfig}
-        isConnected={isConnected}
-        historyOptions={historyOptions}
-        selectedShiftId={selectedShiftId}
-        onSelectShift={setSelectedShiftId}
-      />
-      <TvKpiRow liveLogRows={displayLogRows} />
-
-      <div className="flex-1 min-h-0 grid grid-cols-[3fr_1fr] gap-3">
-        <div className="flex flex-col min-h-0 gap-3">
-          <DefectLocationHeatmap
-            liveLogRows={displayLogRows}
-            matTypes={displayShiftConfig?.mat_types || undefined}
-            periodLabel={periodLabel}
-          />
-          <CycleSequenceGrid liveLogRows={displayLogRows} periodLabel={periodLabel} />
-        </div>
-        <HistoricalTrendHeatmap />
-      </div>
+      {line === "press" && <PressPanel line={line} onSelectLine={selectLine} />}
+      {line === "bales" && <BalesPanel line={line} onSelectLine={selectLine} />}
+      {line === "banbury" && (
+        <BanburyPanel line={line} onSelectLine={selectLine} />
+      )}
     </div>
   );
 }

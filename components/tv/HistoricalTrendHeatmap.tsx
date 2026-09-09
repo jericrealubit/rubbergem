@@ -1,96 +1,62 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { shiftGroupOf, type ShiftGroup } from "@/lib/shift-log";
-import { rateToRedBucket } from "@/lib/heatmap-color";
+import { perthDate, useShiftArchive, type ArchiveRow } from "./use-tv-data";
 
 const DAYS_BACK = 14;
 
-interface ProductionLogRow {
-  id: number;
-  date: string;
-  operator_shift: string;
-  total_mats_produced: number | null;
-  faulty_mats_produced: number | null;
-  cycles: unknown[] | null;
+/** How one day/shift slot renders — the panel decides what "worse" means. */
+export interface TrendCell {
+  /** Bucket class from lib/heatmap-color (the shared single-hue ramp). */
+  className: string;
+  /** Short in-cell figure, e.g. "4%" or "12m". Empty for a shift with no row. */
+  text: string;
+  /** Tooltip / screen-reader description of the value. */
+  title?: string;
 }
 
-function perthDate(daysAgo: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Australia/Perth",
-  }).format(d);
+interface HistoricalTrendHeatmapProps<T extends ArchiveRow> {
+  title: string;
+  /** `*_production_logs` table for this line. */
+  table: string;
+  columns: string;
+  channel: string;
+  /** JSONB array column measuring a row's richness: "cycles" or "checks". */
+  entriesColumn: string;
+  /** Render one slot; `row` is undefined when no shift ran that day/shift. */
+  cellFor: (row: T | undefined) => TrendCell;
 }
 
-export default function HistoricalTrendHeatmap() {
-  const [rows, setRows] = useState<ProductionLogRow[]>([]);
+/**
+ * The 14-day day/night grid down the right of every line's wallboard.
+ *
+ * Press reads it as a reject rate, Bales as a faulty-bale rate and Banbury as
+ * lost minutes, so the severity mapping is the caller's — this component owns
+ * the fetch, the one-row-per-(date, shift group) dedupe and the grid.
+ */
+export default function HistoricalTrendHeatmap<T extends ArchiveRow>({
+  title,
+  table,
+  columns,
+  channel,
+  entriesColumn,
+  cellFor,
+}: HistoricalTrendHeatmapProps<T>) {
+  const cutoff = perthDate(DAYS_BACK);
+  const rows = useShiftArchive<T>(table, columns, channel, entriesColumn, cutoff);
 
-  useEffect(() => {
-    const cutoff = perthDate(DAYS_BACK);
+  const byDateShift = new Map<string, T>();
+  rows.forEach((row) => {
+    byDateShift.set(`${row.date}|${shiftGroupOf(row.operator_shift)}`, row);
+  });
 
-    const fetchLogs = async () => {
-      const { data } = await supabase
-        .from("production_logs")
-        .select("id, date, operator_shift, total_mats_produced, faulty_mats_produced, cycles")
-        .gte("date", cutoff)
-        .order("date", { ascending: true });
-      if (data) setRows(data as ProductionLogRow[]);
-    };
-
-    fetchLogs();
-
-    const channel = supabase
-      .channel("tv-production-logs-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "production_logs" },
-        () => fetchLogs(),
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const byDateShift = useMemo(() => {
-    const map = new Map<string, ProductionLogRow>();
-    rows.forEach((row) => {
-      const key = `${row.date}|${shiftGroupOf(row.operator_shift)}`;
-      const held = map.get(key);
-      if (!held) {
-        map.set(key, row);
-        return;
-      }
-      const heldCycles = Array.isArray(held.cycles) ? held.cycles.length : 0;
-      const rowCycles = Array.isArray(row.cycles) ? row.cycles.length : 0;
-      if (rowCycles > heldCycles || (rowCycles === heldCycles && row.id > held.id)) {
-        map.set(key, row);
-      }
-    });
-    return map;
-  }, [rows]);
-
-  const dates = useMemo(() => {
-    const list: string[] = [];
-    for (let i = 0; i <= DAYS_BACK; i++) list.push(perthDate(i));
-    return list; // newest first
-  }, []);
-
-  const rateFor = (date: string, shift: ShiftGroup): number | null => {
-    const row = byDateShift.get(`${date}|${shift}`);
-    if (!row) return null;
-    const total = row.total_mats_produced || 0;
-    const faulty = row.faulty_mats_produced || 0;
-    return total > 0 ? faulty / total : 0;
-  };
+  const dates: string[] = [];
+  for (let i = 0; i <= DAYS_BACK; i++) dates.push(perthDate(i)); // newest first
 
   return (
     <div className="h-full min-h-0 bg-card rounded-xl border border-border p-3 flex flex-col">
       <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-        Reject-Rate Trend — Last {DAYS_BACK} Days
+        {title} — Last {DAYS_BACK} Days
       </h2>
 
       <div className="grid grid-cols-[auto_1fr_1fr] gap-1 text-center text-[10px] font-bold uppercase text-muted-foreground pb-1">
@@ -108,14 +74,15 @@ export default function HistoricalTrendHeatmap() {
             <span className="text-[10px] font-mono text-muted-foreground pr-1">
               {date.slice(5)}
             </span>
-            {(["day", "night"] as const).map((shift) => {
-              const rate = rateFor(date, shift);
+            {(["day", "night"] as ShiftGroup[]).map((shift) => {
+              const cell = cellFor(byDateShift.get(`${date}|${shift}`));
               return (
                 <div
                   key={shift}
-                  className={`h-full rounded flex items-center justify-center text-[10px] font-mono font-bold text-foreground ${rateToRedBucket(rate)}`}
+                  title={cell.title}
+                  className={`h-full rounded flex items-center justify-center text-[10px] font-mono font-bold text-foreground ${cell.className}`}
                 >
-                  {rate === null ? "" : `${(rate * 100).toFixed(0)}%`}
+                  {cell.text}
                 </div>
               );
             })}

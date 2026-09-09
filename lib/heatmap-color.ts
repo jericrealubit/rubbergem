@@ -42,3 +42,21 @@ export function rateToRedBucket(rate: number | null): string {
   if (rate < 0.2) return "bg-destructive/70";
   return "bg-destructive";
 }
+
+/**
+ * Bucket a downtime figure in minutes -- the Banbury wallboard's trend scale,
+ * where a shift's severity is an absolute number of lost minutes rather than
+ * a 0..1 rate (the Banbury check cycle carries no output to take a rate of;
+ * see lib/banbury-log.ts). Same single-hue `--destructive` opacity ramp as
+ * the two functions above so all three read as one scale across /tv.
+ * `null` means no shift ran that day/slot.
+ */
+export function minutesToRedBucket(minutes: number | null): string {
+  if (minutes === null) return "bg-muted/40";
+  if (minutes <= 0) return "bg-muted";
+  if (minutes < 10) return "bg-destructive/20";
+  if (minutes < 25) return "bg-destructive/35";
+  if (minutes < 45) return "bg-destructive/50";
+  if (minutes < 90) return "bg-destructive/70";
+  return "bg-destructive";
+}
