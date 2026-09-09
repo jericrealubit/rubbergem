@@ -45,3 +45,60 @@ export interface BanburyCheckEntry extends CycleIdentity {
   left_tank_level?: string | null;
   notes?: string | null;
 }
+
+/**
+ * The Banbury's standard check-cycle length, in minutes -- the Banbury
+ * equivalent of the Press's 17-minute load target
+ * (DEFAULT_LOAD_TIME_MINUTES in app/ProductionTable.tsx). A check cycle is
+ * expected to take 14 minutes end to end, so every minute a cycle runs past
+ * that is downtime.
+ *
+ * The Press measures its own overrun against a *derived* figure (load time =
+ * elapsed minus the shift's configured press Run Time) because a press cycle
+ * has a machine cure sitting inside it. A Banbury check has no machine cycle
+ * behind it, so the whole start-to-log interval
+ * (banbury_live_log.run_time_minutes) is what gets measured against this
+ * constant -- see BanburyForm's computeDurationMinutes.
+ *
+ * Defined here rather than inline per component so the live form readout
+ * (components/BanburyForm.tsx), the live shift total (app/BanburyTable.tsx)
+ * and the archived total (components/BanburyHistory.tsx) can't drift apart --
+ * the drift the Press's three separate copies of 17 invite.
+ */
+export const BANBURY_DEFAULT_RUN_TIME_MINUTES = 14;
+
+/**
+ * Minutes a single check cycle overran the standard cycle, clamped at 0 --
+ * a check logged early is never negative downtime, exactly as the Press's
+ * `Math.max(0, loadTime - 17)`.
+ *
+ * Checks archived before banbury_live_log carried run_time_minutes have null
+ * here and so contribute nothing.
+ */
+export function checkDowntimeMinutes(
+  runTimeMinutes: number | string | null | undefined,
+): number {
+  const minutes =
+    typeof runTimeMinutes === "number"
+      ? runTimeMinutes
+      : parseFloat(String(runTimeMinutes ?? "")) || 0;
+  return Math.max(0, minutes - BANBURY_DEFAULT_RUN_TIME_MINUTES);
+}
+
+/** Did this check cycle overrun the standard cycle? The grids colour on this. */
+export function isCheckOverrun(
+  runTimeMinutes: number | string | null | undefined,
+): boolean {
+  return checkDowntimeMinutes(runTimeMinutes) > 0;
+}
+
+/** Total downtime across a shift's checks, in minutes. */
+export function totalDowntimeMinutes(
+  checks: readonly { run_time_minutes?: number | null }[] | null | undefined,
+): number {
+  if (!Array.isArray(checks)) return 0;
+  return checks.reduce(
+    (total, check) => total + checkDowntimeMinutes(check?.run_time_minutes),
+    0,
+  );
+}

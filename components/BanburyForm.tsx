@@ -1,7 +1,14 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
-import { mergeCycles, shiftGroupOf, describeError } from "@/lib/banbury-log";
+import {
+  mergeCycles,
+  shiftGroupOf,
+  describeError,
+  BANBURY_DEFAULT_RUN_TIME_MINUTES,
+  checkDowntimeMinutes,
+  isCheckOverrun,
+} from "@/lib/banbury-log";
 import type { BanburyCheckEntry } from "@/lib/banbury-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useState } from "react";
@@ -375,8 +382,10 @@ export default function BanburyForm({
   // Elapsed minutes between the open cycle's start and the moment it's
   // logged. Unlike PressForm there is no configured per-cycle run time to
   // subtract -- a Banbury check has no machine cycle behind it, so the whole
-  // interval is the figure worth keeping. Midnight crossover is handled the
-  // same way PressForm's computeDurationMinutes does it.
+  // interval is the figure worth keeping, and it is that interval that gets
+  // measured against BANBURY_DEFAULT_RUN_TIME_MINUTES to give the shift's
+  // downtime. Midnight crossover is handled the same way PressForm's
+  // computeDurationMinutes does it.
   const computeDurationMinutes = (endTimeHHMM: string) => {
     const [startHours, startMinutes] = startTime.split(":").map(Number);
     const [endHours, endMinutes] = endTimeHHMM.split(":").map(Number);
@@ -413,6 +422,24 @@ export default function BanburyForm({
     const mm = String(Math.floor((abs % 3600) / 60)).padStart(2, "0");
     const ss = String(Math.floor(abs % 60)).padStart(2, "0");
     return hh > 0 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+  };
+
+  // Live downtime for the open cycle: how far past the standard 14-minute
+  // check cycle it has run. Counts UP from -14:00 the way PressForm's Load
+  // Time readout counts up from minus the press run time, so the operator
+  // sees the cycle burning down to zero and then, past it, the downtime the
+  // shift is actually accruing.
+  const downtimeSeconds =
+    elapsedSeconds === null
+      ? null
+      : elapsedSeconds - BANBURY_DEFAULT_RUN_TIME_MINUTES * 60;
+
+  const formatSigned = (totalSeconds: number) => {
+    const sign = totalSeconds < 0 ? "-" : "+";
+    const abs = Math.abs(totalSeconds);
+    const mm = String(Math.floor(abs / 60)).padStart(2, "0");
+    const ss = String(Math.floor(abs % 60)).padStart(2, "0");
+    return `${sign}${mm}:${ss}`;
   };
 
   // Log Check is gated the same way PressForm gates its submit button (a
@@ -613,8 +640,11 @@ export default function BanburyForm({
       setIsManualStart(false);
 
       setIsSubmitting(false);
+      const overrunMinutes = checkDowntimeMinutes(durationMinutes);
       toast.success(
-        `Check #${nextCheckNumber} logged (${durationMinutes} min) — next check cycle started.`,
+        `Check #${nextCheckNumber} logged (${durationMinutes} min${
+          overrunMinutes > 0 ? `, +${overrunMinutes}m downtime` : ""
+        }) — next check cycle started.`,
       );
       fetchRecentChecks();
     } catch (err) {
@@ -937,15 +967,39 @@ export default function BanburyForm({
                     TAP TO START
                   </Button>
                 )}
-                {cycleOpen && elapsedSeconds !== null && (
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                      <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-success" />
-                      {recentChecks.length > 0 ? "Since Last Check" : "Elapsed"}
-                    </span>
-                    <span className="font-mono font-bold text-lg tabular-nums text-success">
-                      {formatElapsed(elapsedSeconds)}
-                    </span>
+                {cycleOpen && elapsedSeconds !== null && downtimeSeconds !== null && (
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                            downtimeSeconds > 0 ? "bg-destructive" : "bg-success"
+                          }`}
+                        />
+                        {recentChecks.length > 0 ? "Since Last Check" : "Elapsed"}
+                      </span>
+                      <span
+                        className={`font-mono font-bold text-lg tabular-nums ${
+                          downtimeSeconds > 0 ? "text-destructive" : "text-success"
+                        }`}
+                      >
+                        {formatElapsed(elapsedSeconds)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Downtime (Run: {BANBURY_DEFAULT_RUN_TIME_MINUTES}m)
+                      </span>
+                      <span
+                        className={`font-mono font-bold text-xs tabular-nums ${
+                          downtimeSeconds > 0
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {formatSigned(downtimeSeconds)}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1110,7 +1164,13 @@ export default function BanburyForm({
                             }).format(new Date(c.check_time))
                           : "--:--"}
                         {c.run_time_minutes !== null && (
-                          <span className="text-muted-foreground/70">
+                          <span
+                            className={
+                              isCheckOverrun(c.run_time_minutes)
+                                ? "text-destructive font-bold"
+                                : "text-muted-foreground/70"
+                            }
+                          >
                             {" "}
                             ({c.run_time_minutes}m)
                           </span>

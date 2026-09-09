@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import {
+  BANBURY_DEFAULT_RUN_TIME_MINUTES,
+  checkDowntimeMinutes,
+  isCheckOverrun,
+} from "@/lib/banbury-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +17,7 @@ import {
   User,
   FlaskConical,
   Clock,
+  Timer,
   Layers,
   Settings2,
   AlertCircle,
@@ -42,6 +48,9 @@ interface CheckEntry {
   startTime: string;
   /** When the check itself was logged -- the paper sheet's "Time" column. */
   time: string;
+  /** Start -> log interval in minutes; null on rows logged before checks
+   *  carried one. Anything past BANBURY_DEFAULT_RUN_TIME_MINUTES is downtime. */
+  runTimeMinutes: number | null;
   crumbRubber: boolean;
   otherRubbers: boolean;
   powderedChemicals: boolean;
@@ -131,6 +140,10 @@ export default function BanburyTablePage({
                 minute: "2-digit",
               })
             : "--:--",
+          runTimeMinutes:
+            row.run_time_minutes === null || row.run_time_minutes === undefined
+              ? null
+              : Number(row.run_time_minutes),
           crumbRubber: !!row.crumb_rubber,
           otherRubbers: !!row.other_rubbers,
           powderedChemicals: !!row.powdered_chemicals,
@@ -256,6 +269,15 @@ export default function BanburyTablePage({
   const checksWithIssues = entries.filter((e) =>
     TICK_COLUMNS.some((col) => !e[col.key]),
   ).length;
+
+  // Shift downtime = the minutes every check cycle ran past the standard
+  // 14-minute cycle, summed. Same shape as ProductionTable's totalDowntime
+  // for the Press, but measured on the check cycle's own length rather than
+  // on a derived load time -- see lib/banbury-log.ts.
+  const totalDowntime = entries.reduce(
+    (total, entry) => total + checkDowntimeMinutes(entry.runTimeMinutes),
+    0,
+  );
 
   const bagWeight = shiftConfig?.bag_weight_kg || 0;
   const bagsCount = shiftConfig?.mesh_bags_count || 0;
@@ -385,7 +407,7 @@ export default function BanburyTablePage({
 
         {/* Metadata Strip */}
         <div className="bg-muted border-b border-border p-2.5 space-y-2.5 meta-grid-compact">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-foreground">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs text-foreground">
             <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
               <User className="w-4 h-4 text-primary shrink-0" />
               <div>
@@ -421,6 +443,18 @@ export default function BanburyTablePage({
                 </span>
                 <span className="font-bold text-foreground text-xs">
                   {runTimeHours > 0 ? `${runTimeHours.toFixed(1)}hrs` : "0hrs"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded border border-border meta-item-compact">
+              <Timer className="w-4 h-4 text-primary shrink-0" />
+              <div>
+                <span className="text-[9px] font-bold uppercase text-muted-foreground block leading-none">
+                  Total Downtime(Run:{BANBURY_DEFAULT_RUN_TIME_MINUTES}m)
+                </span>
+                <span className="font-bold text-destructive text-xs">
+                  {totalDowntime > 0 ? `${Math.round(totalDowntime)}m` : "0m"}
                 </span>
               </div>
             </div>
@@ -501,8 +535,8 @@ export default function BanburyTablePage({
                 <th className="p-2 border-r border-border text-center w-[60px]">
                   Start
                 </th>
-                <th className="p-2 border-r border-border text-center w-[70px]">
-                  Time
+                <th className="p-2 border-r border-border text-center w-[100px]">
+                  Time (Cycle)
                 </th>
                 {TICK_COLUMNS.map((col) => (
                   <th
@@ -569,6 +603,17 @@ export default function BanburyTablePage({
                     </td>
                     <td className="p-1 border-r border-border text-center font-mono text-[10px] whitespace-nowrap">
                       {entry.time}
+                      {entry.runTimeMinutes !== null && (
+                        <span
+                          className={`text-[9px] font-sans ml-1 font-semibold ${
+                            isCheckOverrun(entry.runTimeMinutes)
+                              ? "text-destructive"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          ({entry.runTimeMinutes}m)
+                        </span>
+                      )}
                     </td>
                     {TICK_COLUMNS.map((col) => (
                       <td
