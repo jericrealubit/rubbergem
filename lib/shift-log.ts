@@ -30,6 +30,35 @@ export function describeError(err: unknown): string {
   }
 }
 
+/**
+ * True when a Supabase/PostgREST failure is "that column isn't there",
+ * naming one of `columns`.
+ *
+ * Every table in this project is applied by hand in the Supabase SQL editor
+ * (see the .sql files at the repo root), so a column added in a later script
+ * can be live in the code and missing from the database. PostgREST reports
+ * that two different ways: `PGRST204` on a write, whose message reads
+ * "Could not find the 'run_time_minutes' column of 'banbury_live_log' in the
+ * schema cache", and Postgres' own `42703` ("column ... does not exist") on a
+ * read. Both are worth telling apart from a real failure, because a caller
+ * can usually fall back to the pre-migration shape instead of losing the
+ * operator's entry.
+ *
+ * Note PGRST204 also fires when the ALTER *has* been run but PostgREST is
+ * still serving a stale schema cache -- hence the `NOTIFY pgrst,
+ * 'reload schema';` at the end of the ADD COLUMN scripts.
+ */
+export function isMissingColumnError(
+  err: unknown,
+  columns: readonly string[],
+): boolean {
+  if (!err || typeof err !== "object") return false;
+  const { code } = err as { code?: unknown };
+  if (code !== "PGRST204" && code !== "42703") return false;
+  const message = describeError(err);
+  return columns.some((column) => message.includes(column));
+}
+
 export type ShiftGroup = "day" | "night";
 
 /**

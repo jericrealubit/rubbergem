@@ -22,3 +22,11 @@ ALTER TABLE public.banbury_live_log
 
 ALTER TABLE public.banbury_live_log
   ADD COLUMN IF NOT EXISTS run_time_minutes INTEGER;
+
+-- PostgREST answers from a cached copy of the schema, and an ALTER on its own
+-- does not invalidate it. Without this the ADD COLUMNs above appear to have
+-- worked in the SQL editor while the app keeps failing every insert with
+--   Could not find the 'run_time_minutes' column of 'banbury_live_log'
+--   in the schema cache
+-- (PGRST204) until the API happens to restart. Always run it with the ALTERs.
+NOTIFY pgrst, 'reload schema';

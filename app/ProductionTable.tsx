@@ -401,11 +401,18 @@ export default function ProductionTablePage({
 
             <div className="flex items-center justify-between gap-2 md:contents">
               <div className="flex items-center gap-2 no-print md:ml-auto">
+                {/* Disabled, this sits on the bg-primary strip, so it drops the solid
+                    white pill for a ghosted outline rather than fading: the base
+                    disabled:opacity-50 halved both the pill and its red label
+                    against the strip (~2:1), and text-destructive is a token meant
+                    for dark surfaces anyway. text-primary-foreground on bg-primary
+                    is the strip's own designed pair, so the label reads exactly as
+                    well as the header title beside it. */}
                 <Button
                   onClick={handleResetLog}
                   disabled={!isAuthorized || isResetting}
                   variant="destructive"
-                  className="gap-2 h-9 text-xs font-bold shadow-sm bg-primary-foreground text-destructive hover:bg-primary-foreground/90"
+                  className="gap-2 h-9 text-xs font-bold shadow-sm bg-primary-foreground text-destructive hover:bg-primary-foreground/90 disabled:opacity-100 disabled:bg-transparent disabled:text-primary-foreground disabled:border-primary-foreground/70 disabled:shadow-none"
                 >
                   {isResetting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
