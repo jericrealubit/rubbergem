@@ -1133,6 +1133,12 @@ export default function ProductionForm({
         </Card>
 
         {/* Global Submit Trigger */}
+        {/* disabled:opacity-100 is load-bearing: the Button primitive's base
+            disabled:opacity-50 is a group opacity that fades the fill AND the
+            label together against the card, which collapsed the disabled
+            tokens below to ~2:1 in every theme. The label is the only thing
+            telling the operator why they can't submit, so it has to stay
+            readable -- the muted pair is already the "disabled" signal. */}
         <Button
           type="button"
           disabled={isAuthorized ? isSubmitting || !startTime : true}
@@ -1149,7 +1155,7 @@ export default function ProductionForm({
           onKeyUp={(e) => {
             if (e.key === "Enter" || e.key === " ") cancelHold();
           }}
-          className="relative overflow-hidden w-full h-12 ipad:h-10 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
+          className="relative overflow-hidden w-full h-12 ipad:h-10 disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
         >
           <span
             aria-hidden="true"

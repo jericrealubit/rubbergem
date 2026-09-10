@@ -1153,11 +1153,18 @@ export default function BanburyForm({
                 />
               </div>
 
+              {/* disabled:opacity-100 is load-bearing: the Button primitive's
+                  base disabled:opacity-50 is a group opacity that fades the fill
+                  AND the label together against the card, which collapsed the
+                  disabled tokens below to ~2:1 in every theme. The label is the
+                  only thing telling the operator why they can't submit, so it
+                  has to stay readable -- the muted pair is already the
+                  "disabled" signal. */}
               <Button
                 type="button"
                 disabled={!isAuthorized || isSubmitting || !canLogCheck}
                 onClick={handleLogCheck}
-                className="w-full h-12 font-bold tracking-wide uppercase text-sm shadow-md transition-colors disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
+                className="w-full h-12 font-bold tracking-wide uppercase text-sm shadow-md transition-colors disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
                 {isSubmitting && <Loader2 className="animate-spin" size={20} />}
                 {!isAuthorized

@@ -790,11 +790,18 @@ export default function BalesForm({
 
               {cycleOpen && (
                 <div className="space-y-2">
+                  {/* disabled:opacity-100 is load-bearing: the Button primitive's
+                      base disabled:opacity-50 is a group opacity that fades the fill
+                      AND the label together against the card, which collapsed the
+                      disabled tokens below to ~2:1 in every theme. The label is the
+                      only thing telling the operator why they can't submit, so it
+                      has to stay readable -- the muted pair is already the
+                      "disabled" signal. */}
                   <Button
                     type="button"
                     disabled={!isAuthorized || isSubmitting || !canFinalize}
                     onClick={handleFinishAndStartNext}
-                    className="w-full h-14 bg-primary hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
+                    className="w-full h-14 bg-primary hover:bg-primary/80 disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
                   >
                     {isSubmitting && (
                       <Loader2 className="animate-spin" size={20} />
@@ -807,11 +814,16 @@ export default function BalesForm({
                         ? "Enter Bales Produced to Finish"
                         : "Finish Cycle & Start Next"}
                   </Button>
+                  {/* disabled:opacity-40 put this label at 1.7:1 -- invisible.
+                      A disabled control still has to be readable, so it keeps
+                      full muted-foreground and goes inert via pointer-events
+                      instead; what it's unavailable for is already spelled out
+                      by the CTA directly above ("Login to finish cycle"). */}
                   <button
                     type="button"
                     disabled={!isAuthorized || isSubmitting}
                     onClick={() => setIsFinishShiftOpen(true)}
-                    className="w-full text-center text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors disabled:opacity-40"
+                    className="w-full text-center text-[11px] font-bold text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors disabled:pointer-events-none disabled:opacity-100"
                   >
                     End Shift — Enter Runtime Manually
                   </button>
