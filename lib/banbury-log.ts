@@ -12,7 +12,13 @@
 // the operator maintains directly on banbury_shift_config, not derived by
 // summing checklist entries.
 
-export { shiftGroupOf, cycleKey, mergeCycles, describeError } from "./shift-log";
+export {
+  shiftGroupOf,
+  cycleKey,
+  mergeCycles,
+  describeError,
+  isMissingColumnError,
+} from "./shift-log";
 export type { ShiftGroup, CycleIdentity } from "./shift-log";
 
 import type { CycleIdentity } from "./shift-log";

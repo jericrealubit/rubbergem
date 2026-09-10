@@ -11,3 +11,9 @@
 -- production_logs_rls.sql).
 
 ALTER TABLE public.live_log ADD COLUMN IF NOT EXISTS run_time_minutes INTEGER;
+
+-- PostgREST caches the schema; an ALTER alone does not invalidate it, so
+-- without this the column stays invisible to the API (PGRST204, "Could not
+-- find the 'run_time_minutes' column of 'live_log' in the schema cache")
+-- until the API restarts.
+NOTIFY pgrst, 'reload schema';

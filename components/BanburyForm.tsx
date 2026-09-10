@@ -5,6 +5,7 @@ import {
   mergeCycles,
   shiftGroupOf,
   describeError,
+  isMissingColumnError,
   BANBURY_DEFAULT_RUN_TIME_MINUTES,
   checkDowntimeMinutes,
   isCheckOverrun,
@@ -83,11 +84,18 @@ const DEFAULT_TICKS: Ticks = {
   liquidChemicals: true,
 };
 
+// The two banbury_live_log columns that only exist once
+// banbury_live_log_add_start_time.sql has been run against the database --
+// the pair logCheck drops and warns about when PostgREST says they're not
+// there. See lib/shift-log.ts's isMissingColumnError.
+const CYCLE_TIMING_COLUMNS = ["start_time", "run_time_minutes"] as const;
+
 interface RecentCheckRow {
   banbury_id: number;
   check_number: number;
   check_time: string | null;
-  run_time_minutes: number | null;
+  // Optional: absent entirely until banbury_live_log_add_start_time.sql runs.
+  run_time_minutes?: number | null;
   right_tank_level: string | null;
   left_tank_level: string | null;
   notes: string | null;
@@ -346,11 +354,14 @@ export default function BanburyForm({
   }, []);
 
   const fetchRecentChecks = async () => {
+    // Deliberately "*" rather than a column list: banbury_live_log gains
+    // columns through hand-run scripts (banbury_live_log_add_start_time.sql),
+    // and naming run_time_minutes here would make the whole Recent Checks
+    // panel fail with 42703 on a database that hasn't had that script applied
+    // yet. RecentCheckRow's extra fields just come back undefined instead.
     const { data } = await supabase
       .from("banbury_live_log")
-      .select(
-        "banbury_id, check_number, check_time, run_time_minutes, right_tank_level, left_tank_level, notes",
-      )
+      .select("*")
       .eq("shift_id", 1)
       .order("check_number", { ascending: false })
       .limit(5);
@@ -494,12 +505,14 @@ export default function BanburyForm({
       const startTimestamp = toTimestampIso(startTime);
       const endTimestamp = toTimestampIso(endTimeHHMM);
 
-      const payload = {
+      // Split deliberately: basePayload is the shape banbury_live_log has
+      // always had, and CYCLE_TIMING_COLUMNS is the pair added later by the
+      // hand-run banbury_live_log_add_start_time.sql. Keeping them separable
+      // is what lets the insert below retry without them.
+      const basePayload = {
         shift_id: 1,
         check_number: nextCheckNumber,
-        start_time: startTimestamp,
         check_time: endTimestamp,
-        run_time_minutes: durationMinutes,
         crumb_rubber: ticks.crumbRubber,
         other_rubbers: ticks.otherRubbers,
         powdered_chemicals: ticks.powderedChemicals,
@@ -511,9 +524,31 @@ export default function BanburyForm({
         notes,
         updated_at: nowIso,
       };
+      const payload = {
+        ...basePayload,
+        start_time: startTimestamp,
+        run_time_minutes: durationMinutes,
+      };
 
+      // Against a database that hasn't had that script applied -- or whose
+      // PostgREST is still serving a pre-ALTER schema cache -- this insert
+      // comes back as PGRST204 ("Could not find the 'run_time_minutes' column
+      // of 'banbury_live_log' in the schema cache") and the operator's whole
+      // check is lost mid-shift. Losing the check is far worse than losing its
+      // two timing fields, so fall back to the pre-migration shape and say
+      // loudly what needs running, in the same spirit as the 23505 retry
+      // further down.
+      let timingColumnsMissing = false;
       const { error } = await supabase.from("banbury_live_log").insert([payload]);
-      if (error) throw error;
+      if (error) {
+        if (!isMissingColumnError(error, CYCLE_TIMING_COLUMNS)) throw error;
+
+        timingColumnsMissing = true;
+        const { error: legacyError } = await supabase
+          .from("banbury_live_log")
+          .insert([basePayload]);
+        if (legacyError) throw legacyError;
+      }
 
       const { data: shiftRows } = await supabase
         .from("banbury_live_log")
@@ -647,6 +682,12 @@ export default function BanburyForm({
           overrunMinutes > 0 ? `, +${overrunMinutes}m downtime` : ""
         }) — next check cycle started.`,
       );
+      if (timingColumnsMissing) {
+        toast.warning(
+          "Cycle times aren't being saved: banbury_live_log is missing its start_time / run_time_minutes columns. The check itself was logged. Run banbury_live_log_add_start_time.sql in the Supabase SQL editor to fix it.",
+          { duration: 12000 },
+        );
+      }
       fetchRecentChecks();
     } catch (err) {
       console.error("Error logging check:", err);
@@ -1167,7 +1208,7 @@ export default function BanburyForm({
                               hour12: false,
                             }).format(new Date(c.check_time))
                           : "--:--"}
-                        {c.run_time_minutes !== null && (
+                        {c.run_time_minutes != null && (
                           <span
                             className={
                               isCheckOverrun(c.run_time_minutes)
