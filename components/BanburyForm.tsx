@@ -71,8 +71,9 @@ interface BanburyShiftLogRowRef {
  *  operator who did the task and then pressed its button turned that column
  *  into a cross. Press-to-confirm matches what the button looks like it does.
  *
- *  Logging a check is still NOT gated on all six being ticked -- a partly-done
- *  pass is a legitimate thing to record. */
+ *  All six are mandatory: Log Check stays disabled until every material is
+ *  ticked, alongside the check cycle being open and both tank levels being
+ *  filled in. */
 const TICK_FIELDS = [
   { key: "crumbRubber", label: "Crumb Rubber" },
   { key: "otherRubbers", label: "Other Rubbers" },
@@ -524,14 +525,14 @@ export default function BanburyForm({
   };
 
   // Log Check is gated the same way PressForm gates its submit button (a
-  // plain disabled condition): a check cycle has to be open and both tank
-  // levels have to carry a value. The six ticks are deliberately NOT part of
-  // this -- a pass where a material genuinely wasn't done is a finding the
-  // operator needs to be able to record, not something to block on.
+  // plain disabled condition): a check cycle has to be open, both tank
+  // levels have to carry a value, and all six material ticks have to be
+  // confirmed -- all three are mandatory before the operator can log.
   const cycleOpen = startTime !== "";
   const tanksFilled = rightTank.trim() !== "" && leftTank.trim() !== "";
-  const canLogCheck = cycleOpen && tanksFilled;
   const tickedCount = TICK_FIELDS.filter((f) => ticks[f.key]).length;
+  const allTicksDone = tickedCount === TICK_FIELDS.length;
+  const canLogCheck = cycleOpen && tanksFilled && allTicksDone;
 
   // banbury_production_logs holds exactly ONE row per (date, shift group),
   // same resolution strategy as Press/Bales' findShiftLogRow -- the database
@@ -1306,7 +1307,9 @@ export default function BanburyForm({
                       ? "Tap Start to open a check cycle"
                       : !tanksFilled
                         ? "Enter both tank levels"
-                        : "Log Check & Start Next"}
+                        : !allTicksDone
+                          ? "Confirm all 6 checks"
+                          : "Log Check & Start Next"}
               </Button>
             </CardContent>
           </Card>
