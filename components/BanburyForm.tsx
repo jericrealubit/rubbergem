@@ -1029,16 +1029,18 @@ export default function BanburyForm({
                       type="button"
                       aria-pressed={!checked}
                       onClick={() => toggleTick(field.key)}
-                      className={`h-11 rounded-[var(--radius-card)] border-[length:var(--border-width-card)] text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                      className={`h-11 rounded-[var(--radius-card)] border-[length:var(--border-width-card)] text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                         checked
                           ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-card)] hover:bg-primary/80"
                           : "border-muted-foreground/40 bg-muted text-muted-foreground shadow-inner hover:bg-muted/70"
                       }`}
                     >
-                      <span aria-hidden="true" className="text-xs leading-none">
-                        {checked ? "✓" : "✗"}
+                      <span className="leading-tight">
+                        <span aria-hidden="true" className="text-xs mr-1">
+                          {checked ? "✓" : "✗"}
+                        </span>
+                        {field.label}
                       </span>
-                      <span>{field.label}</span>
                     </button>
                   );
                 })}
