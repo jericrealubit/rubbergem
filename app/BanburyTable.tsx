@@ -7,6 +7,10 @@ import {
   checkDowntimeMinutes,
   isCheckOverrun,
 } from "@/lib/banbury-log";
+import {
+  clearCheckTimings,
+  readCheckTimings,
+} from "@/lib/banbury-check-timing";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,40 +124,50 @@ export default function BanburyTablePage({
       }
 
       if (data) {
-        const transformed: CheckEntry[] = data.map((row: any, index: number) => ({
-          id: row.banbury_id.toString(),
-          checkNumber: row.check_number ?? index + 1,
-          date: row.check_time
-            ? new Intl.DateTimeFormat("en-CA", {
-                timeZone: "Australia/Perth",
-              }).format(new Date(row.check_time))
-            : "---",
-          startTime: row.start_time
-            ? new Date(row.start_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "—",
-          time: row.check_time
-            ? new Date(row.check_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "--:--",
-          runTimeMinutes:
-            row.run_time_minutes === null || row.run_time_minutes === undefined
-              ? null
-              : Number(row.run_time_minutes),
-          crumbRubber: !!row.crumb_rubber,
-          otherRubbers: !!row.other_rubbers,
-          powderedChemicals: !!row.powdered_chemicals,
-          rpo: !!row.rpo,
-          sulphur: !!row.sulphur,
-          liquidChemicals: !!row.liquid_chemicals,
-          rightTankLevel: row.right_tank_level || "",
-          leftTankLevel: row.left_tank_level || "",
-          notes: row.notes || "",
-        }));
+        // On a database that hasn't had banbury_live_log_add_start_time.sql
+        // applied, start_time/run_time_minutes come back undefined on every
+        // row. The operator's own browser still knows them, so fall back to
+        // that rather than rendering a shift of blank cycle times -- see
+        // lib/banbury-check-timing.ts.
+        const shimmedTimings = readCheckTimings();
+        const transformed: CheckEntry[] = data.map((row: any, index: number) => {
+          const checkNumber = row.check_number ?? index + 1;
+          const shimmed = shimmedTimings[String(checkNumber)] ?? null;
+          return {
+            id: row.banbury_id.toString(),
+            checkNumber,
+            date: row.check_time
+              ? new Intl.DateTimeFormat("en-CA", {
+                  timeZone: "Australia/Perth",
+                }).format(new Date(row.check_time))
+              : "---",
+            startTime: row.start_time
+              ? new Date(row.start_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : (shimmed?.startTime ?? "—"),
+            time: row.check_time
+              ? new Date(row.check_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "--:--",
+            runTimeMinutes:
+              row.run_time_minutes === null || row.run_time_minutes === undefined
+                ? (shimmed?.runTimeMinutes ?? null)
+                : Number(row.run_time_minutes),
+            crumbRubber: !!row.crumb_rubber,
+            otherRubbers: !!row.other_rubbers,
+            powderedChemicals: !!row.powdered_chemicals,
+            rpo: !!row.rpo,
+            sulphur: !!row.sulphur,
+            liquidChemicals: !!row.liquid_chemicals,
+            rightTankLevel: row.right_tank_level || "",
+            leftTankLevel: row.left_tank_level || "",
+            notes: row.notes || "",
+          };
+        });
         setEntries(transformed);
       }
     } catch (err: any) {
@@ -249,6 +263,9 @@ export default function BanburyTablePage({
       localStorage.removeItem("banbury_production_log_id");
       // Any check cycle left open belonged to the shift just cleared.
       localStorage.removeItem("banbury_ws_start_time");
+      // Check numbers restart at 1, so shimmed timings for the cleared checks
+      // would land on the new shift's -- see lib/banbury-check-timing.ts.
+      clearCheckTimings();
 
       alert("Live log cleared. A new shift will start a fresh history entry.");
     } catch (err: any) {

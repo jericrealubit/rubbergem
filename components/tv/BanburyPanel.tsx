@@ -52,9 +52,10 @@ interface BanburyTrendRow extends ArchiveRow {
 }
 
 /**
- * The six material/chemical ticks on the paper form. BanburyForm pre-checks
- * all six and the operator un-ticks what wasn't done, so only an explicit
- * `false` is a miss — `null` (a check logged before a column existed) is not.
+ * The six material/chemical ticks on the paper form. BanburyForm starts every
+ * check unticked and the operator presses each one they've done, so only an
+ * explicit `false` is a miss — `null` (a check logged before a column existed)
+ * is not.
  */
 type TickKey =
   | "crumb_rubber"

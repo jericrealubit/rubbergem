@@ -9,9 +9,13 @@
 -- start_time/run_time_minutes were added later, hence the separate
 -- banbury_live_log_add_start_time.sql for tables already created.
 --
--- The six BOOLEAN columns default to true because the paper form's checks
--- are overwhelmingly all-ticked on every row -- components/BanburyForm.tsx
--- pre-checks all six so the operator only has to un-tick what wasn't done.
+-- The six BOOLEAN columns default to false: components/BanburyForm.tsx starts
+-- every check unticked and the operator presses a button once they've done
+-- that material, so an absent value means "not done", never "assumed done".
+-- They defaulted to true while the form ran inverted (all six pre-ticked, the
+-- operator un-ticking the exceptions) -- for a table already created under
+-- that shape, see banbury_live_log_flip_tick_defaults.sql. The app always
+-- writes all six explicitly, so the default only reaches hand-inserted rows.
 --
 -- right_tank_level/left_tank_level are TEXT, not NUMERIC, because the paper
 -- form records either a number (e.g. "302") or the word "Full" in the same
@@ -27,12 +31,12 @@ CREATE TABLE IF NOT EXISTS public.banbury_live_log (
   start_time          TIMESTAMPTZ,    -- cycle opened (TAP TO START)
   check_time          TIMESTAMPTZ,    -- cycle logged (the check itself)
   run_time_minutes    INTEGER,        -- check_time - start_time, minutes
-  crumb_rubber        BOOLEAN DEFAULT true,
-  other_rubbers       BOOLEAN DEFAULT true,
-  powdered_chemicals  BOOLEAN DEFAULT true,
-  rpo                 BOOLEAN DEFAULT true,
-  sulphur             BOOLEAN DEFAULT true,
-  liquid_chemicals    BOOLEAN DEFAULT true,
+  crumb_rubber        BOOLEAN DEFAULT false,
+  other_rubbers       BOOLEAN DEFAULT false,
+  powdered_chemicals  BOOLEAN DEFAULT false,
+  rpo                 BOOLEAN DEFAULT false,
+  sulphur             BOOLEAN DEFAULT false,
+  liquid_chemicals    BOOLEAN DEFAULT false,
   right_tank_level    TEXT,           -- numeric string or "Full"
   left_tank_level     TEXT,
   notes               TEXT,
