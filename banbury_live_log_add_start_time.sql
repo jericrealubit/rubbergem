@@ -30,3 +30,13 @@ ALTER TABLE public.banbury_live_log
 --   in the schema cache
 -- (PGRST204) until the API happens to restart. Always run it with the ALTERs.
 NOTIFY pgrst, 'reload schema';
+
+-- Verification. Run this on its own afterwards; it must return both rows. If
+-- it does and the app still warns that the columns are missing, the ALTERs
+-- landed but PostgREST is serving a stale cache -- re-run the NOTIFY above (or
+-- toggle anything in Settings -> API, which restarts it) and reload the page.
+SELECT column_name, data_type, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'banbury_live_log'
+  AND column_name IN ('start_time', 'run_time_minutes');

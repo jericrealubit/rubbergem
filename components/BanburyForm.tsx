@@ -11,6 +11,11 @@ import {
   isCheckOverrun,
 } from "@/lib/banbury-log";
 import type { BanburyCheckEntry } from "@/lib/banbury-log";
+import {
+  clearCheckTimings,
+  readCheckTimings,
+  rememberCheckTiming,
+} from "@/lib/banbury-check-timing";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,17 +57,22 @@ interface BanburyShiftLogRowRef {
   checks: unknown;
 }
 
-/** The six material/chemical checks on the paper sheet, default-checked since
- *  the sheet is overwhelmingly all-ticked on every row -- the operator only
- *  has to un-tick what wasn't actually checked this pass.
+/** The six material/chemical checks on the paper sheet.
  *
- *  That "un-tick the exceptions" flow is what drives the buttons' inverted
- *  colouring in the grid below: an untouched button is PRIMARY (checked, the
- *  default, themed the same as every other primary action in the app), and
- *  tapping SELECTS it as an exception, turning it muted grey. So primary is
- *  the resting state and grey is the deliberate one -- the opposite of a
- *  normal toggle, and the reason logging a check is NOT gated on all six
- *  being checked (a grey tick is a legitimate thing to record). */
+ *  A plain toggle: every check starts UNCHECKED (muted grey) and the operator
+ *  taps one once they have actually done that material, which fills the button
+ *  with the theme's primary colour. Whatever is filled at Log Check time is
+ *  written as `true` and renders as a green tick in the audit grid
+ *  (app/BanburyTable.tsx) and in History (components/BanburyHistory.tsx);
+ *  whatever is still grey is written as `false` and renders as a red cross.
+ *
+ *  This deliberately replaces the earlier inverted flow (all six pre-checked,
+ *  tapping marked an exception grey), which read backwards at the machine: an
+ *  operator who did the task and then pressed its button turned that column
+ *  into a cross. Press-to-confirm matches what the button looks like it does.
+ *
+ *  Logging a check is still NOT gated on all six being ticked -- a partly-done
+ *  pass is a legitimate thing to record. */
 const TICK_FIELDS = [
   { key: "crumbRubber", label: "Crumb Rubber" },
   { key: "otherRubbers", label: "Other Rubbers" },
@@ -76,13 +86,20 @@ type TickKey = (typeof TICK_FIELDS)[number]["key"];
 type Ticks = Record<TickKey, boolean>;
 
 const DEFAULT_TICKS: Ticks = {
-  crumbRubber: true,
-  otherRubbers: true,
-  powderedChemicals: true,
-  rpo: true,
-  sulphur: true,
-  liquidChemicals: true,
+  crumbRubber: false,
+  otherRubbers: false,
+  powderedChemicals: false,
+  rpo: false,
+  sulphur: false,
+  liquidChemicals: false,
 };
+
+/** Bumped from the un-suffixed "banbury_ws_ticks" when the six buttons stopped
+ *  being inverted: a value saved under the old key means the OPPOSITE thing
+ *  (all-true was "nothing flagged", not "all six done"), so restoring it here
+ *  would silently pre-tick every material. The old key is cleared on mount. */
+const TICKS_STORAGE_KEY = "banbury_ws_ticks_v2";
+const LEGACY_TICKS_STORAGE_KEY = "banbury_ws_ticks";
 
 // The two banbury_live_log columns that only exist once
 // banbury_live_log_add_start_time.sql has been run against the database --
@@ -113,6 +130,10 @@ export default function BanburyForm({
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
     count: number;
   } | null>(null);
+  // True once we know banbury_live_log_add_start_time.sql hasn't been applied
+  // to this database -- set by the probe on mount and by a failed insert, and
+  // rendered as a standing banner rather than a toast that scrolls away.
+  const [timingColumnsMissing, setTimingColumnsMissing] = useState(false);
   const [pendingProceed, setPendingProceed] = useState<
     (() => Promise<void>) | null
   >(null);
@@ -180,7 +201,7 @@ export default function BanburyForm({
 
   const [ticks, setTicks] = useState<Ticks>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("banbury_ws_ticks");
+      const saved = localStorage.getItem(TICKS_STORAGE_KEY);
       return saved ? { ...DEFAULT_TICKS, ...JSON.parse(saved) } : DEFAULT_TICKS;
     }
     return DEFAULT_TICKS;
@@ -261,7 +282,7 @@ export default function BanburyForm({
       );
 
       setStartTime(localStorage.getItem("banbury_ws_start_time") || "");
-      const savedTicks = localStorage.getItem("banbury_ws_ticks");
+      const savedTicks = localStorage.getItem(TICKS_STORAGE_KEY);
       setTicks(savedTicks ? { ...DEFAULT_TICKS, ...JSON.parse(savedTicks) } : DEFAULT_TICKS);
       setRightTank(localStorage.getItem("banbury_ws_right_tank") || "");
       setLeftTank(localStorage.getItem("banbury_ws_left_tank") || "");
@@ -334,7 +355,7 @@ export default function BanburyForm({
     localStorage.setItem("banbury_ws_start_time", startTime);
   }, [startTime]);
   useEffect(() => {
-    localStorage.setItem("banbury_ws_ticks", JSON.stringify(ticks));
+    localStorage.setItem(TICKS_STORAGE_KEY, JSON.stringify(ticks));
   }, [ticks]);
   useEffect(() => {
     localStorage.setItem("banbury_ws_right_tank", rightTank);
@@ -365,11 +386,59 @@ export default function BanburyForm({
       .eq("shift_id", 1)
       .order("check_number", { ascending: false })
       .limit(5);
-    if (data) setRecentChecks(data as RecentCheckRow[]);
+    if (!data) return;
+
+    // Fill the cycle length back in from the local shim for any row the
+    // database couldn't store it on -- see lib/banbury-check-timing.ts.
+    const timings = readCheckTimings();
+    setRecentChecks(
+      (data as RecentCheckRow[]).map((row) => ({
+        ...row,
+        run_time_minutes:
+          row.run_time_minutes ??
+          timings[String(row.check_number)]?.runTimeMinutes ??
+          null,
+      })),
+    );
   };
 
   useEffect(() => {
     fetchRecentChecks();
+  }, []);
+
+  // Find out about the missing cycle-timing columns BEFORE a shift's worth of
+  // checks has been logged against them. Discovering it from a failed insert
+  // (the fallback in logCheck) works, but the operator only learns from a
+  // toast, after the fact, once per check -- easy to miss on a machine.
+  // A one-row select is the cheapest way to ask PostgREST whether the columns
+  // resolve at all; on a database that does have them this also clears out any
+  // shimmed timings left over from before the script was run.
+  useEffect(() => {
+    // The six tick buttons stopped being inverted; a value under the old key
+    // means the opposite of what it says now (see TICKS_STORAGE_KEY).
+    localStorage.removeItem(LEGACY_TICKS_STORAGE_KEY);
+
+    let cancelled = false;
+    (async () => {
+      const { error } = await supabase
+        .from("banbury_live_log")
+        .select(CYCLE_TIMING_COLUMNS.join(","))
+        .limit(1);
+      if (cancelled) return;
+
+      if (isMissingColumnError(error, CYCLE_TIMING_COLUMNS)) {
+        setTimingColumnsMissing(true);
+      } else if (!error) {
+        setTimingColumnsMissing(false);
+        clearCheckTimings();
+      }
+      // Any other error (offline, RLS, ...) says nothing about the schema --
+      // leave the banner as it is rather than claiming the columns are fine.
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const toggleTick = (key: TickKey) => {
@@ -457,12 +526,12 @@ export default function BanburyForm({
   // Log Check is gated the same way PressForm gates its submit button (a
   // plain disabled condition): a check cycle has to be open and both tank
   // levels have to carry a value. The six ticks are deliberately NOT part of
-  // this -- they default to checked and turning one grey is a finding the
+  // this -- a pass where a material genuinely wasn't done is a finding the
   // operator needs to be able to record, not something to block on.
   const cycleOpen = startTime !== "";
   const tanksFilled = rightTank.trim() !== "" && leftTank.trim() !== "";
   const canLogCheck = cycleOpen && tanksFilled;
-  const flaggedCount = TICK_FIELDS.filter((f) => !ticks[f.key]).length;
+  const tickedCount = TICK_FIELDS.filter((f) => ticks[f.key]).length;
 
   // banbury_production_logs holds exactly ONE row per (date, shift group),
   // same resolution strategy as Press/Bales' findShiftLogRow -- the database
@@ -538,16 +607,30 @@ export default function BanburyForm({
       // two timing fields, so fall back to the pre-migration shape and say
       // loudly what needs running, in the same spirit as the 23505 retry
       // further down.
-      let timingColumnsMissing = false;
+      let timingDropped = false;
       const { error } = await supabase.from("banbury_live_log").insert([payload]);
       if (error) {
         if (!isMissingColumnError(error, CYCLE_TIMING_COLUMNS)) throw error;
 
-        timingColumnsMissing = true;
+        timingDropped = true;
         const { error: legacyError } = await supabase
           .from("banbury_live_log")
           .insert([basePayload]);
         if (legacyError) throw legacyError;
+      }
+      setTimingColumnsMissing(timingDropped);
+
+      // The row went in without its timing, so keep the numbers here instead
+      // of losing them: the aggregation below and the audit grid read them
+      // back out until the columns exist. On the happy path the shim is
+      // deleted -- the database is carrying the timing again.
+      if (timingDropped) {
+        rememberCheckTiming(nextCheckNumber, {
+          startTime,
+          runTimeMinutes: durationMinutes,
+        });
+      } else {
+        clearCheckTimings();
       }
 
       const { data: shiftRows } = await supabase
@@ -572,6 +655,13 @@ export default function BanburyForm({
       // cycleKey/mergeCycles still match the entry already sitting in
       // banbury_production_logs.checks instead of appending a duplicate of
       // it under a new key.
+      // run_time_minutes -- and only that -- is topped up from the local shim
+      // for rows the database couldn't store it on, so a shift logged against
+      // the pre-migration schema still archives its downtime. start_time and
+      // end_time are left exactly as the row shape dictates because cycleKey
+      // is built from them: shimming those would give the entry a new key and
+      // mergeCycles would append a duplicate of the one already archived.
+      const shimmedTimings = readCheckTimings();
       const aggregatedChecks: BanburyCheckEntry[] = (shiftRows || []).map(
         (r: any) => {
           const startPerth = fmtPerth(r.start_time);
@@ -580,7 +670,10 @@ export default function BanburyForm({
             cycle_number: r.check_number,
             start_time: startPerth ?? checkPerth,
             end_time: startPerth ? checkPerth : null,
-            run_time_minutes: r.run_time_minutes ?? null,
+            run_time_minutes:
+              r.run_time_minutes ??
+              shimmedTimings[String(r.check_number)]?.runTimeMinutes ??
+              null,
             crumb_rubber: r.crumb_rubber,
             other_rubbers: r.other_rubbers,
             powdered_chemicals: r.powdered_chemicals,
@@ -656,14 +749,14 @@ export default function BanburyForm({
         localStorage.setItem("banbury_production_log_id", savedLogId);
       }
 
-      // Notes, ticks, and tank levels all reset per entry: ticks default
-      // to all-checked (see DEFAULT_TICKS above) and both tank levels are
+      // Notes, ticks, and tank levels all reset per entry: ticks go back to
+      // all-unchecked (see DEFAULT_TICKS above) and both tank levels are
       // required on every check, so leaving a prior value in place would
       // either silently mis-mark or silently pre-fill the next check.
       setNotes("");
       localStorage.removeItem("banbury_ws_notes");
       setTicks(DEFAULT_TICKS);
-      localStorage.removeItem("banbury_ws_ticks");
+      localStorage.removeItem(TICKS_STORAGE_KEY);
       setRightTank("");
       localStorage.removeItem("banbury_ws_right_tank");
       setLeftTank("");
@@ -682,9 +775,9 @@ export default function BanburyForm({
           overrunMinutes > 0 ? `, +${overrunMinutes}m downtime` : ""
         }) — next check cycle started.`,
       );
-      if (timingColumnsMissing) {
+      if (timingDropped) {
         toast.warning(
-          "Cycle times aren't being saved: banbury_live_log is missing its start_time / run_time_minutes columns. The check itself was logged. Run banbury_live_log_add_start_time.sql in the Supabase SQL editor to fix it.",
+          "banbury_live_log is still missing its start_time / run_time_minutes columns — the check and its cycle time were kept, but the time is only on this device until the SQL is run. See the banner above.",
           { duration: 12000 },
         );
       }
@@ -770,6 +863,10 @@ export default function BanburyForm({
         );
       }
 
+      // Those rows are gone and check numbers restart at 1, so any timings
+      // shimmed for them would land on the new shift's checks.
+      clearCheckTimings();
+
       setStaleClearConfirm(null);
       toast.warning(
         `Cleared ${clearedCount} leftover check${clearedCount === 1 ? "" : "s"} from a previous shift.`,
@@ -811,6 +908,37 @@ export default function BanburyForm({
           </Button>
         )}
       </div>
+
+      {/* Standing setup warning, not a toast: this is a one-line fix an admin
+          has to make in the Supabase SQL editor, and until they do, every
+          cycle time the shift records lives only in this browser. It stays on
+          screen until the columns exist. */}
+      {timingColumnsMissing && (
+        <div
+          role="alert"
+          className="border-[length:var(--border-width-card)] border-destructive/50 bg-destructive/10 text-foreground rounded-[var(--radius-card)] p-3 flex gap-2.5"
+        >
+          <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+          <div className="space-y-1.5 min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wide text-destructive">
+              Database setup incomplete
+            </p>
+            <p className="text-[11px] leading-snug text-foreground/90">
+              <code className="font-mono font-semibold">banbury_live_log</code>{" "}
+              has no{" "}
+              <code className="font-mono font-semibold">start_time</code> /{" "}
+              <code className="font-mono font-semibold">run_time_minutes</code>{" "}
+              columns, so cycle times can&apos;t be stored. Checks still log
+              normally and their times are held on this device, but they
+              won&apos;t reach the audit table on any other screen. Run{" "}
+              <code className="font-mono font-semibold">
+                banbury_live_log_add_start_time.sql
+              </code>{" "}
+              in the Supabase SQL editor, then reload.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4 ipad:space-y-0 ipad:grid ipad:grid-cols-2 ipad:gap-4 ipad:items-start">
         <div className="space-y-4">
@@ -1057,10 +1185,12 @@ export default function BanburyForm({
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0 space-y-4">
-              {/* Inverted toggles: all six start checked in the theme's
-                  primary color (the paper sheet's normal row) and tapping
-                  one SELECTS it as grey -- the operator only marks what
-                  wasn't actually done. */}
+              {/* Press-to-confirm: all six start grey and tapping one fills it
+                  with the theme's primary colour, which is exactly what the
+                  audit grid then shows as a tick. No glyph inside the button --
+                  the fill IS the state, and a ✓/✗ on a button the operator
+                  presses to CONFIRM reads as the action rather than the
+                  result. aria-pressed carries the state for screen readers. */}
               <div className="grid grid-cols-2 gap-2">
                 {TICK_FIELDS.map((field) => {
                   const checked = ticks[field.key];
@@ -1068,7 +1198,7 @@ export default function BanburyForm({
                     <button
                       key={field.key}
                       type="button"
-                      aria-pressed={!checked}
+                      aria-pressed={checked}
                       onClick={() => toggleTick(field.key)}
                       className={`h-11 rounded-[var(--radius-card)] border-[length:var(--border-width-card)] text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                         checked
@@ -1076,25 +1206,24 @@ export default function BanburyForm({
                           : "border-muted-foreground/40 bg-muted text-muted-foreground shadow-inner hover:bg-muted/70"
                       }`}
                     >
-                      <span className="leading-tight">
-                        <span aria-hidden="true" className="text-xs mr-1">
-                          {checked ? "✓" : "✗"}
-                        </span>
-                        {field.label}
-                      </span>
+                      <span className="leading-tight">{field.label}</span>
                     </button>
                   );
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground leading-snug -mt-2">
-                All six start checked. Tap any that weren&apos;t done — it
-                turns grey and is logged as unchecked.
-                {flaggedCount > 0 && (
-                  <span className="font-bold text-foreground">
-                    {" "}
-                    {flaggedCount} marked unchecked.
-                  </span>
-                )}
+                Tap each material once you&apos;ve done it — it fills in and
+                the table shows a tick. Anything left grey logs as a cross.
+                <span
+                  className={`font-bold ${
+                    tickedCount === TICK_FIELDS.length
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {" "}
+                  {tickedCount} of {TICK_FIELDS.length} done.
+                </span>
               </p>
 
               <div className="grid grid-cols-2 gap-3">
