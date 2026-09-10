@@ -54,7 +54,7 @@ All three archives hold **exactly one row per `(date, shift group)`**, written l
 - **Chemical/tank checklist:** six material ticks (Crumb Rubber, Other Rubbers, Powdered Chemicals, RPO, Sulphur, Liquid Chemicals) that **default to ticked** — the paper sheet is overwhelmingly all-ticked, so the operator only un-ticks the exceptions. Logging a check is deliberately *not* gated on all six being green.
 - **Tank levels:** right/left, stored as `TEXT` because the paper cell holds either a number (`302`) or the word `Full`.
 - **Check cycles:** tap to open, log to close — the row spans `start_time` → `check_time` with `run_time_minutes` between them, and logging immediately opens the next cycle, so the interval doubles as "time since the last check".
-- **Total Downtime (14m):** every minute a check cycle runs past the standard 14-minute cycle, summed for the shift. Defined once in `lib/banbury-log.ts` (`BANBURY_DEFAULT_RUN_TIME_MINUTES`, `checkDowntimeMinutes`, `isCheckOverrun`, `totalDowntimeMinutes`) and consumed by the form, table and history so the three can't drift.
+- **Total Downtime (16m):** every minute a check cycle runs past the standard 16-minute cycle, summed for the shift. Defined once in `lib/banbury-log.ts` (`BANBURY_DEFAULT_RUN_TIME_MINUTES`, `checkDowntimeMinutes`, `isCheckOverrun`, `totalDowntimeMinutes`) and consumed by the form, table and history so the three can't drift.
 - **Shift-wide output totals:** unlike Press/Bales, a Banbury entry carries no output. Product, bag weight, batches made and 30-mesh bag count live on `banbury_shift_config`, and Tonnes (`bags × bag weight ÷ 1000`) and Average Output P/H (`tonnes ÷ run time`) are computed client-side from the sheet's own formulas and snapshotted into the archive.
 
 ### 3. Bales (`BalesForm` · `BalesProductionTable` · `BalesHistory`)
@@ -204,7 +204,7 @@ rubbergem/
 │   ├── supabase.ts                 # Supabase client (anon key)
 │   ├── line-accounts.ts            # The three per-line login accounts + active-line lookup
 │   ├── shift-log.ts                # Press shift identity, cycle merge, table yields
-│   ├── banbury-log.ts              # Banbury check merge + downtime helpers (14-minute cycle)
+│   ├── banbury-log.ts              # Banbury check merge + downtime helpers (16-minute cycle)
 │   ├── bales-log.ts                # Bales cycle merge + shift totals
 │   └── heatmap-color.ts            # Wallboard heatmap colour scale
 ├── shift_config.sql                # ─┐

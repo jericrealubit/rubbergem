@@ -506,8 +506,8 @@ export default function BanburyForm({
     return hh > 0 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
   };
 
-  // Live downtime for the open cycle: how far past the standard 14-minute
-  // check cycle it has run. Counts UP from -14:00 the way PressForm's Load
+  // Live downtime for the open cycle: how far past the standard 16-minute
+  // check cycle it has run. Counts UP from -16:00 the way PressForm's Load
   // Time readout counts up from minus the press run time, so the operator
   // sees the cycle burning down to zero and then, past it, the downtime the
   // shift is actually accruing.

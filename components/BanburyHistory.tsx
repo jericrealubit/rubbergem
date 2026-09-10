@@ -293,7 +293,7 @@ export default function BanburyHistory() {
                     const runTimeHours = day.runTimeMinutes / 60;
                     // Same computation as BanburyTable's live figure, run over
                     // the archived checks -- the minutes each check cycle ran
-                    // past the standard 14-minute cycle, summed.
+                    // past the standard 16-minute cycle, summed.
                     const totalDowntime = totalDowntimeMinutes(dayChecks);
 
                     return (

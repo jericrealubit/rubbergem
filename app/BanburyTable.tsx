@@ -288,7 +288,7 @@ export default function BanburyTablePage({
   ).length;
 
   // Shift downtime = the minutes every check cycle ran past the standard
-  // 14-minute cycle, summed. Same shape as ProductionTable's totalDowntime
+  // 16-minute cycle, summed. Same shape as ProductionTable's totalDowntime
   // for the Press, but measured on the check cycle's own length rather than
   // on a derived load time -- see lib/banbury-log.ts.
   const totalDowntime = entries.reduce(

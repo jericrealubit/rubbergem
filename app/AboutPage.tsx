@@ -78,8 +78,8 @@ const PRODUCTION_LINES = [
         text: "Right and left tank levels are required on every check, and accept either a number or the word \u201cFull\u201d, exactly like the paper cell.",
       },
       {
-        label: "Downtime past 14 minutes",
-        text: "A check cycle is timed from the moment you tap start to the moment you log it; every minute past the standard 14-minute cycle is added up as downtime for the shift.",
+        label: "Downtime past 16 minutes",
+        text: "A check cycle is timed from the moment you tap start to the moment you log it; every minute past the standard 16-minute cycle is added up as downtime for the shift.",
       },
       {
         label: "Shift output does the maths",
@@ -547,7 +547,7 @@ export default function AboutPage() {
                 </strong>{" "}
                 Adds up, across the whole shift, every minute run past the
                 standard cycle — beyond the 17-minute load target on Press,
-                and beyond the 14-minute check cycle on Banbury. Overrunning
+                and beyond the 16-minute check cycle on Banbury. Overrunning
                 entries and the shift total are both shown in red, so a slow
                 shift stands out at a glance.
               </li>

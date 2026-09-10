@@ -56,7 +56,7 @@ export interface BanburyCheckEntry extends CycleIdentity {
  * The Banbury's standard check-cycle length, in minutes -- the Banbury
  * equivalent of the Press's 17-minute load target
  * (DEFAULT_LOAD_TIME_MINUTES in app/ProductionTable.tsx). A check cycle is
- * expected to take 14 minutes end to end, so every minute a cycle runs past
+ * expected to take 16 minutes end to end, so every minute a cycle runs past
  * that is downtime.
  *
  * The Press measures its own overrun against a *derived* figure (load time =
@@ -71,7 +71,7 @@ export interface BanburyCheckEntry extends CycleIdentity {
  * and the archived total (components/BanburyHistory.tsx) can't drift apart --
  * the drift the Press's three separate copies of 17 invite.
  */
-export const BANBURY_DEFAULT_RUN_TIME_MINUTES = 14;
+export const BANBURY_DEFAULT_RUN_TIME_MINUTES = 16;
 
 /**
  * Minutes a single check cycle overran the standard cycle, clamped at 0 --
