@@ -56,11 +56,12 @@ interface BanburyShiftLogRowRef {
  *  has to un-tick what wasn't actually checked this pass.
  *
  *  That "un-tick the exceptions" flow is what drives the buttons' inverted
- *  colouring in the grid below: an untouched button is GREEN (checked, the
- *  default), and tapping SELECTS it as an exception, turning it grey. So
- *  green is the resting state and grey is the deliberate one -- the opposite
- *  of a normal toggle, and the reason logging a check is NOT gated on all
- *  six being green (a grey tick is a legitimate thing to record). */
+ *  colouring in the grid below: an untouched button is PRIMARY (checked, the
+ *  default, themed the same as every other primary action in the app), and
+ *  tapping SELECTS it as an exception, turning it muted grey. So primary is
+ *  the resting state and grey is the deliberate one -- the opposite of a
+ *  normal toggle, and the reason logging a check is NOT gated on all six
+ *  being checked (a grey tick is a legitimate thing to record). */
 const TICK_FIELDS = [
   { key: "crumbRubber", label: "Crumb Rubber" },
   { key: "otherRubbers", label: "Other Rubbers" },
@@ -445,8 +446,8 @@ export default function BanburyForm({
   // Log Check is gated the same way PressForm gates its submit button (a
   // plain disabled condition): a check cycle has to be open and both tank
   // levels have to carry a value. The six ticks are deliberately NOT part of
-  // this -- they default to green/checked and turning one grey is a finding
-  // the operator needs to be able to record, not something to block on.
+  // this -- they default to checked and turning one grey is a finding the
+  // operator needs to be able to record, not something to block on.
   const cycleOpen = startTime !== "";
   const tanksFilled = rightTank.trim() !== "" && leftTank.trim() !== "";
   const canLogCheck = cycleOpen && tanksFilled;
@@ -1015,9 +1016,10 @@ export default function BanburyForm({
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0 space-y-4">
-              {/* Inverted toggles: all six start GREEN (checked, the paper
-                  sheet's normal row) and tapping one SELECTS it as grey --
-                  the operator only marks what wasn't actually done. */}
+              {/* Inverted toggles: all six start checked in the theme's
+                  primary color (the paper sheet's normal row) and tapping
+                  one SELECTS it as grey -- the operator only marks what
+                  wasn't actually done. */}
               <div className="grid grid-cols-2 gap-2">
                 {TICK_FIELDS.map((field) => {
                   const checked = ticks[field.key];
@@ -1029,7 +1031,7 @@ export default function BanburyForm({
                       onClick={() => toggleTick(field.key)}
                       className={`h-11 rounded-[var(--radius-card)] border-[length:var(--border-width-card)] text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                         checked
-                          ? "border-success bg-success text-success-foreground shadow-[var(--shadow-card)] hover:bg-success/90"
+                          ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-card)] hover:bg-primary/80"
                           : "border-muted-foreground/40 bg-muted text-muted-foreground shadow-inner hover:bg-muted/70"
                       }`}
                     >
@@ -1042,8 +1044,8 @@ export default function BanburyForm({
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground leading-snug -mt-2">
-                All six start green (checked). Tap any that weren&apos;t done —
-                it turns grey and is logged as unchecked.
+                All six start checked. Tap any that weren&apos;t done — it
+                turns grey and is logged as unchecked.
                 {flaggedCount > 0 && (
                   <span className="font-bold text-foreground">
                     {" "}
