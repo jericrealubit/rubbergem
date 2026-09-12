@@ -70,8 +70,8 @@ const PRODUCTION_LINES = [
       "One entry per chemical and tank check, plus the shift-wide output totals from the bottom of the paper sheet.",
     points: [
       {
-        label: "Un-tick the exceptions",
-        text: "All six materials (Crumb Rubber, Other Rubbers, Powdered Chemicals, RPO, Sulphur, Liquid Chemicals) start ticked, because that is the normal row — you only mark what wasn't done.",
+        label: "Press what you did",
+        text: "All six materials (Crumb Rubber, Other Rubbers, Powdered Chemicals, RPO, Sulphur, Liquid Chemicals) start grey — press each one as you do it, and anything left grey reads as not done.",
       },
       {
         label: "Both tank levels every check",
