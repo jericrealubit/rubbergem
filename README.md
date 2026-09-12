@@ -9,7 +9,7 @@ A single-page operational tool for rubber manufacturing shift logging, covering 
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Realtime-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Static export](https://img.shields.io/badge/deploy-static%20export-0F766E)](https://nextjs.org/docs/app/guides/static-exports)
 
-**Live:** <https://waai.au/rubber> — the control-room wallboard is the `/tv` route of the same deployment.
+**Live:** <https://waai.au/rubbergem> — the control-room wallboard is the `/tv` route of the same deployment.
 
 ---
 
