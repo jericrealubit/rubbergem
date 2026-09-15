@@ -126,6 +126,10 @@ Each line is a self-contained module: its own entry form, live audit table and h
 
 All three archives hold **exactly one row per `(date, shift group)`**, written live as the shift runs. Identity is resolved from the database on every write (`localStorage` is only a per-browser fast path, never the identity), backed by a unique index — created directly for Banbury/Bales, and via the optional cleanup pass in `production_logs_dedupe.sql` for Press, whose table predates the rule. A losing insert returns SQLSTATE `23505` and is handled by re-resolving and updating. Cycles are **merged rather than replaced** on each write, so a mid-shift reset or a second terminal joining an open shift never splits or loses a shift's data.
 
+**The shift date is not the calendar date.** The night shift runs into the small hours — rostered to finish around 00:30, sometimes later — so a cycle logged at 00:19 belongs to the shift that *started the previous evening*. Every line files its work under `currentShiftDate()` (`lib/shift-log.ts`), which holds a night shift on the date it started until 06:00 and is recomputed on a timer so the rollover happens under a terminal left open. Cycle timestamps follow the same rule, so a 23:35 → 00:19 cycle ends on the *next* calendar day rather than before it began, and a night shift's cycles sort with the small hours last.
+
+Shift rows split by an earlier build are corrected on read — the History views fold an after-midnight night row back into the shift it belongs to — and `night_shift_midnight_fix.sql` repairs the stored rows themselves.
+
 ### 1. Press (`PressForm` · `ProductionTable` · `ProductionHistory`)
 
 - **Press switcher:** toggles the active config between **Press #1** and **Press #2**.
@@ -224,6 +228,7 @@ This project does **not** use a migration tool — the schema, RLS policies and 
 | `shift_config.sql` | `shift_config` table + RLS policies |
 | `production_logs_rls.sql` | RLS policies for `production_logs` |
 | `production_logs_dedupe.sql` | Optional cleanup pass, then the one-row-per-shift-day unique index |
+| `night_shift_midnight_fix.sql` | One-off repair: folds a night shift's after-midnight rows back into the shift they belong to (all three lines) |
 | `live_log_add_run_time.sql` | Adds `run_time_minutes` to `live_log` |
 | `reset_shift_log.txt` | The `reset_shift_log(p_shift_id text)` RPC — a pure delete of `live_log` + `shift_messages` |
 | `shift_messages.sql` | The chat table; the one place `anon` may INSERT |
@@ -310,7 +315,7 @@ rubbergem/
 ├── lib/
 │   ├── supabase.ts                 # Supabase client (anon key)
 │   ├── line-accounts.ts            # The three per-line login accounts + active-line lookup
-│   ├── shift-log.ts                # Press shift identity, cycle merge, table yields, error helpers
+│   ├── shift-log.ts                # Shift date/identity, night-past-midnight rules, cycle merge, table yields, error helpers
 │   ├── banbury-log.ts              # Banbury check merge + downtime helpers (16-minute cycle)
 │   ├── banbury-check-timing.ts     # Degraded-mode shim for banbury_live_log's timing columns
 │   ├── bales-log.ts                # Bales cycle merge + shift totals
@@ -320,6 +325,7 @@ rubbergem/
 ├── shift_config.sql                # ─┐
 ├── production_logs_rls.sql         #  │
 ├── production_logs_dedupe.sql      #  │
+├── night_shift_midnight_fix.sql    #  │
 ├── live_log_add_run_time.sql       #  ├─ Manual SQL, applied in the Supabase SQL editor
 ├── shift_messages.sql              #  │  (see "Database setup" above)
 ├── banbury_*.sql                   #  │

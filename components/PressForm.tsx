@@ -6,6 +6,8 @@ import {
   shiftGroupOf,
   tableYieldsFromCycles,
   describeError,
+  currentShiftDate,
+  shiftTimestamp,
 } from "@/lib/shift-log";
 import type { ArchivedCycle } from "@/lib/shift-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
@@ -242,13 +244,27 @@ export default function ProductionForm({
     localStorage.setItem("ws_notes", notes);
   }, [notes]);
 
+  // The date this terminal files its work under. Recomputed on a timer rather
+  // than once on mount, because a mount-time Perth date is wrong in both
+  // directions once the clock passes midnight:
+  //
+  //  - a night shift runs into the small hours, and the cycles logged after
+  //    midnight belong to the shift that *started* the previous evening, so
+  //    the whole shift lands in one production_logs row (see currentShiftDate
+  //    in lib/shift-log.ts) instead of opening a second one-cycle row on the
+  //    next day;
+  //  - a terminal left open since yesterday would otherwise keep writing under
+  //    yesterday's date all through today's shift.
+  //
+  // It also settles the stale-clear dialog correctly: findShiftLogRow looks
+  // the shift's row up by this date, so at 00:19 it now finds the night shift
+  // that is genuinely still open and stops offering to wipe its live cycles.
   useEffect(() => {
-    const formatted = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Australia/Perth",
-    }).format(new Date());
-
-    setCurrentDate(formatted);
-  }, []);
+    const syncShiftDate = () => setCurrentDate(currentShiftDate(shift));
+    syncShiftDate();
+    const interval = setInterval(syncShiftDate, 30000);
+    return () => clearInterval(interval);
+  }, [shift]);
 
   const nowHHMM = () =>
     new Date().toTimeString().split(" ")[0].substring(0, 5);
@@ -385,13 +401,12 @@ export default function ProductionForm({
 
       const nextCycleNumber = (latestEntry?.cycle_number || 0) + 1;
 
-      const startTimestamp = new Date(
-        `${currentDate}T${startTime}:00+08:00`,
-      ).toISOString();
-
-      const endTimestamp = new Date(
-        `${currentDate}T${endTimeHHMM}:00+08:00`,
-      ).toISOString();
+      // Both ends are placed relative to the shift's own date: on a night
+      // shift a small-hours time is the *next* calendar day, so a 23:35 ->
+      // 00:19 cycle no longer stores an end that falls before its start (and
+      // reports a negative run duration).
+      const startTimestamp = shiftTimestamp(currentDate, startTime, shift);
+      const endTimestamp = shiftTimestamp(currentDate, endTimeHHMM, shift);
 
       const formattedYieldJson: Record<string, any> = {};
 
@@ -469,7 +484,11 @@ export default function ProductionForm({
       // than overwriting: after a "Reset Shift Log" the live_log no longer
       // holds the earlier cycles, and they must survive in history.
       const buildLogRow = (existingCycles: unknown) => {
-        const mergedCycles = mergeCycles(existingCycles, aggregatedCycles);
+        const mergedCycles = mergeCycles(
+          existingCycles,
+          aggregatedCycles,
+          shiftGroupOf(operatorShift),
+        );
         const tableYields = tableYieldsFromCycles(mergedCycles);
 
         return {
