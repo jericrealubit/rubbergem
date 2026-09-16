@@ -518,6 +518,30 @@ export type TableYields = Record<
   { type?: string; good?: number; reject?: number }
 >;
 
+/**
+ * Mats for an archived Press shift, from the row's own stored totals.
+ *
+ * `production_logs.total_mats_produced` is a trap worth a helper: it archives
+ * the *good* count, not every mat pressed. The write path sums each table's
+ * `good` into it and each table's `reject` into `faulty_mats_produced`
+ * alongside, and a table is one or the other every cycle (the "max 1 reject
+ * per table per cycle" rule -- see CLAUDE.md), so all mats is the two added.
+ *
+ * That total is the figure the rest of the app already shows: the live audit
+ * table's "Total Mats Produced" (cycles x 4 tables), the wallboard KPI row's
+ * "Mats Produced", and History's per-shift `mats:`. A rate taken against
+ * `total_mats_produced` alone is rejects over *good*, which reads high and
+ * disagrees with all three.
+ */
+export function pressMatTotals(
+  row: Pick<PressShiftRow, "total_mats_produced" | "faulty_mats_produced">,
+): { good: number; rejects: number; mats: number; rejectRate: number } {
+  const good = row.total_mats_produced || 0;
+  const rejects = row.faulty_mats_produced || 0;
+  const mats = good + rejects;
+  return { good, rejects, mats, rejectRate: mats > 0 ? rejects / mats : 0 };
+}
+
 /** The production_logs columns a spillover fold has to combine. */
 export interface PressShiftRow {
   cycles?: unknown;
