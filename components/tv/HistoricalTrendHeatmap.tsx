@@ -23,6 +23,11 @@ interface HistoricalTrendHeatmapProps<T extends ArchiveRow> {
   channel: string;
   /** JSONB array column measuring a row's richness: "cycles" or "checks". */
   entriesColumn: string;
+  /**
+   * This line's midnight-spillover fold, passed straight through to
+   * useShiftArchive — must be the module-level import, not an inline arrow.
+   */
+  mergeSpillover: (host: T, spillover: T) => T;
   /** Render one slot; `row` is undefined when no shift ran that day/shift. */
   cellFor: (row: T | undefined) => TrendCell;
 }
@@ -32,7 +37,8 @@ interface HistoricalTrendHeatmapProps<T extends ArchiveRow> {
  *
  * Press reads it as a reject rate, Bales as a faulty-bale rate and Banbury as
  * lost minutes, so the severity mapping is the caller's — this component owns
- * the fetch, the one-row-per-(date, shift group) dedupe and the grid.
+ * the fetch, the resolution to one row per real shift (duplicates and
+ * after-midnight night rows alike, see useShiftArchive) and the grid.
  */
 export default function HistoricalTrendHeatmap<T extends ArchiveRow>({
   title,
@@ -40,10 +46,22 @@ export default function HistoricalTrendHeatmap<T extends ArchiveRow>({
   columns,
   channel,
   entriesColumn,
+  mergeSpillover,
   cellFor,
 }: HistoricalTrendHeatmapProps<T>) {
-  const cutoff = perthDate(DAYS_BACK);
-  const rows = useShiftArchive<T>(table, columns, channel, entriesColumn, cutoff);
+  // One day wider than the grid: a night shift on the oldest rendered day can
+  // have its after-midnight tail inside the window and its own row just
+  // outside it, and the fold needs both to put the cycles back on the shift
+  // that ran them. The extra day is fetched, not drawn.
+  const cutoff = perthDate(DAYS_BACK + 1);
+  const rows = useShiftArchive<T>(
+    table,
+    columns,
+    channel,
+    entriesColumn,
+    mergeSpillover,
+    cutoff,
+  );
 
   const byDateShift = new Map<string, T>();
   rows.forEach((row) => {

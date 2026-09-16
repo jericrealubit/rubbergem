@@ -128,7 +128,7 @@ All three archives hold **exactly one row per `(date, shift group)`**, written l
 
 **The shift date is not the calendar date.** The night shift runs into the small hours — rostered to finish around 00:30, sometimes later — so a cycle logged at 00:19 belongs to the shift that *started the previous evening*. Every line files its work under `currentShiftDate()` (`lib/shift-log.ts`), which holds a night shift on the date it started until 06:00 and is recomputed on a timer so the rollover happens under a terminal left open. Cycle timestamps follow the same rule, so a 23:35 → 00:19 cycle ends on the *next* calendar day rather than before it began, and a night shift's cycles sort with the small hours last.
 
-Shift rows split by an earlier build are corrected on read — the History views fold an after-midnight night row back into the shift it belongs to — and `night_shift_midnight_fix.sql` repairs the stored rows themselves.
+Shift rows split by an earlier build are corrected on read — History and the `/tv` wallboard both fold an after-midnight night row back into the shift it belongs to — and `night_shift_midnight_fix.sql` repairs the stored rows themselves.
 
 ### 1. Press (`PressForm` · `ProductionTable` · `ProductionHistory`)
 
@@ -181,7 +181,7 @@ Shift rows split by an earlier build are corrected on read — the History views
 
 - Reads each line's archive, grouped by month and day. Press and Banbury shifts toggle between a totals summary and the full entry-by-entry table; Bales shows the shift totals.
 - Day and Night shifts on the same date expand/collapse independently.
-- Duplicate rows from before the one-row-per-shift write path was fixed are collapsed on read (most entries wins, highest `id` breaking a tie), so they never render twice or double-count a month.
+- Duplicate rows from before the one-row-per-shift write path was fixed are collapsed on read (most entries wins, highest `id` breaking a tie), so they never render twice or double-count a month. A night row that is really the previous day's after-midnight tail is folded back into that shift by the same pass, so a night shift that ran to 00:19 reads as one shift rather than splitting across two dates.
 - Shows a clear error banner (instead of a silent empty list) if the fetch fails.
 
 ### Wallboard (`/tv`)
@@ -194,7 +194,7 @@ The one extra route in the app: a read-only control-room dashboard covering all 
 | **Bales** | Bales-per-cycle chart + live bag-change log |
 | **Banbury** | Material-check matrix, check cycle times, tank levels |
 
-Every line's header can also replay any archived shift from that line's history through the same widgets.
+Every line's header can also replay any archived shift from that line's history through the same widgets. The shift picker and the trend heatmap both read the archive through `useShiftArchive`, which applies the same `resolveShiftRows` pass History does — duplicates and after-midnight night rows alike — so the wallboard and History never disagree about what a shift was.
 
 ### Shift chat (`components/ChatPanel.tsx`)
 

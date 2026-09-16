@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { shiftGroupOf } from "@/lib/shift-log";
+import { mergeBalesShiftRows } from "@/lib/bales-log";
 import type { BalesArchivedCycle } from "@/lib/bales-log";
 import { rateToRedBucket } from "@/lib/heatmap-color";
 import TvHeader from "./TvHeader";
@@ -86,6 +87,7 @@ export default function BalesPanel({
     PICKER_COLUMNS,
     "tv-bales-history-picker-sync",
     "cycles",
+    mergeBalesShiftRows,
   );
 
   const historyOptions: BalesShiftHistoryOption[] = useMemo(
@@ -240,6 +242,7 @@ export default function BalesPanel({
           columns={TREND_COLUMNS}
           channel="tv-bales-production-logs-sync"
           entriesColumn="cycles"
+          mergeSpillover={mergeBalesShiftRows}
           cellFor={(row) => {
             if (!row) return { className: rateToRedBucket(null), text: "" };
             const produced = row.total_bales_produced || 0;

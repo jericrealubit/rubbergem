@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { shiftGroupOf, tableYieldsFromCycles, type ArchivedCycle } from "@/lib/shift-log";
+import {
+  mergePressShiftRows,
+  shiftGroupOf,
+  tableYieldsFromCycles,
+  type ArchivedCycle,
+} from "@/lib/shift-log";
 import { rateToRedBucket } from "@/lib/heatmap-color";
 import TvHeader from "./TvHeader";
 import TvKpiRow, { type KpiTile } from "./TvKpiRow";
@@ -71,6 +76,7 @@ export default function PressPanel({
     PICKER_COLUMNS,
     "tv-history-picker-sync",
     "cycles",
+    mergePressShiftRows,
   );
 
   const historyOptions: ShiftHistoryOption[] = useMemo(
@@ -196,6 +202,7 @@ export default function PressPanel({
           columns={TREND_COLUMNS}
           channel="tv-production-logs-sync"
           entriesColumn="cycles"
+          mergeSpillover={mergePressShiftRows}
           cellFor={(row) => {
             if (!row) return { className: rateToRedBucket(null), text: "" };
             const total = row.total_mats_produced || 0;

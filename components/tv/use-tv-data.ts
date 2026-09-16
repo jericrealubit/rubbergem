@@ -11,12 +11,15 @@
 // warns about, so the pattern lives here once and takes the table name as a
 // parameter.
 //
-// Every argument is a primitive so the effect dependency lists stay stable:
-// passing a callback or an options object would re-subscribe on every render.
+// Every argument that the fetch effect reads is a primitive so its dependency
+// list stays stable: passing an options object would re-subscribe on every
+// render. useShiftArchive's `mergeSpillover` is the one exception -- it is a
+// function, but it feeds the shift-resolution useMemo rather than the effect,
+// and every caller passes a module-level import whose identity never changes.
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { shiftGroupOf } from "@/lib/shift-log";
+import { resolveShiftRows, shiftGroupOf } from "@/lib/shift-log";
 
 /** The columns every `*_production_logs` table shares. */
 export interface ArchiveRow {
@@ -130,16 +133,23 @@ export function useShiftConfig<T>(
 }
 
 /**
- * A line's `*_production_logs` archive, collapsed to one row per
- * (date, shift group) — the richest row wins (most cycles/checks), highest
- * `id` breaking a tie, exactly as ProductionHistory/BalesHistory/
- * BanburyHistory do on read. Rows duplicated before the write paths were
- * fixed therefore never render twice here either.
+ * A line's `*_production_logs` archive, resolved to one row per real shift by
+ * the same `resolveShiftRows` the three History views use — duplicate rows for
+ * a (date, shift group) collapse to the richest one, and a night row that is
+ * really the previous day's after-midnight tail is folded into the shift it
+ * belongs to. Neither ever renders as its own shift on the wallboard.
  *
  * `entriesColumn` names the JSONB array that measures richness ("cycles" for
- * Press/Bales, "checks" for Banbury). `sinceDate` limits the fetch to a
- * trailing window (the trend heatmaps); omit it for the full archive (the
- * shift picker).
+ * Press/Bales, "checks" for Banbury), and `mergeSpillover` is that line's fold
+ * (mergePressShiftRows / mergeBalesShiftRows / mergeBanburyShiftRows) — pass
+ * the import itself, never an inline arrow, or the memo recomputes every
+ * render. `sinceDate` limits the fetch to a trailing window (the trend
+ * heatmaps); omit it for the full archive (the shift picker).
+ *
+ * Every returned row's own `date` is its shift's date: a fold merges into the
+ * host row, which already carries it, and a spillover row with no host keeps
+ * its own (see resolveShiftRows on why those are never moved). Callers can go
+ * on keying off `row.date`.
  *
  * Sorted newest first, night before day within a date.
  */
@@ -148,6 +158,7 @@ export function useShiftArchive<T extends ArchiveRow>(
   columns: string,
   channel: string,
   entriesColumn: string,
+  mergeSpillover: (host: T, spillover: T) => T,
   sinceDate?: string,
 ): T[] {
   const [rows, setRows] = useState<T[]>([]);
@@ -181,37 +192,24 @@ export function useShiftArchive<T extends ArchiveRow>(
     };
   }, [table, columns, channel, sinceDate]);
 
-  return useMemo(() => {
-    const byShift = new Map<string, T>();
-
-    rows.forEach((row) => {
-      const key = `${row.date}|${shiftGroupOf(row.operator_shift)}`;
-      const held = byShift.get(key);
-      const rowEntries = countEntries(row, entriesColumn);
-      const heldEntries = held ? countEntries(held, entriesColumn) : -1;
-      if (
-        !held ||
-        rowEntries > heldEntries ||
-        (rowEntries === heldEntries && row.id > held.id)
-      ) {
-        byShift.set(key, row);
-      }
-    });
-
-    return Array.from(byShift.values()).sort((a, b) => {
-      const byDate = b.date.localeCompare(a.date);
-      if (byDate !== 0) return byDate;
-      const aGroup = shiftGroupOf(a.operator_shift);
-      const bGroup = shiftGroupOf(b.operator_shift);
-      if (aGroup === bGroup) return 0;
-      return aGroup === "night" ? -1 : 1;
-    });
-  }, [rows, entriesColumn]);
-}
-
-function countEntries(row: ArchiveRow, entriesColumn: string): number {
-  const value = (row as unknown as Record<string, unknown>)[entriesColumn];
-  return Array.isArray(value) ? value.length : 0;
+  return useMemo(
+    () =>
+      resolveShiftRows<T>(rows, {
+        entriesOf: (row) =>
+          (row as unknown as Record<string, unknown>)[entriesColumn],
+        mergeSpillover,
+      })
+        .map((shift) => shift.row)
+        .sort((a, b) => {
+          const byDate = b.date.localeCompare(a.date);
+          if (byDate !== 0) return byDate;
+          const aGroup = shiftGroupOf(a.operator_shift);
+          const bGroup = shiftGroupOf(b.operator_shift);
+          if (aGroup === bGroup) return 0;
+          return aGroup === "night" ? -1 : 1;
+        }),
+    [rows, entriesColumn, mergeSpillover],
+  );
 }
 
 /** "Jeric (night)" -> "Jeric". */
