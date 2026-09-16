@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { shiftGroupOf, tableYieldsFromCycles, type ArchivedCycle } from "@/lib/shift-log";
+import {
+  mergePressShiftRows,
+  pressMatTotals,
+  shiftGroupOf,
+  tableYieldsFromCycles,
+  type ArchivedCycle,
+} from "@/lib/shift-log";
 import { rateToRedBucket } from "@/lib/heatmap-color";
 import TvHeader from "./TvHeader";
 import TvKpiRow, { type KpiTile } from "./TvKpiRow";
@@ -71,6 +77,7 @@ export default function PressPanel({
     PICKER_COLUMNS,
     "tv-history-picker-sync",
     "cycles",
+    mergePressShiftRows,
   );
 
   const historyOptions: ShiftHistoryOption[] = useMemo(
@@ -196,15 +203,18 @@ export default function PressPanel({
           columns={TREND_COLUMNS}
           channel="tv-production-logs-sync"
           entriesColumn="cycles"
+          mergeSpillover={mergePressShiftRows}
           cellFor={(row) => {
             if (!row) return { className: rateToRedBucket(null), text: "" };
-            const total = row.total_mats_produced || 0;
-            const faulty = row.faulty_mats_produced || 0;
-            const rate = total > 0 ? faulty / total : 0;
+            // Rejects over every mat pressed, not over the good ones --
+            // `total_mats_produced` archives good only, so pressMatTotals adds
+            // the rejects back to reach the same figure the KPI row above and
+            // the live audit table both call "Mats Produced".
+            const { rejects, mats, rejectRate } = pressMatTotals(row);
             return {
-              className: rateToRedBucket(rate),
-              text: `${(rate * 100).toFixed(0)}%`,
-              title: `${faulty} reject${faulty === 1 ? "" : "s"} of ${total} mats`,
+              className: rateToRedBucket(rejectRate),
+              text: `${(rejectRate * 100).toFixed(0)}%`,
+              title: `${rejects} reject${rejects === 1 ? "" : "s"} of ${mats} mats`,
             };
           }}
         />

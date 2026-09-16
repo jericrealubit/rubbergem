@@ -126,6 +126,10 @@ Each line is a self-contained module: its own entry form, live audit table and h
 
 All three archives hold **exactly one row per `(date, shift group)`**, written live as the shift runs. Identity is resolved from the database on every write (`localStorage` is only a per-browser fast path, never the identity), backed by a unique index — created directly for Banbury/Bales, and via the optional cleanup pass in `production_logs_dedupe.sql` for Press, whose table predates the rule. A losing insert returns SQLSTATE `23505` and is handled by re-resolving and updating. Cycles are **merged rather than replaced** on each write, so a mid-shift reset or a second terminal joining an open shift never splits or loses a shift's data.
 
+**The shift date is not the calendar date.** The night shift runs into the small hours — rostered to finish around 00:30, sometimes later — so a cycle logged at 00:19 belongs to the shift that *started the previous evening*. Every line files its work under `currentShiftDate()` (`lib/shift-log.ts`), which holds a night shift on the date it started until 06:00 and is recomputed on a timer so the rollover happens under a terminal left open. Cycle timestamps follow the same rule, so a 23:35 → 00:19 cycle ends on the *next* calendar day rather than before it began, and a night shift's cycles sort with the small hours last.
+
+Shift rows split by an earlier build are corrected on read — History and the `/tv` wallboard both fold an after-midnight night row back into the shift it belongs to — and `night_shift_midnight_fix.sql` repairs the stored rows themselves.
+
 ### 1. Press (`PressForm` · `ProductionTable` · `ProductionHistory`)
 
 - **Press switcher:** toggles the active config between **Press #1** and **Press #2**.
@@ -177,7 +181,8 @@ All three archives hold **exactly one row per `(date, shift group)`**, written l
 
 - Reads each line's archive, grouped by month and day. Press and Banbury shifts toggle between a totals summary and the full entry-by-entry table; Bales shows the shift totals.
 - Day and Night shifts on the same date expand/collapse independently.
-- Duplicate rows from before the one-row-per-shift write path was fixed are collapsed on read (most entries wins, highest `id` breaking a tie), so they never render twice or double-count a month.
+- Duplicate rows from before the one-row-per-shift write path was fixed are collapsed on read (most entries wins, highest `id` breaking a tie), so they never render twice or double-count a month. A night row that is really the previous day's after-midnight tail is folded back into that shift by the same pass, so a night shift that ran to 00:19 reads as one shift rather than splitting across two dates.
+- A month's `cycle:` / `mats:` / `G:` / `R:` figures are the sum of the day rows inside it — `mats:` counts every mat pressed (good + reject), matching each shift's own `mats:`, rather than totalling the archive's good-only `total_mats_produced` column.
 - Shows a clear error banner (instead of a silent empty list) if the fetch fails.
 
 ### Wallboard (`/tv`)
@@ -190,7 +195,7 @@ The one extra route in the app: a read-only control-room dashboard covering all 
 | **Bales** | Bales-per-cycle chart + live bag-change log |
 | **Banbury** | Material-check matrix, check cycle times, tank levels |
 
-Every line's header can also replay any archived shift from that line's history through the same widgets.
+Every line's header can also replay any archived shift from that line's history through the same widgets. The shift picker and the trend heatmap both read the archive through `useShiftArchive`, which applies the same `resolveShiftRows` pass History does — duplicates and after-midnight night rows alike — so the wallboard and History never disagree about what a shift was.
 
 ### Shift chat (`components/ChatPanel.tsx`)
 
@@ -224,6 +229,7 @@ This project does **not** use a migration tool — the schema, RLS policies and 
 | `shift_config.sql` | `shift_config` table + RLS policies |
 | `production_logs_rls.sql` | RLS policies for `production_logs` |
 | `production_logs_dedupe.sql` | Optional cleanup pass, then the one-row-per-shift-day unique index |
+| `night_shift_midnight_fix.sql` | One-off repair: folds a night shift's after-midnight rows back into the shift they belong to (all three lines) |
 | `live_log_add_run_time.sql` | Adds `run_time_minutes` to `live_log` |
 | `reset_shift_log.txt` | The `reset_shift_log(p_shift_id text)` RPC — a pure delete of `live_log` + `shift_messages` |
 | `shift_messages.sql` | The chat table; the one place `anon` may INSERT |
@@ -262,6 +268,8 @@ The `live_log` and `production_logs` tables themselves are expected to already e
 Read these before changing behaviour; each has bitten this codebase before.
 
 **Perth time is the shop clock.** The site runs on `Australia/Perth`, but timestamps are stored and compared several ways (`Intl.DateTimeFormat` with `timeZone: "Australia/Perth"`, manual `+08:00` offset construction in the forms, UTC conversions in SQL). When touching date/time logic, check the form's timestamp construction and its `currentDate` (Perth `YYYY-MM-DD`, used as `production_logs.date`) *together* — this has been a recurring source of off-by-one-day bugs.
+
+**`total_mats_produced` is the good count, not every mat.** The archive sums each table's `good` into `total_mats_produced` and each table's `reject` into `faulty_mats_produced`; a table is one or the other every cycle, so all mats is the two added — the same figure the live table shows as "cycles × 4 tables" and the wallboard KPI row as "Mats Produced". Take reject rates off an archived row with `pressMatTotals` (`lib/shift-log.ts`), never by dividing by `total_mats_produced` alone. Bales is a different shape: `bales_produced` and `faulty_bales_count` are independent per-cycle entries with faulty a subset of produced, so its faulty rate divides by `total_bales_produced` as it stands.
 
 **The reject rule lives in three places.** "Max 1 reject per table per cycle" is computed independently in `PressForm`'s submit handler (which bakes `good`/`reject` into each cycle's `short_mold_json`), in `tableYieldsFromCycles` (`lib/shift-log.ts`, which sums those across the shift's merged cycles) and in `ProductionTable`'s footer stats. Change one, change all three.
 
@@ -310,7 +318,7 @@ rubbergem/
 ├── lib/
 │   ├── supabase.ts                 # Supabase client (anon key)
 │   ├── line-accounts.ts            # The three per-line login accounts + active-line lookup
-│   ├── shift-log.ts                # Press shift identity, cycle merge, table yields, error helpers
+│   ├── shift-log.ts                # Shift date/identity, night-past-midnight rules, cycle merge, table yields, error helpers
 │   ├── banbury-log.ts              # Banbury check merge + downtime helpers (16-minute cycle)
 │   ├── banbury-check-timing.ts     # Degraded-mode shim for banbury_live_log's timing columns
 │   ├── bales-log.ts                # Bales cycle merge + shift totals
@@ -320,6 +328,7 @@ rubbergem/
 ├── shift_config.sql                # ─┐
 ├── production_logs_rls.sql         #  │
 ├── production_logs_dedupe.sql      #  │
+├── night_shift_midnight_fix.sql    #  │
 ├── live_log_add_run_time.sql       #  ├─ Manual SQL, applied in the Supabase SQL editor
 ├── shift_messages.sql              #  │  (see "Database setup" above)
 ├── banbury_*.sql                   #  │

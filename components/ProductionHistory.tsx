@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase"; // Ensure this import matches your project setup
 import {
-  shiftGroupOf,
   cycleKey,
   formatShortMolds,
+  resolveShiftRows,
+  mergePressShiftRows,
+  compareShiftCycles,
   type ArchivedCycle,
 } from "@/lib/shift-log";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,7 +54,6 @@ interface DayYield {
 interface MonthGroup {
   monthName: string;
   totalCycles: number;
-  totalMats: number;
   days: DayYield[];
 }
 
@@ -99,33 +100,28 @@ export default function ProductionHistory() {
           "December",
         ];
 
-        // A shift is one record per day: collapse any duplicate rows for the
-        // same (date, shift group) down to a single entry before rendering.
-        // Older rows predate the DB-backed row resolution in PressForm.tsx and
-        // can still be duplicated (a second terminal, a cleared browser store
-        // or a mid-shift reset each used to insert a fresh row) — keep the
-        // richest one, i.e. the most cycles, newest id breaking a tie.
-        const shiftsMap = new Map<string, RawProductionLog>();
-        rawLogs.forEach((log) => {
-          const key = `${log.date}|${shiftGroupOf(log.operator_shift)}`;
-          const held = shiftsMap.get(key);
-          if (!held) {
-            shiftsMap.set(key, log);
-            return;
-          }
-
-          const heldCycles = Array.isArray(held.cycles) ? held.cycles.length : 0;
-          const logCycles = Array.isArray(log.cycles) ? log.cycles.length : 0;
-          if (
-            logCycles > heldCycles ||
-            (logCycles === heldCycles && log.id > held.id)
-          ) {
-            shiftsMap.set(key, log);
-          }
+        // A shift is one record per day. resolveShiftRows applies both
+        // corrections the archive needs before anything renders (see
+        // lib/shift-log.ts):
+        //
+        //  - duplicate rows for the same (date, shift group) collapse to the
+        //    richest one — rows written before PressForm.tsx resolved its
+        //    archive row from the database can still be duplicated;
+        //  - a night row that is really the previous day's after-midnight tail
+        //    is merged back into that shift, so a night shift that ran to
+        //    00:19 shows as one shift with all its cycles instead of splitting
+        //    into a 13-cycle shift and a 1-cycle one on the next day.
+        //
+        // The split rows stay in the database until
+        // night_shift_midnight_fix.sql is run against it; this is what keeps
+        // History right in the meantime.
+        const shifts = resolveShiftRows<RawProductionLog>(rawLogs, {
+          entriesOf: (log) => log.cycles,
+          mergeSpillover: mergePressShiftRows,
         });
 
-        shiftsMap.forEach((log) => {
-          const dateParts = log.date.split("-");
+        shifts.forEach(({ date: shiftDate, group, row: log }) => {
+          const dateParts = shiftDate.split("-");
           const year = dateParts[0];
           const monthIdx = parseInt(dateParts[1], 10) - 1;
           const monthName = `${monthNames[monthIdx]} ${year}`;
@@ -134,12 +130,11 @@ export default function ProductionHistory() {
             monthsMap[monthName] = {
               monthName,
               totalCycles: 0,
-              totalMats: 0,
               days: [],
             };
           }
 
-          const isNight = shiftGroupOf(log.operator_shift) === "night";
+          const isNight = group === "night";
           const cleanOperator = log.operator_shift.split("(")[0].trim();
 
           const tables: Record<
@@ -171,10 +166,11 @@ export default function ProductionHistory() {
           const cyclesArray = Array.isArray(log.cycles) ? log.cycles : [];
 
           monthsMap[monthName].totalCycles += cyclesArray.length;
-          monthsMap[monthName].totalMats += log.total_mats_produced || 0;
           monthsMap[monthName].days.push({
             id: log.id,
-            dateString: log.date,
+            // The shift's own date, which for a folded after-midnight row is
+            // the evening it started, not the `date` column it was written to.
+            dateString: shiftDate,
             shift: isNight ? "Night" : "Day",
             operator: cleanOperator,
             tables,
@@ -281,6 +277,14 @@ export default function ProductionHistory() {
               acc + Object.values(d.tables).reduce((a, b) => a + b.good, 0),
             0,
           );
+          // Every mat pressed this month, which is exactly the sum of the
+          // `mats:` figures on the day rows inside it — both are good +
+          // reject off the same per-table yields. This used to total the
+          // stored `total_mats_produced`, which archives the *good* count
+          // alone (see pressMatTotals in lib/shift-log.ts), so a month
+          // reported fewer mats than its own days did and less than its own
+          // G: beside it.
+          const monthMats = monthGood + monthFaulty;
 
           return (
             <div key={month.monthName} className="space-y-1">
@@ -302,7 +306,7 @@ export default function ProductionHistory() {
                   <span className="normal-case text-[10px] font-sans font-medium text-muted-foreground ml-1">
                     (cycle:{month.totalCycles}{" "}
                     <span className="font-bold text-foreground">
-                      mats:{month.totalMats}
+                      mats:{monthMats}
                     </span>{" "}
                     <span className="text-success font-semibold">
                       G:{monthGood}
@@ -459,8 +463,12 @@ export default function ProductionHistory() {
                                     {dayCycles
                                       .slice()
                                       .sort((a, b) =>
-                                        (a.start_time || "").localeCompare(
-                                          b.start_time || "",
+                                        compareShiftCycles(
+                                          a,
+                                          b,
+                                          day.shift === "Night"
+                                            ? "night"
+                                            : "day",
                                         ),
                                       )
                                       .map((cycle, idx) => (

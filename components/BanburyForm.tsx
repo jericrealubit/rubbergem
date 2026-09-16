@@ -6,6 +6,8 @@ import {
   shiftGroupOf,
   describeError,
   isMissingColumnError,
+  currentShiftDate,
+  shiftTimestamp,
   BANBURY_DEFAULT_RUN_TIME_MINUTES,
   checkDowntimeMinutes,
   isCheckOverrun,
@@ -368,12 +370,17 @@ export default function BanburyForm({
     localStorage.setItem("banbury_ws_notes", notes);
   }, [notes]);
 
+  // The date this terminal files its work under -- recomputed on a timer so a
+  // night shift running past midnight stays on the date it started and lands
+  // in one banbury_production_logs row, and a terminal left open since
+  // yesterday picks today's date up. Same rule as PressForm; see
+  // currentShiftDate in lib/shift-log.ts.
   useEffect(() => {
-    const formatted = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Australia/Perth",
-    }).format(new Date());
-    setCurrentDate(formatted);
-  }, []);
+    const syncShiftDate = () => setCurrentDate(currentShiftDate(shift));
+    syncShiftDate();
+    const interval = setInterval(syncShiftDate, 30000);
+    return () => clearInterval(interval);
+  }, [shift]);
 
   const fetchRecentChecks = async () => {
     // Deliberately "*" rather than a column list: banbury_live_log gains
@@ -449,8 +456,10 @@ export default function BanburyForm({
   const nowHHMM = () =>
     new Date().toTimeString().split(" ")[0].substring(0, 5);
 
+  // Placed relative to the shift's own date, so a night shift's small-hours
+  // times land on the next calendar day rather than before the shift started.
   const toTimestampIso = (hhmm: string) =>
-    new Date(`${currentDate}T${hhmm}:00+08:00`).toISOString();
+    shiftTimestamp(currentDate, hhmm, shift);
 
   const handleStartTap = () => {
     setStartTime(nowHHMM());
@@ -701,7 +710,11 @@ export default function BanburyForm({
         tonnes,
         run_time_minutes: runTimeMinutesValue,
         average_output_ph: averageOutputPH,
-        checks: mergeCycles(existingChecks, aggregatedChecks),
+        checks: mergeCycles(
+          existingChecks,
+          aggregatedChecks,
+          shiftGroupOf(operatorShift),
+        ),
       });
 
       let targetRow: BanburyShiftLogRowRef | null = await findShiftLogRow();

@@ -6,6 +6,8 @@ import {
   shiftGroupOf,
   balesTotalsFromCycles,
   describeError,
+  currentShiftDate,
+  shiftTimestamp,
 } from "@/lib/bales-log";
 import type { BalesArchivedCycle } from "@/lib/bales-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
@@ -273,12 +275,17 @@ export default function BalesForm({
     localStorage.setItem("bales_ws_notes", notes);
   }, [notes]);
 
+  // The date this terminal files its work under -- recomputed on a timer so a
+  // night shift running past midnight stays on the date it started and lands
+  // in one bales_production_logs row, and a terminal left open since yesterday
+  // picks today's date up. Same rule as PressForm; see currentShiftDate in
+  // lib/shift-log.ts.
   useEffect(() => {
-    const formatted = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Australia/Perth",
-    }).format(new Date());
-    setCurrentDate(formatted);
-  }, []);
+    const syncShiftDate = () => setCurrentDate(currentShiftDate(shift));
+    syncShiftDate();
+    const interval = setInterval(syncShiftDate, 30000);
+    return () => clearInterval(interval);
+  }, [shift]);
 
   const fetchRecentBagChanges = async () => {
     const { data } = await supabase
@@ -297,8 +304,10 @@ export default function BalesForm({
   const nowHHMM = () =>
     new Date().toTimeString().split(" ")[0].substring(0, 5);
 
+  // Placed relative to the shift's own date, so a night shift's small-hours
+  // times land on the next calendar day rather than before the shift started.
   const toTimestampIso = (hhmm: string) =>
-    new Date(`${currentDate}T${hhmm}:00+08:00`).toISOString();
+    shiftTimestamp(currentDate, hhmm, shift);
 
   const handleStartTap = () => {
     setStartTime(nowHHMM());
@@ -441,7 +450,11 @@ export default function BalesForm({
       const operatorShift = `${operator} (${shift})`;
 
       const buildLogRow = (existingCycles: unknown) => {
-        const mergedCycles = mergeCycles(existingCycles, aggregatedCycles);
+        const mergedCycles = mergeCycles(
+          existingCycles,
+          aggregatedCycles,
+          shiftGroupOf(operatorShift),
+        );
         const totals = balesTotalsFromCycles(mergedCycles);
 
         return {

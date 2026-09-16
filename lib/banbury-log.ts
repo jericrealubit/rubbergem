@@ -16,11 +16,24 @@ export {
   shiftGroupOf,
   cycleKey,
   mergeCycles,
+  asCycleArray,
   describeError,
   isMissingColumnError,
+  currentShiftDate,
+  shiftTimestamp,
+  shiftTimeRank,
+  compareShiftCycles,
+  isNightMidnightSpillover,
+  resolveShiftRows,
 } from "./shift-log";
-export type { ShiftGroup, CycleIdentity } from "./shift-log";
+export type {
+  ShiftGroup,
+  CycleIdentity,
+  ResolvedShift,
+  ShiftArchiveRow,
+} from "./shift-log";
 
+import { asCycleArray, mergeCycles } from "./shift-log";
 import type { CycleIdentity } from "./shift-log";
 
 /**
@@ -107,4 +120,64 @@ export function totalDowntimeMinutes(
     (total, check) => total + checkDowntimeMinutes(check?.run_time_minutes),
     0,
   );
+}
+
+/** The banbury_production_logs columns a spillover fold has to combine. */
+export interface BanburyShiftRow {
+  checks?: unknown;
+  product?: string | null;
+  bag_weight_kg?: number | null;
+  batches_made?: number | null;
+  mesh_bags_count?: number | null;
+  tonnes?: number | null;
+  run_time_minutes?: number | null;
+  average_output_ph?: number | null;
+}
+
+/** The later of two operator-entered values, treating 0/blank as "not entered". */
+function latestEntered<V>(host: V, spillover: V): V {
+  if (typeof spillover === "number") return spillover !== 0 ? spillover : host;
+  return spillover ? spillover : host;
+}
+
+/**
+ * Fold a Banbury midnight-spillover row into the night shift that owns it --
+ * the Banbury counterpart of mergePressShiftRows (see lib/shift-log.ts).
+ *
+ * Only the checklist entries merge. Everything else on a Banbury row
+ * (Batches Made, # Bags, Tonnes, Run Time, Average Output P/H) is a
+ * shift-level scalar the operator maintains directly and the form rewrites in
+ * full on every check, so the two rows hold two snapshots of the same running
+ * totals, not two halves to add up -- adding them would double the shift.
+ * The spillover row is the later write, so its figures win wherever the
+ * operator actually entered one.
+ */
+export function mergeBanburyShiftRows<T extends BanburyShiftRow>(
+  host: T,
+  spillover: T,
+): T {
+  return {
+    ...host,
+    checks: mergeCycles<BanburyCheckEntry>(
+      asCycleArray<BanburyCheckEntry>(host.checks),
+      asCycleArray<BanburyCheckEntry>(spillover.checks),
+      "night",
+    ),
+    product: latestEntered(host.product, spillover.product),
+    bag_weight_kg: latestEntered(host.bag_weight_kg, spillover.bag_weight_kg),
+    batches_made: latestEntered(host.batches_made, spillover.batches_made),
+    mesh_bags_count: latestEntered(
+      host.mesh_bags_count,
+      spillover.mesh_bags_count,
+    ),
+    tonnes: latestEntered(host.tonnes, spillover.tonnes),
+    run_time_minutes: latestEntered(
+      host.run_time_minutes,
+      spillover.run_time_minutes,
+    ),
+    average_output_ph: latestEntered(
+      host.average_output_ph,
+      spillover.average_output_ph,
+    ),
+  };
 }

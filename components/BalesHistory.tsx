@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { shiftGroupOf } from "@/lib/bales-log";
+import { resolveShiftRows, mergeBalesShiftRows } from "@/lib/bales-log";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertCircle,
@@ -89,30 +89,17 @@ export default function BalesHistory() {
           "December",
         ];
 
-        // Same one-row-per-(date, shift group) collapse ProductionHistory.tsx
-        // does for Press: keep the richest row (most cycles, newest id
-        // breaking a tie) if duplicates ever exist.
-        const shiftsMap = new Map<string, RawBalesProductionLog>();
-        rawLogs.forEach((log) => {
-          const key = `${log.date}|${shiftGroupOf(log.operator_shift)}`;
-          const held = shiftsMap.get(key);
-          if (!held) {
-            shiftsMap.set(key, log);
-            return;
-          }
-
-          const heldCycles = Array.isArray(held.cycles) ? held.cycles.length : 0;
-          const logCycles = Array.isArray(log.cycles) ? log.cycles.length : 0;
-          if (
-            logCycles > heldCycles ||
-            (logCycles === heldCycles && log.id > held.id)
-          ) {
-            shiftsMap.set(key, log);
-          }
+        // Same resolution ProductionHistory.tsx does for Press: collapse any
+        // duplicate rows for a (date, shift group) to the richest one, then
+        // fold a night row that is really the previous day's after-midnight
+        // tail back into the shift it belongs to. See lib/shift-log.ts.
+        const shifts = resolveShiftRows<RawBalesProductionLog>(rawLogs, {
+          entriesOf: (log) => log.cycles,
+          mergeSpillover: mergeBalesShiftRows,
         });
 
-        shiftsMap.forEach((log) => {
-          const dateParts = log.date.split("-");
+        shifts.forEach(({ date: shiftDate, group, row: log }) => {
+          const dateParts = shiftDate.split("-");
           const year = dateParts[0];
           const monthIdx = parseInt(dateParts[1], 10) - 1;
           const monthName = `${monthNames[monthIdx]} ${year}`;
@@ -127,7 +114,7 @@ export default function BalesHistory() {
             };
           }
 
-          const isNight = shiftGroupOf(log.operator_shift) === "night";
+          const isNight = group === "night";
           const cleanOperator = log.operator_shift.split("(")[0].trim();
           const cyclesArray = Array.isArray(log.cycles) ? log.cycles : [];
 
@@ -136,7 +123,9 @@ export default function BalesHistory() {
           monthsMap[monthName].totalFaulty += log.total_faulty_bales || 0;
           monthsMap[monthName].days.push({
             id: log.id,
-            dateString: log.date,
+            // The shift's own date, which for a folded after-midnight row is
+            // the evening it started, not the `date` column it was written to.
+            dateString: shiftDate,
             shift: isNight ? "Night" : "Day",
             operator: cleanOperator,
             totalCycles: cyclesArray.length,

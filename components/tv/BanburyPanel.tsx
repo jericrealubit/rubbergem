@@ -5,6 +5,7 @@ import { shiftGroupOf } from "@/lib/shift-log";
 import {
   BANBURY_DEFAULT_RUN_TIME_MINUTES,
   isCheckOverrun,
+  mergeBanburyShiftRows,
   totalDowntimeMinutes,
   type BanburyCheckEntry,
 } from "@/lib/banbury-log";
@@ -125,6 +126,7 @@ export default function BanburyPanel({
     PICKER_COLUMNS,
     "tv-banbury-history-picker-sync",
     "checks",
+    mergeBanburyShiftRows,
   );
 
   const historyOptions: BanburyShiftHistoryOption[] = useMemo(
@@ -350,6 +352,7 @@ export default function BanburyPanel({
           columns={TREND_COLUMNS}
           channel="tv-banbury-production-logs-sync"
           entriesColumn="checks"
+          mergeSpillover={mergeBanburyShiftRows}
           cellFor={(row) => {
             if (!row) return { className: minutesToRedBucket(null), text: "" };
             const shiftChecks = Array.isArray(row.checks)

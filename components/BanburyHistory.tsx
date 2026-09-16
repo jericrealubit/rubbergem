@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
-  shiftGroupOf,
   cycleKey,
+  compareShiftCycles,
+  resolveShiftRows,
+  mergeBanburyShiftRows,
   BANBURY_DEFAULT_RUN_TIME_MINUTES,
   isCheckOverrun,
   totalDowntimeMinutes,
@@ -103,30 +105,17 @@ export default function BanburyHistory() {
           "July", "August", "September", "October", "November", "December",
         ];
 
-        // One row per (date, shift group) -- collapse any duplicates the
-        // same way ProductionHistory.tsx/BalesHistory.tsx do, keeping the
-        // richest (most checks), newest id breaking a tie.
-        const shiftsMap = new Map<string, RawBanburyProductionLog>();
-        rawLogs.forEach((log) => {
-          const key = `${log.date}|${shiftGroupOf(log.operator_shift)}`;
-          const held = shiftsMap.get(key);
-          if (!held) {
-            shiftsMap.set(key, log);
-            return;
-          }
-
-          const heldChecks = Array.isArray(held.checks) ? held.checks.length : 0;
-          const logChecks = Array.isArray(log.checks) ? log.checks.length : 0;
-          if (
-            logChecks > heldChecks ||
-            (logChecks === heldChecks && log.id > held.id)
-          ) {
-            shiftsMap.set(key, log);
-          }
+        // Same resolution ProductionHistory.tsx/BalesHistory.tsx do: collapse
+        // duplicate rows for a (date, shift group) to the richest one, then
+        // fold a night row that is really the previous day's after-midnight
+        // tail back into the shift it belongs to. See lib/shift-log.ts.
+        const shifts = resolveShiftRows<RawBanburyProductionLog>(rawLogs, {
+          entriesOf: (log) => log.checks,
+          mergeSpillover: mergeBanburyShiftRows,
         });
 
-        shiftsMap.forEach((log) => {
-          const dateParts = log.date.split("-");
+        shifts.forEach(({ date: shiftDate, group, row: log }) => {
+          const dateParts = shiftDate.split("-");
           const year = dateParts[0];
           const monthIdx = parseInt(dateParts[1], 10) - 1;
           const monthName = `${monthNames[monthIdx]} ${year}`;
@@ -140,7 +129,7 @@ export default function BanburyHistory() {
             };
           }
 
-          const isNight = shiftGroupOf(log.operator_shift) === "night";
+          const isNight = group === "night";
           const cleanOperator = log.operator_shift.split("(")[0].trim();
           const checksArray = Array.isArray(log.checks) ? log.checks : [];
 
@@ -148,7 +137,9 @@ export default function BanburyHistory() {
           monthsMap[monthName].totalBatches += log.batches_made || 0;
           monthsMap[monthName].days.push({
             id: log.id,
-            dateString: log.date,
+            // The shift's own date, which for a folded after-midnight row is
+            // the evening it started, not the `date` column it was written to.
+            dateString: shiftDate,
             shift: isNight ? "Night" : "Day",
             operator: cleanOperator,
             product: log.product || "—",
@@ -405,8 +396,12 @@ export default function BanburyHistory() {
                                     {dayChecks
                                       .slice()
                                       .sort((a, b) =>
-                                        (a.start_time || "").localeCompare(
-                                          b.start_time || "",
+                                        compareShiftCycles(
+                                          a,
+                                          b,
+                                          day.shift === "Night"
+                                            ? "night"
+                                            : "day",
                                         ),
                                       )
                                       .map((check, idx) => (
