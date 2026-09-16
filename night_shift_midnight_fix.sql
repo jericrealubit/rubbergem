@@ -43,6 +43,14 @@
 --
 -- Each line's section stands alone. If a line's tables do not exist on your
 -- project yet, skip that section rather than running the file end to end.
+--
+-- The three tables do not agree on how `date` is stored: production_logs
+-- predates the .sql files in this repo and holds a real DATE, while
+-- bales_production_logs.sql and banbury_production_logs.sql declare TEXT
+-- ('YYYY-MM-DD', Perth). Every comparison here is written `date::date` on
+-- both sides so it works either way -- `x::date = y::date - 1` rather than
+-- `x = to_char(...)`, which fails with "operator does not exist: date = text"
+-- against the DATE column.
 
 
 -- ===========================================================================
@@ -240,7 +248,7 @@ BEGIN
     LEFT JOIN LATERAL (
       SELECT p.id
       FROM public.%1$I p
-      WHERE p.date = to_char(s.date::date - 1, 'YYYY-MM-DD')
+      WHERE p.date::date = s.date::date - 1
         AND position('night' in lower(p.operator_shift)) > 0
         AND NOT public.night_fix_is_spillover(p.operator_shift, p.%2$I)
       ORDER BY jsonb_array_length(coalesce(p.%2$I, '[]'::jsonb)) DESC, p.id DESC
@@ -389,7 +397,7 @@ WHERE s.id IN (
 -- shift really started the previous evening, move it with
 --
 --   UPDATE public.production_logs
---   SET date = to_char(date::date - 1, 'YYYY-MM-DD')
+--   SET date = date::date - 1
 --   WHERE id = <the id below>;
 -- ---------------------------------------------------------------------------
 
