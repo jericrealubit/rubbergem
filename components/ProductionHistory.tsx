@@ -54,7 +54,6 @@ interface DayYield {
 interface MonthGroup {
   monthName: string;
   totalCycles: number;
-  totalMats: number;
   days: DayYield[];
 }
 
@@ -131,7 +130,6 @@ export default function ProductionHistory() {
             monthsMap[monthName] = {
               monthName,
               totalCycles: 0,
-              totalMats: 0,
               days: [],
             };
           }
@@ -168,7 +166,6 @@ export default function ProductionHistory() {
           const cyclesArray = Array.isArray(log.cycles) ? log.cycles : [];
 
           monthsMap[monthName].totalCycles += cyclesArray.length;
-          monthsMap[monthName].totalMats += log.total_mats_produced || 0;
           monthsMap[monthName].days.push({
             id: log.id,
             // The shift's own date, which for a folded after-midnight row is
@@ -280,6 +277,14 @@ export default function ProductionHistory() {
               acc + Object.values(d.tables).reduce((a, b) => a + b.good, 0),
             0,
           );
+          // Every mat pressed this month, which is exactly the sum of the
+          // `mats:` figures on the day rows inside it — both are good +
+          // reject off the same per-table yields. This used to total the
+          // stored `total_mats_produced`, which archives the *good* count
+          // alone (see pressMatTotals in lib/shift-log.ts), so a month
+          // reported fewer mats than its own days did and less than its own
+          // G: beside it.
+          const monthMats = monthGood + monthFaulty;
 
           return (
             <div key={month.monthName} className="space-y-1">
@@ -301,7 +306,7 @@ export default function ProductionHistory() {
                   <span className="normal-case text-[10px] font-sans font-medium text-muted-foreground ml-1">
                     (cycle:{month.totalCycles}{" "}
                     <span className="font-bold text-foreground">
-                      mats:{month.totalMats}
+                      mats:{monthMats}
                     </span>{" "}
                     <span className="text-success font-semibold">
                       G:{monthGood}

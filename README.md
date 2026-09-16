@@ -182,6 +182,7 @@ Shift rows split by an earlier build are corrected on read — History and the `
 - Reads each line's archive, grouped by month and day. Press and Banbury shifts toggle between a totals summary and the full entry-by-entry table; Bales shows the shift totals.
 - Day and Night shifts on the same date expand/collapse independently.
 - Duplicate rows from before the one-row-per-shift write path was fixed are collapsed on read (most entries wins, highest `id` breaking a tie), so they never render twice or double-count a month. A night row that is really the previous day's after-midnight tail is folded back into that shift by the same pass, so a night shift that ran to 00:19 reads as one shift rather than splitting across two dates.
+- A month's `cycle:` / `mats:` / `G:` / `R:` figures are the sum of the day rows inside it — `mats:` counts every mat pressed (good + reject), matching each shift's own `mats:`, rather than totalling the archive's good-only `total_mats_produced` column.
 - Shows a clear error banner (instead of a silent empty list) if the fetch fails.
 
 ### Wallboard (`/tv`)
