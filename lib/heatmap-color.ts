@@ -10,6 +10,10 @@
 // theme for legibility against that theme's own `--background`/`--card` --
 // so the same opacity ramp reads correctly whether the active theme is light
 // or dark, with no per-theme branching needed here.
+//
+// One ramp is `--warning` rather than `--destructive` -- countToAmberBucket,
+// for B-grade, which is a downgrade rather than scrap. It keeps the red
+// ramp's thresholds so the two stay comparable; see its own note.
 
 /**
  * Bucket a raw defect count (occurrences at one position/side this shift).
@@ -24,6 +28,28 @@ export function countToRedBucket(count: number): string {
   if (count <= 6) return "bg-destructive/50";
   if (count <= 10) return "bg-destructive/70";
   return "bg-destructive";
+}
+
+/**
+ * Bucket a B-grade count on the same steps as countToRedBucket, in `--warning`
+ * instead of `--destructive`.
+ *
+ * The one place /tv departs from the single `--destructive` hue, and
+ * deliberately: a B-grade mat is a downgrade, not scrap, and it is amber
+ * everywhere else it is counted (the live table's `B:` chip, History's
+ * per-table column). On one red ramp a table with six B-grades would read
+ * exactly like a table with six short-molds, which is the distinction the
+ * cell exists to draw. The *thresholds* are deliberately identical, so the
+ * two ramps stay directly comparable in magnitude -- only the hue says which
+ * kind of defect it is.
+ */
+export function countToAmberBucket(count: number): string {
+  if (count === 0) return "bg-muted";
+  if (count === 1) return "bg-warning/15";
+  if (count <= 3) return "bg-warning/30";
+  if (count <= 6) return "bg-warning/50";
+  if (count <= 10) return "bg-warning/70";
+  return "bg-warning";
 }
 
 /**
