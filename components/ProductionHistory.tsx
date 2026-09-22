@@ -32,11 +32,13 @@ interface RawProductionLog {
   accumulated_load_time_minutes: number;
   total_mats_produced: number;
   faulty_mats_produced: number;
+  // b_grade is optional: it is a breakdown of `reject` added later, so rows
+  // archived before it exist without the key and read as 0 B-grade.
   table_line_output_yields: {
-    table_1: { type: string; good: number; reject: number };
-    table_2: { type: string; good: number; reject: number };
-    table_3: { type: string; good: number; reject: number };
-    table_4: { type: string; good: number; reject: number };
+    table_1: { type: string; good: number; reject: number; b_grade?: number };
+    table_2: { type: string; good: number; reject: number; b_grade?: number };
+    table_3: { type: string; good: number; reject: number; b_grade?: number };
+    table_4: { type: string; good: number; reject: number; b_grade?: number };
   };
   cycles: ArchivedCycle[];
 }
@@ -46,7 +48,10 @@ interface DayYield {
   dateString: string;
   shift: "Day" | "Night";
   operator: string;
-  tables: Record<number, { matType: string; good: number; reject: number }>;
+  tables: Record<
+    number,
+    { matType: string; good: number; reject: number; bGrade: number }
+  >;
   totalCycles: number;
   cycles: ArchivedCycle[]; // <-- FIX 1: Added cycles array to interface
 }
@@ -139,27 +144,31 @@ export default function ProductionHistory() {
 
           const tables: Record<
             number,
-            { matType: string; good: number; reject: number }
+            { matType: string; good: number; reject: number; bGrade: number }
           > = {
             1: {
               matType: log.table_line_output_yields?.table_1?.type || "—",
               good: log.table_line_output_yields?.table_1?.good || 0,
               reject: log.table_line_output_yields?.table_1?.reject || 0,
+              bGrade: log.table_line_output_yields?.table_1?.b_grade || 0,
             },
             2: {
               matType: log.table_line_output_yields?.table_2?.type || "—",
               good: log.table_line_output_yields?.table_2?.good || 0,
               reject: log.table_line_output_yields?.table_2?.reject || 0,
+              bGrade: log.table_line_output_yields?.table_2?.b_grade || 0,
             },
             3: {
               matType: log.table_line_output_yields?.table_3?.type || "—",
               good: log.table_line_output_yields?.table_3?.good || 0,
               reject: log.table_line_output_yields?.table_3?.reject || 0,
+              bGrade: log.table_line_output_yields?.table_3?.b_grade || 0,
             },
             4: {
               matType: log.table_line_output_yields?.table_4?.type || "—",
               good: log.table_line_output_yields?.table_4?.good || 0,
               reject: log.table_line_output_yields?.table_4?.reject || 0,
+              bGrade: log.table_line_output_yields?.table_4?.b_grade || 0,
             },
           };
 
@@ -525,6 +534,7 @@ export default function ProductionHistory() {
                                     matType: "---",
                                     good: 0,
                                     reject: 0,
+                                    bGrade: 0,
                                   };
                                   return (
                                     <div
@@ -539,7 +549,11 @@ export default function ProductionHistory() {
                                           {tableData.matType}
                                         </span>
                                       </div>
-                                      <div className="grid grid-cols-2 text-center pt-0.5">
+                                      {/* B-grade is part of Reject beside it,
+                                          not a bucket of its own -- hence the
+                                          "of which" title rather than a third
+                                          figure that looks addable. */}
+                                      <div className="grid grid-cols-3 text-center pt-0.5">
                                         <div className="border-r border-border/80">
                                           <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">
                                             Good
@@ -548,7 +562,7 @@ export default function ProductionHistory() {
                                             {tableData.good}
                                           </p>
                                         </div>
-                                        <div>
+                                        <div className="border-r border-border/80">
                                           <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">
                                             Reject
                                           </p>
@@ -556,6 +570,18 @@ export default function ProductionHistory() {
                                             className={`text-xs font-black font-mono ${tableData.reject > 0 ? "text-destructive animate-pulse" : "text-muted-foreground"}`}
                                           >
                                             {tableData.reject}
+                                          </p>
+                                        </div>
+                                        <div
+                                          title={`${tableData.bGrade} B-grade, counted in the ${tableData.reject} reject${tableData.reject === 1 ? "" : "s"}`}
+                                        >
+                                          <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">
+                                            B-Grade
+                                          </p>
+                                          <p
+                                            className={`text-xs font-black font-mono ${tableData.bGrade > 0 ? "text-warning" : "text-muted-foreground"}`}
+                                          >
+                                            {tableData.bGrade}
                                           </p>
                                         </div>
                                       </div>

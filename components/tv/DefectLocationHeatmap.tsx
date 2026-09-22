@@ -1,9 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { countToRedBucket } from "@/lib/heatmap-color";
+import { countToAmberBucket, countToRedBucket } from "@/lib/heatmap-color";
+import { B_GRADE_POSITION } from "@/lib/shift-log";
 import type { LiveLogRow } from "./types";
 
+// Every value a cycle's `position` can hold -- the 5 grid positions plus the
+// two defect grades, which are not places on the table but are tallied here
+// all the same: they are rejects the wallboard's KPI row counts, so leaving
+// them out would show a reject total with nothing under it to explain it.
 const POSITIONS = [
   "top-left",
   "top-right",
@@ -11,6 +16,7 @@ const POSITIONS = [
   "bottom-left",
   "bottom-right",
   "bubble",
+  B_GRADE_POSITION,
 ] as const;
 type Position = (typeof POSITIONS)[number];
 
@@ -27,6 +33,7 @@ function emptyTally(): TableDefectTally {
       "bottom-left": 0,
       "bottom-right": 0,
       bubble: 0,
+      [B_GRADE_POSITION]: 0,
     },
   };
 }
@@ -58,14 +65,20 @@ function PositionCell({
   count,
   label,
   className = "",
+  bucket = countToRedBucket,
 }: {
   count: number;
   label?: string;
   className?: string;
+  /**
+   * Magnitude ramp for this cell. Defaults to the red one every other cell
+   * uses; B-grade passes countToAmberBucket, which shares its thresholds.
+   */
+  bucket?: (count: number) => string;
 }) {
   return (
     <div
-      className={`w-11 h-11 rounded flex items-center justify-center gap-1 text-sm font-mono font-bold text-foreground ${countToRedBucket(count)} ${className}`}
+      className={`w-11 h-11 rounded flex items-center justify-center gap-1 text-sm font-mono font-bold text-foreground ${bucket(count)} ${className}`}
     >
       {label && (
         <span className="text-[9px] font-sans font-bold uppercase tracking-wide">
@@ -131,11 +144,27 @@ export default function DefectLocationHeatmap({
                     className="col-start-2 row-start-3"
                   />
                 </div>
-                <PositionCell
-                  count={tally.positions.bubble}
-                  label="Bubble"
-                  className="!w-full h-8"
-                />
+                {/* The two defect grades sit under the position grid,
+                    because neither is a place on the table -- as one row, not
+                    two, so the column is no taller than it was with Bubble
+                    alone: a second row overflowed the card at 1280x720, where
+                    /tv's overflow-hidden clips rather than scrolls. The column
+                    is ~214px wide even there, so both labels still fit.
+                    B-grade is amber, as everywhere else it is counted -- on
+                    the red ramp six B-grades would read as six short-molds. */}
+                <div className="flex w-full gap-1.5">
+                  <PositionCell
+                    count={tally.positions.bubble}
+                    label="Bubble"
+                    className="!w-auto flex-1 h-8"
+                  />
+                  <PositionCell
+                    count={tally.positions[B_GRADE_POSITION]}
+                    label="B-Grade"
+                    bucket={countToAmberBucket}
+                    className="!w-auto flex-1 h-8"
+                  />
+                </div>
               </div>
             </div>
           );
