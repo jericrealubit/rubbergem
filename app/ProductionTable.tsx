@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { B_GRADE_POSITION, formatRejectPosition } from "@/lib/shift-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -293,15 +294,23 @@ export default function ProductionTablePage({
     }
   });
 
+  // `bGrade` counts a *subset* of `reject`, not a third bucket beside it: a
+  // B-grade mat is one of the rejects already counted (the defect grades share
+  // the position radio, so a table is good or rejected once per cycle and
+  // never both), flagged by the position it was logged under. Keeping it a
+  // breakdown is what keeps good + reject the cycle count here and in every
+  // total taken off it -- the footer cards, production_logs, the wallboard.
   const getTableStats = (id: number) => {
     let good = 0;
     let reject = 0;
+    let bGrade = 0;
 
     entries.forEach((entry) => {
-      const hasShortMold = !!entry.selectedTableSquares?.[id];
+      const position = entry.selectedTableSquares?.[id];
 
-      if (hasShortMold) {
+      if (position) {
         reject++;
+        if (position === B_GRADE_POSITION) bGrade++;
       } else {
         good++;
       }
@@ -311,6 +320,7 @@ export default function ProductionTablePage({
       matType: matTypes[id] || "—",
       good,
       reject,
+      bGrade,
     };
   };
 
@@ -521,13 +531,27 @@ export default function ProductionTablePage({
                       </span>
                     </div>
                     <div className="flex flex-col items-end text-[10px] font-bold gap-0.5 shrink-0">
-                      <span className="text-success bg-success/10 px-1.5 py-0.5 rounded font-mono">
+                      <span
+                        className="text-success bg-success/10 px-1.5 py-0.5 rounded font-mono"
+                        title={`${stats.good} good`}
+                      >
                         G: {stats.good}
                       </span>
+                      {/* R is every reject, B the B-grade ones among them, so
+                          the titles spell the relationship out -- three bare
+                          counts in a column otherwise invite reading G+R+B as
+                          the table's mats, which double-counts every B-grade. */}
                       <span
                         className={`px-1.5 py-0.5 rounded font-mono ${stats.reject > 0 ? "text-destructive bg-destructive/10" : "text-muted-foreground bg-muted"}`}
+                        title={`${stats.reject} reject${stats.reject === 1 ? "" : "s"} in total, ${stats.bGrade} of them B-grade`}
                       >
                         R: {stats.reject}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded font-mono ${stats.bGrade > 0 ? "text-warning bg-warning/10" : "text-muted-foreground bg-muted"}`}
+                        title={`${stats.bGrade} B-grade, counted in the ${stats.reject} reject${stats.reject === 1 ? "" : "s"} above`}
+                      >
+                        B: {stats.bGrade}
                       </span>
                     </div>
                   </div>
@@ -596,7 +620,10 @@ export default function ProductionTablePage({
                 const formatShortMolds = () => {
                   const activeMolds = [1, 2, 3, 4]
                     .filter((id) => entry.selectedTableSquares?.[id])
-                    .map((id) => `T${id}: ${entry.selectedTableSquares[id]}`);
+                    .map(
+                      (id) =>
+                        `T${id}: ${formatRejectPosition(entry.selectedTableSquares[id])}`,
+                    );
                   return activeMolds.length > 0 ? activeMolds.join(" | ") : "-";
                 };
 

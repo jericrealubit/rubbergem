@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import {
+  B_GRADE_POSITION,
   mergeCycles,
   shiftGroupOf,
   tableYieldsFromCycles,
@@ -43,7 +44,35 @@ import {
   RotateCcw,
   Loader2,
   FileText,
+  // Glyphs for the two defect-grade toggles: lucide's "bold" icon is a B
+  // letterform (B-grade) and "bubbles" is a cluster of bubbles.
+  Bold as BGradeIcon,
+  Bubbles as BubbleIcon,
 } from "lucide-react";
+
+/**
+ * Styling for the two defect-grade toggles that stack beside each table's
+ * 5-position grid (B-grade over Bubble).
+ *
+ * Shared rather than written twice so the halves cannot drift apart: they are
+ * one control split in two, and a difference in the selected-state tokens
+ * would read as one of them being a different kind of thing.
+ *
+ * The focus ring hangs off `peer-focus-visible` -- the radio itself is
+ * sr-only, so its own ring is invisible, and the RadioGroupItem primitive
+ * already tags it `peer`. It is on these two and not on the position squares
+ * because these two are icon-only -- a keyboard user arrowing onto them has
+ * no label to go by, so the ring is the only thing saying where focus is.
+ */
+const gradeToggleClass = (selected: boolean) =>
+  [
+    "h-full w-7 border-2 rounded flex items-center justify-center",
+    "cursor-pointer transition-all",
+    "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-1",
+    selected
+      ? "border-primary bg-accent-chip text-accent-ink shadow-sm"
+      : "border-border bg-card hover:bg-accent text-foreground",
+  ].join(" ");
 
 /** The production_logs columns read back when resolving a shift's archive row. */
 interface ShiftLogRowRef {
@@ -1115,18 +1144,48 @@ export default function ProductionForm({
                       </Label>
                     </div>
                   </div>
-                  <div className="h-[100px] ipad:h-[118px]">
-                    <RadioGroupItem
-                      value="bubble"
-                      id={`t${tableNum}-bubble`}
-                      className="sr-only"
-                    />
-                    <Label
-                      htmlFor={`t${tableNum}-bubble`}
-                      className={`h-full w-7 border-2 rounded flex items-center justify-center text-[10px] font-bold uppercase tracking-wide cursor-pointer transition-all [writing-mode:vertical-rl] ${selectedTableSquares[tableNum] === "bubble" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border bg-card hover:bg-accent text-foreground"}`}
-                    >
-                      Bubble
-                    </Label>
+                  {/* Defect grades. Neither is a place on the table, so they
+                      sit beside the position grid rather than in it -- but
+                      they are values of the same RadioGroup, which is what
+                      keeps "max 1 reject per table per cycle" (see CLAUDE.md)
+                      true by construction: picking B-grade clears a position
+                      and vice versa. Each half wraps its own radio so the
+                      `peer` focus ring stays scoped to that half. */}
+                  <div className="h-[100px] ipad:h-[118px] flex flex-col gap-1.5">
+                    <div className="flex-1 min-h-0 flex">
+                      <RadioGroupItem
+                        value={B_GRADE_POSITION}
+                        id={`t${tableNum}-bgrade`}
+                        className="sr-only"
+                      />
+                      <Label
+                        htmlFor={`t${tableNum}-bgrade`}
+                        title="B-Grade"
+                        className={gradeToggleClass(
+                          selectedTableSquares[tableNum] === B_GRADE_POSITION,
+                        )}
+                      >
+                        <BGradeIcon className="size-[18px]" aria-hidden="true" />
+                        <span className="sr-only">B-Grade</span>
+                      </Label>
+                    </div>
+                    <div className="flex-1 min-h-0 flex">
+                      <RadioGroupItem
+                        value="bubble"
+                        id={`t${tableNum}-bubble`}
+                        className="sr-only"
+                      />
+                      <Label
+                        htmlFor={`t${tableNum}-bubble`}
+                        title="Bubble"
+                        className={gradeToggleClass(
+                          selectedTableSquares[tableNum] === "bubble",
+                        )}
+                      >
+                        <BubbleIcon className="size-[18px]" aria-hidden="true" />
+                        <span className="sr-only">Bubble</span>
+                      </Label>
+                    </div>
                   </div>
                   </RadioGroup>
                 </div>

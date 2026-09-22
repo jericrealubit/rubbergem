@@ -242,6 +242,38 @@ export interface ArchivedCycle {
 }
 
 /**
+ * The `position` a B-grade reject is stored under in a cycle's
+ * short_mold_json.
+ *
+ * B-grade is the one reject reason that isn't a place on the table -- the mat
+ * came out downgraded rather than short-molded or bubbled -- but it still
+ * rides in `position`, because that is the single field the write path stamps
+ * and every read path (the live grid, History, tableYieldsFromCycles below)
+ * already looks at. A boolean of its own beside `reject` would be a second
+ * record of the same fact, free to drift out of sync with it.
+ */
+export const B_GRADE_POSITION = "b-grade";
+
+/**
+ * A stored reject `position` as the operator reads it: "top-left" ->
+ * "Top Left", "b-grade" -> "B-Grade".
+ *
+ * The stored values are slugs, and until B-grade arrived they were shown raw
+ * ("T2: bubble"). A title-cased "B-Grade" beside a lowercase "bubble" in the
+ * same cell reads as two different kinds of thing, so the whole vocabulary is
+ * cased here instead. B-grade keeps its hyphen -- it is a grade name, not two
+ * words -- and anything already capitalised (the legacy "Short Mold"
+ * fallback) passes through unchanged.
+ */
+export function formatRejectPosition(position: string): string {
+  if (position === B_GRADE_POSITION) return "B-Grade";
+  return position
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
  * Human-readable "T1: position | T3: Short Mold" summary of a cycle's
  * rejects, or "-" if none -- mirrors the formatting used by the live
  * Press Live Log Table (app/ProductionTable.tsx) so History's table view
@@ -254,7 +286,7 @@ export function formatShortMolds(
     .map((id) => {
       const cell = cycle.short_mold_json?.[`table_${id}`];
       if (!cell) return null;
-      if (cell.position) return `T${id}: ${cell.position}`;
+      if (cell.position) return `T${id}: ${formatRejectPosition(cell.position)}`;
       if (cell.reject) return `T${id}: Short Mold`;
       return null;
     })
@@ -336,15 +368,26 @@ export function asCycleArray<T extends CycleIdentity>(value: unknown): T[] {
  * time (the "max 1 reject per table per cycle" rule -- see CLAUDE.md), so this
  * only sums them. `type` is latest-wins, which works because the cycles arrive
  * sorted by start_time.
+ *
+ * `b_grade` is a *breakdown of* `reject`, not a bucket beside it: a B-grade
+ * mat is one of the rejects already counted, flagged by its position. So
+ * good + reject is still the shift's mat count and every total taken off these
+ * yields -- total_mats_produced, faulty_mats_produced, pressMatTotals, the
+ * wallboard's reject rate -- keeps counting each mat exactly once. Only the
+ * displays that break the rejects down (the live table's "B:" chip, History's
+ * per-table card) read it.
  */
 export function tableYieldsFromCycles(cycles: ArchivedCycle[]) {
-  const yields: Record<string, { good: number; reject: number; type: string }> =
-    {};
+  const yields: Record<
+    string,
+    { good: number; reject: number; b_grade: number; type: string }
+  > = {};
 
   [1, 2, 3, 4].forEach((tableId) => {
     const key = `table_${tableId}`;
     let good = 0;
     let reject = 0;
+    let bGrade = 0;
     let type = "—";
 
     cycles.forEach((cycle) => {
@@ -352,11 +395,12 @@ export function tableYieldsFromCycles(cycles: ArchivedCycle[]) {
       if (cell) {
         good += cell.good || 0;
         reject += cell.reject || 0;
+        if (cell.position === B_GRADE_POSITION) bGrade += 1;
         if (cell.type) type = cell.type;
       }
     });
 
-    yields[key] = { good, reject, type };
+    yields[key] = { good, reject, b_grade: bGrade, type };
   });
 
   return yields;
@@ -515,7 +559,7 @@ export function resolveShiftRows<T extends ShiftArchiveRow>(
 /** The per-table yields shape stored on `production_logs`. */
 export type TableYields = Record<
   string,
-  { type?: string; good?: number; reject?: number }
+  { type?: string; good?: number; reject?: number; b_grade?: number }
 >;
 
 /**
@@ -552,8 +596,10 @@ export interface PressShiftRow {
 
 /** Add two rows' stored per-table yields together, latest mat type winning. */
 function addTableYields(a: TableYields | null | undefined, b: TableYields | null | undefined) {
-  const yields: Record<string, { good: number; reject: number; type: string }> =
-    {};
+  const yields: Record<
+    string,
+    { good: number; reject: number; b_grade: number; type: string }
+  > = {};
 
   [1, 2, 3, 4].forEach((tableId) => {
     const key = `table_${tableId}`;
@@ -562,6 +608,7 @@ function addTableYields(a: TableYields | null | undefined, b: TableYields | null
     yields[key] = {
       good: (left?.good || 0) + (right?.good || 0),
       reject: (left?.reject || 0) + (right?.reject || 0),
+      b_grade: (left?.b_grade || 0) + (right?.b_grade || 0),
       type: right?.type || left?.type || "—",
     };
   });
