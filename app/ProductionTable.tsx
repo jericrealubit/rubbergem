@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { B_GRADE_POSITION, formatRejectPosition } from "@/lib/shift-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
+import { useThemeSpring } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -60,7 +62,10 @@ export default function ProductionTablePage({
   session: any;
 }) {
   const isAuthorized = session?.user?.email === LINE_ACCOUNTS.press;
+  const spring = useThemeSpring();
   const [entries, setEntries] = useState<CycleEntry[]>([]);
+  const [freshRowIds, setFreshRowIds] = useState<Set<string>>(new Set());
+  const seenRowIdsRef = useRef<Set<string>>(new Set());
   const [matTypes, setMatTypes] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -256,6 +261,19 @@ export default function ProductionTablePage({
     }
   };
 
+  // Flags the background-flash treatment on rows that just arrived via the
+  // live_log realtime subscription (not on the initial fetch, hence the
+  // `seenRowIdsRef.current.size > 0` guard).
+  useEffect(() => {
+    const seen = seenRowIdsRef.current;
+    const added = entries.filter((e) => !seen.has(e.id)).map((e) => e.id);
+    seenRowIdsRef.current = new Set(entries.map((e) => e.id));
+    if (added.length === 0 || seen.size === 0) return;
+    setFreshRowIds(new Set(added));
+    const t = setTimeout(() => setFreshRowIds(new Set()), 1200);
+    return () => clearTimeout(t);
+  }, [entries]);
+
   // --- UI Computation Logic ---
   const latestEntry = entries[entries.length - 1] || null;
   const totalDisplayRows = 16;
@@ -328,6 +346,10 @@ export default function ProductionTablePage({
     <div className="w-full max-w-[1200px] mx-auto p-2 sm:p-4 space-y-3">
       <style jsx global>{`
         @media print {
+          * {
+            animation: none !important;
+            transition: none !important;
+          }
           @page {
             size: landscape;
             margin: 0.2cm 0.3cm;
@@ -424,11 +446,22 @@ export default function ProductionTablePage({
                   variant="destructive"
                   className="gap-2 h-9 text-xs font-bold shadow-sm bg-primary-foreground text-destructive hover:bg-primary-foreground/90 disabled:opacity-100 disabled:bg-transparent disabled:text-primary-foreground disabled:border-primary-foreground/70 disabled:shadow-none"
                 >
-                  {isResetting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={isResetting ? "loading" : "idle"}
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.6 }}
+                      transition={spring}
+                      className="inline-flex"
+                    >
+                      {isResetting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </motion.span>
+                  </AnimatePresence>
                   {!isAuthorized
                     ? session
                       ? "Press account required"
@@ -628,9 +661,14 @@ export default function ProductionTablePage({
                 };
 
                 return (
-                  <tr
+                  <motion.tr
                     key={entry.id}
-                    className="min-h-[25px] hover:bg-accent text-foreground font-medium"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={spring}
+                    className={`min-h-[25px] hover:bg-accent text-foreground font-medium ${
+                      freshRowIds.has(entry.id) ? "row-flash" : ""
+                    }`}
                   >
                     <td className="p-1 border-r border-border text-center font-mono font-bold bg-muted text-muted-foreground w-[45px]">
                       {index + 1}
@@ -668,7 +706,7 @@ export default function ProductionTablePage({
                         <span className="text-muted-foreground/50 italic">None</span>
                       )}
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>

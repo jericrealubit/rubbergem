@@ -44,6 +44,43 @@ export const THEME_COLORS: Record<ThemeId, string> = {
   "tropical-jade-sunrise": "#fdf6e3",
 };
 
+export type MotionPreset = {
+  /** framer-motion spring config — the primary source of per-theme "feel". */
+  spring: { stiffness: number; damping: number };
+  duration: { fast: number; base: number; slow: number };
+};
+
+const snappy: MotionPreset = {
+  spring: { stiffness: 500, damping: 40 },
+  duration: { fast: 0.12, base: 0.2, slow: 0.32 },
+};
+
+const bouncy: MotionPreset = {
+  spring: { stiffness: 320, damping: 18 },
+  duration: { fast: 0.18, base: 0.32, slow: 0.5 },
+};
+
+const smoothGlide: MotionPreset = {
+  spring: { stiffness: 260, damping: 28 },
+  duration: { fast: 0.16, base: 0.28, slow: 0.46 },
+};
+
+// Mirrors each theme's existing "surface personality" (radius/shadow/border)
+// with a matching motion personality — snappy/no-overshoot for the sharp
+// brutalist/editorial themes, visible bounce for the soft/organic ones, and
+// a smooth slower glide for the glass/neon dark themes.
+export const MOTION_PRESETS: Record<ThemeId, MotionPreset> = {
+  classic: smoothGlide,
+  "editorial-minimal": snappy,
+  "dark-glass": smoothGlide,
+  "organic-wellness": bouncy,
+  "cobalt-brutalist": snappy,
+  "soft-3d": bouncy,
+  "retro-future": smoothGlide,
+  "neutral-elegance": snappy,
+  "tropical-jade-sunrise": bouncy,
+};
+
 export const STORAGE_KEY = "app-theme";
 
 // Used only when no explicit localStorage choice exists yet — the initial

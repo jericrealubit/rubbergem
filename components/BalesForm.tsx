@@ -12,6 +12,9 @@ import {
 import type { BalesArchivedCycle } from "@/lib/bales-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useThemeSpring, collapseHeight } from "@/lib/motion";
+import { AnimatedChevron } from "@/components/motion/AnimatedChevron";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -37,8 +40,6 @@ import {
   Clock,
   Package,
   AlertTriangle,
-  ChevronDown,
-  ChevronUp,
   Settings2,
   Loader2,
   FileText,
@@ -76,6 +77,7 @@ export default function BalesForm({
   onNavigateToTable?: () => void;
 }) {
   const isAuthorized = session?.user?.email === LINE_ACCOUNTS.bales;
+  const spring = useThemeSpring();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
     count: number;
@@ -704,14 +706,23 @@ export default function BalesForm({
                   )}
                 </div>
               </div>
-              {isShiftOpen ? (
-                <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
-              )}
+              <AnimatedChevron
+                open={isShiftOpen}
+                className="text-muted-foreground"
+              />
             </button>
 
-            {isShiftOpen && (
+            <AnimatePresence initial={false}>
+              {isShiftOpen && (
+                <motion.div
+                  key="bales-shift-info-content"
+                  variants={collapseHeight}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={spring}
+                  className="overflow-hidden"
+                >
               <CardContent className="p-4 pt-2 border-t border-border space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -756,7 +767,9 @@ export default function BalesForm({
                   </div>
                 </div>
               </CardContent>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Card>
 
           {/* Cycle Entry Card */}
@@ -810,23 +823,32 @@ export default function BalesForm({
                       only thing telling the operator why they can't submit, so it
                       has to stay readable -- the muted pair is already the
                       "disabled" signal. */}
-                  <Button
-                    type="button"
-                    disabled={!isAuthorized || isSubmitting || !canFinalize}
-                    onClick={handleFinishAndStartNext}
-                    className="w-full h-14 bg-primary hover:bg-primary/80 disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
-                  >
-                    {isSubmitting && (
-                      <Loader2 className="animate-spin" size={20} />
-                    )}
-                    {!isAuthorized
-                      ? session
-                        ? "Bales account required"
-                        : "Login to finish cycle"
-                      : !canFinalize
-                        ? "Enter Bales Produced to Finish"
-                        : "Finish Cycle & Start Next"}
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.97 }} transition={spring}>
+                    <Button
+                      type="button"
+                      disabled={!isAuthorized || isSubmitting || !canFinalize}
+                      onClick={handleFinishAndStartNext}
+                      className="w-full h-14 bg-primary hover:bg-primary/80 disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
+                    >
+                      {isSubmitting && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.6 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={spring}
+                          className="inline-flex"
+                        >
+                          <Loader2 className="animate-spin" size={20} />
+                        </motion.span>
+                      )}
+                      {!isAuthorized
+                        ? session
+                          ? "Bales account required"
+                          : "Login to finish cycle"
+                        : !canFinalize
+                          ? "Enter Bales Produced to Finish"
+                          : "Finish Cycle & Start Next"}
+                    </Button>
+                  </motion.div>
                   {/* disabled:opacity-40 put this label at 1.7:1 -- invisible.
                       A disabled control still has to be readable, so it keeps
                       full muted-foreground and goes inert via pointer-events
@@ -1043,7 +1065,16 @@ export default function BalesForm({
               disabled={isLoggingBag}
               className="bg-primary hover:bg-primary/80"
             >
-              {isLoggingBag && <Loader2 className="animate-spin" size={16} />}
+              {isLoggingBag && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={spring}
+                  className="inline-flex"
+                >
+                  <Loader2 className="animate-spin" size={16} />
+                </motion.span>
+              )}
               Log Bag Change
             </Button>
           </DialogFooter>
@@ -1095,7 +1126,16 @@ export default function BalesForm({
               }
               className="bg-primary hover:bg-primary/80"
             >
-              {isSubmitting && <Loader2 className="animate-spin" size={16} />}
+              {isSubmitting && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={spring}
+                  className="inline-flex"
+                >
+                  <Loader2 className="animate-spin" size={16} />
+                </motion.span>
+              )}
               End Shift
             </Button>
           </DialogFooter>

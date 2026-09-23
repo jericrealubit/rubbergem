@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { resolveShiftRows, mergeBalesShiftRows } from "@/lib/bales-log";
+import { useThemeSpring, collapseHeight } from "@/lib/motion";
+import { AnimatedChevron } from "@/components/motion/AnimatedChevron";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertCircle,
   AlertTriangle,
   Calendar,
-  ChevronDown,
-  ChevronUp,
   Clock,
   Folder,
   FolderOpen,
@@ -51,6 +52,7 @@ interface MonthGroup {
 }
 
 export default function BalesHistory() {
+  const spring = useThemeSpring();
   const [historicalData, setHistoricalData] = useState<MonthGroup[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -234,11 +236,31 @@ export default function BalesHistory() {
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  {isMonthOpen ? (
-                    <FolderOpen className="w-4 h-4 text-primary shrink-0" />
-                  ) : (
-                    <Folder className="w-4 h-4 text-muted-foreground shrink-0" />
-                  )}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {isMonthOpen ? (
+                      <motion.span
+                        key="open"
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.6 }}
+                        transition={spring}
+                        className="inline-flex shrink-0"
+                      >
+                        <FolderOpen className="w-4 h-4 text-primary" />
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="closed"
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.6 }}
+                        transition={spring}
+                        className="inline-flex shrink-0"
+                      >
+                        <Folder className="w-4 h-4 text-muted-foreground" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                   <span>{month.monthName}</span>
                   <span className="normal-case text-[10px] font-sans font-medium text-muted-foreground ml-1">
                     (cycles:{month.totalCycles}{" "}
@@ -251,14 +273,23 @@ export default function BalesHistory() {
                     )
                   </span>
                 </div>
-                {isMonthOpen ? (
-                  <ChevronUp className="w-4 h-4 text-primary" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                )}
+                <AnimatedChevron
+                  open={isMonthOpen}
+                  className={isMonthOpen ? "text-primary" : "text-muted-foreground"}
+                />
               </button>
 
-              {isMonthOpen && (
+              <AnimatePresence initial={false}>
+                {isMonthOpen && (
+                  <motion.div
+                    key="bales-month-content"
+                    variants={collapseHeight}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={spring}
+                    className="overflow-hidden"
+                  >
                 <div className="pl-3 pr-1 py-1 space-y-2 border-l-2 border-primary/20 ml-5">
                   {month.days.map((day) => {
                     const keyForDay = `${day.dateString}-${day.shift}-${day.id}`;
@@ -306,15 +337,21 @@ export default function BalesHistory() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            {isDayOpen ? (
-                              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                            )}
+                            <AnimatedChevron open={isDayOpen} className="text-muted-foreground" />
                           </div>
                         </button>
 
-                        {isDayOpen && (
+                        <AnimatePresence initial={false}>
+                          {isDayOpen && (
+                            <motion.div
+                              key="bales-day-content"
+                              variants={collapseHeight}
+                              initial="initial"
+                              animate="animate"
+                              exit="exit"
+                              transition={spring}
+                              className="overflow-hidden"
+                            >
                           <Card className="bg-card border-border rounded-lg shadow-inner overflow-hidden mx-0.5 my-1">
                             <CardContent className="p-3 space-y-3">
                               <div className="flex items-center gap-1.5 border-b border-border pb-1.5">
@@ -456,12 +493,16 @@ export default function BalesHistory() {
                               </div>
                             )}
                           </Card>
-                        )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     );
                   })}
                 </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
