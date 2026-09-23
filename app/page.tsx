@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { useMotionPreset, useThemeSpring, viewTransition } from "@/lib/motion";
+import { useMotionPreset, useThemeSpring, viewTransition, popIn } from "@/lib/motion";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,8 @@ import BanburyHistory from "@/components/BanburyHistory";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
+import { PulseDot } from "@/components/motion/PulseDot";
+import { IdleIcon } from "@/components/motion/IdleIcon";
 import { activeLineFor, type LineKey } from "@/lib/line-accounts";
 
 type ViewType =
@@ -291,8 +293,26 @@ export default function Home() {
               </motion.span>
             </AnimatePresence>
           </button>
-          <span className="font-bold tracking-wide uppercase text-sm md:text-base">
-            Rubber Production System
+          <span className="inline-flex items-center gap-2">
+            <span className="font-bold tracking-wide uppercase text-sm md:text-base">
+              Rubber Production System
+            </span>
+            <AnimatePresence>
+              {isTimerActive && (
+                <motion.span
+                  key="live-pulse-dot"
+                  variants={popIn}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={spring}
+                  className="inline-flex"
+                  aria-hidden="true"
+                >
+                  <PulseDot color="success" />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </span>
         </div>
 
@@ -393,7 +413,7 @@ export default function Home() {
                                   className="absolute inset-0 rounded-lg bg-primary shadow-sm -z-10"
                                 />
                               )}
-                              <item.icon className="w-4 h-4 shrink-0" />
+                              <IdleIcon icon={item.icon} active={active} />
                               <span>{item.label}</span>
                             </button>
                           );
@@ -427,7 +447,7 @@ export default function Home() {
                       className="absolute inset-0 rounded-lg bg-primary shadow-sm -z-10"
                     />
                   )}
-                  <HelpCircle className="w-4 h-4 shrink-0" />
+                  <IdleIcon icon={HelpCircle} active={currentView === "about"} />
                   <span>About System</span>
                 </button>
               </div>

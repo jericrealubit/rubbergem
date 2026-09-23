@@ -48,21 +48,39 @@ export type MotionPreset = {
   /** framer-motion spring config — the primary source of per-theme "feel". */
   spring: { stiffness: number; damping: number };
   duration: { fast: number; base: number; slow: number };
+  /**
+   * Continuous idle/ambient loop personality (e.g. breathing nav icons).
+   * Scale-only by design — see lib/motion.ts's idleBreathe doc comment for
+   * why this deliberately avoids animating opacity.
+   */
+  idle: {
+    /** Peak scale multiplier for the active/selected icon's breathing loop. */
+    activeScale: number;
+    /** Peak scale multiplier for inactive icons — always < activeScale, kept small. */
+    inactiveScale: number;
+    /** Full loop duration in seconds (1 → peak → 1). */
+    duration: number;
+    /** Easing curve for the loop. */
+    ease: NonNullable<import("framer-motion").Transition["ease"]>;
+  };
 };
 
 const snappy: MotionPreset = {
   spring: { stiffness: 500, damping: 40 },
   duration: { fast: 0.12, base: 0.2, slow: 0.32 },
+  idle: { activeScale: 1.09, inactiveScale: 1.03, duration: 1.8, ease: "easeInOut" },
 };
 
 const bouncy: MotionPreset = {
   spring: { stiffness: 320, damping: 18 },
   duration: { fast: 0.18, base: 0.32, slow: 0.5 },
+  idle: { activeScale: 1.18, inactiveScale: 1.06, duration: 2.6, ease: "easeInOut" },
 };
 
 const smoothGlide: MotionPreset = {
   spring: { stiffness: 260, damping: 28 },
   duration: { fast: 0.16, base: 0.28, slow: 0.46 },
+  idle: { activeScale: 1.12, inactiveScale: 1.04, duration: 3.4, ease: "easeInOut" },
 };
 
 // Mirrors each theme's existing "surface personality" (radius/shadow/border)

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Transition, Variants } from "framer-motion";
+import type { Transition, TargetAndTransition, Variants } from "framer-motion";
 import { MOTION_PRESETS, type MotionPreset } from "@/components/theme/theme-config";
 import { useThemeContext } from "@/components/theme/ThemeProvider";
 
@@ -50,3 +50,50 @@ export const popIn: Variants = {
 export const staggerContainer: Variants = {
   animate: { transition: { staggerChildren: 0.04 } },
 };
+
+/**
+ * Deterministic 0..1 phase derived from a string seed (e.g. an icon's
+ * displayName), so multiple IdleIcon instances desync from each other
+ * instead of all breathing in lockstep — a wall of icons pulsing in unison
+ * reads as mechanical/distracting; staggered, it reads as "alive". Not
+ * cryptographic, just a cheap deterministic spread.
+ */
+function phaseFromSeed(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  return (Math.abs(hash) % 100) / 100;
+}
+
+/**
+ * Builds the animate/transition pair for a continuously-looping "breathing"
+ * icon — ambient/idle motion, not gated by user interaction. `active` icons
+ * get the theme's full idle amplitude; inactive icons use a deliberately
+ * smaller one, so a whole icon list reads as "alive" without competing with
+ * the active item (see theme-config.ts's `MotionPreset.idle`).
+ *
+ * Deliberately scale-only (no opacity): framer-motion's `reducedMotion`
+ * config (see ThemeProvider.tsx's `<MotionConfig reducedMotion="user">`)
+ * only disables transform-based animation, not opacity — so an opacity loop
+ * here would keep running under prefers-reduced-motion, when nothing else
+ * looping in this app does. Keeping this scale-only means the existing
+ * app-wide MotionConfig fully covers it with zero per-component checks.
+ */
+export function idleBreathe(
+  preset: MotionPreset,
+  active: boolean,
+  seed = ""
+): { animate: TargetAndTransition; transition: Transition } {
+  const { idle } = preset;
+  const scale = active ? idle.activeScale : idle.inactiveScale;
+  return {
+    animate: { scale: [1, scale, 1] },
+    transition: {
+      duration: idle.duration,
+      repeat: Infinity,
+      ease: idle.ease,
+      delay: phaseFromSeed(seed) * idle.duration,
+    },
+  };
+}
