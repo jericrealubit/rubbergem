@@ -13,6 +13,10 @@ import {
 import type { ArchivedCycle } from "@/lib/shift-log";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useThemeSpring, collapseHeight } from "@/lib/motion";
+import { AnimatedChevron } from "@/components/motion/AnimatedChevron";
+import { PulseDot } from "@/components/motion/PulseDot";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -38,8 +42,6 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  ChevronDown,
-  ChevronUp,
   Settings2,
   RotateCcw,
   Loader2,
@@ -92,6 +94,8 @@ export default function ProductionForm({
 }) {
   const isAuthorized = session?.user?.email === LINE_ACCOUNTS.press;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [justSucceeded, setJustSucceeded] = useState(false);
+  const spring = useThemeSpring();
 
   // --- HOLD-TO-CONFIRM SUBMIT ---
   const [holdProgress, setHoldProgress] = useState(0); // 0-100
@@ -625,6 +629,8 @@ export default function ProductionForm({
       localStorage.setItem("shift_panel_open", "false");
       setIsShiftOpen(false);
       setIsSubmitting(false);
+      setJustSucceeded(true);
+      setTimeout(() => setJustSucceeded(false), 1100);
 
       toast.success(
         `Cycle saved! Load time: ${formatSigned(durationMinutes * 60)} — next cycle started.`,
@@ -842,14 +848,23 @@ export default function ProductionForm({
                 )}
               </div>
             </div>
-            {isShiftOpen ? (
-              <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
-            )}
+            <AnimatedChevron
+              open={isShiftOpen}
+              className="text-muted-foreground"
+            />
           </button>
 
-          {isShiftOpen && (
+          <AnimatePresence initial={false}>
+            {isShiftOpen && (
+              <motion.div
+                key="shift-info-content"
+                variants={collapseHeight}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={spring}
+                className="overflow-hidden"
+              >
             <CardContent className="p-4 pt-2 border-t border-border space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -937,7 +952,11 @@ export default function ProductionForm({
                               <span className="font-mono tracking-tighter">
                                 {type}
                               </span>
-                              <div
+                              <motion.div
+                                animate={{
+                                  scale: tableMatTypes[tableId] === type ? 1 : 0.4,
+                                }}
+                                transition={spring}
                                 className={`w-1 h-1 rounded-full shrink-0 ${
                                   tableMatTypes[tableId] === type
                                     ? "bg-primary-foreground"
@@ -954,7 +973,9 @@ export default function ProductionForm({
               </div>
 
             </CardContent>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
 
         {/* Timestamps & Durations */}
@@ -1011,17 +1032,11 @@ export default function ProductionForm({
               {startTime && liveDurationSeconds !== null && (
                 <div className="flex items-center justify-between pt-1">
                   <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                        liveDurationSeconds < 0
-                          ? "bg-warning"
-                          : "bg-success"
-                      }`}
-                    />
+                    <PulseDot color={liveDurationSeconds < 0 ? "warning" : "success"} />
                     Load Time
                   </span>
                   <span
-                    className={`font-mono font-bold text-lg tabular-nums ${
+                    className={`font-mono font-bold text-lg tabular-nums transition-colors duration-300 ${
                       liveDurationSeconds < 0
                         ? "text-warning"
                         : "text-success"
@@ -1078,8 +1093,13 @@ export default function ProductionForm({
                         htmlFor={`t${tableNum}-tl`}
                         className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
-                        <div
-                          className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-left" ? "scale-100" : "scale-0"}`}
+                        <motion.div
+                          animate={{
+                            scale:
+                              selectedTableSquares[tableNum] === "top-left" ? 1 : 0,
+                          }}
+                          transition={spring}
+                          className="w-2 h-2 rounded-full bg-current"
                         />
                       </Label>
                     </div>
@@ -1093,8 +1113,13 @@ export default function ProductionForm({
                         htmlFor={`t${tableNum}-tr`}
                         className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
-                        <div
-                          className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "top-right" ? "scale-100" : "scale-0"}`}
+                        <motion.div
+                          animate={{
+                            scale:
+                              selectedTableSquares[tableNum] === "top-right" ? 1 : 0,
+                          }}
+                          transition={spring}
+                          className="w-2 h-2 rounded-full bg-current"
                         />
                       </Label>
                     </div>
@@ -1108,8 +1133,13 @@ export default function ProductionForm({
                         htmlFor={`t${tableNum}-cc`}
                         className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
-                        <div
-                          className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "center" ? "scale-100" : "scale-0"}`}
+                        <motion.div
+                          animate={{
+                            scale:
+                              selectedTableSquares[tableNum] === "center" ? 1 : 0,
+                          }}
+                          transition={spring}
+                          className="w-2 h-2 rounded-full bg-current"
                         />
                       </Label>
                     </div>
@@ -1123,8 +1153,13 @@ export default function ProductionForm({
                         htmlFor={`t${tableNum}-bl`}
                         className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
-                        <div
-                          className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-left" ? "scale-100" : "scale-0"}`}
+                        <motion.div
+                          animate={{
+                            scale:
+                              selectedTableSquares[tableNum] === "bottom-left" ? 1 : 0,
+                          }}
+                          transition={spring}
+                          className="w-2 h-2 rounded-full bg-current"
                         />
                       </Label>
                     </div>
@@ -1138,8 +1173,13 @@ export default function ProductionForm({
                         htmlFor={`t${tableNum}-br`}
                         className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
                       >
-                        <div
-                          className={`w-2 h-2 rounded-full bg-current transition-transform ${selectedTableSquares[tableNum] === "bottom-right" ? "scale-100" : "scale-0"}`}
+                        <motion.div
+                          animate={{
+                            scale:
+                              selectedTableSquares[tableNum] === "bottom-right" ? 1 : 0,
+                          }}
+                          transition={spring}
+                          className="w-2 h-2 rounded-full bg-current"
                         />
                       </Label>
                     </div>
@@ -1217,6 +1257,11 @@ export default function ProductionForm({
             tokens below to ~2:1 in every theme. The label is the only thing
             telling the operator why they can't submit, so it has to stay
             readable -- the muted pair is already the "disabled" signal. */}
+        <motion.div
+          className="ipad:col-span-2"
+          whileTap={{ scale: 0.97 }}
+          transition={spring}
+        >
         <Button
           type="button"
           disabled={isAuthorized ? isSubmitting || !startTime : true}
@@ -1233,14 +1278,38 @@ export default function ProductionForm({
           onKeyUp={(e) => {
             if (e.key === "Enter" || e.key === " ") cancelHold();
           }}
-          className="relative overflow-hidden w-full h-12 ipad:h-10 disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors ipad:col-span-2"
+          className="relative overflow-hidden w-full h-12 ipad:h-10 disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold tracking-wide uppercase text-sm shadow-md transition-colors"
         >
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 bg-primary-foreground/25"
-            style={{ width: `${holdProgress}%` }}
+            className="pointer-events-none absolute inset-y-0 left-0 w-full origin-left bg-primary-foreground/25"
+            style={{ transform: `scaleX(${holdProgress / 100})` }}
           />
-          {isSubmitting && <Loader2 className="animate-spin" size={20} />}
+          <AnimatePresence mode="wait" initial={false}>
+            {justSucceeded ? (
+              <motion.span
+                key="success"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={spring}
+                className="relative inline-flex motion-pulse-ring rounded-full"
+              >
+                <CheckCircle2 className="text-success" size={20} />
+              </motion.span>
+            ) : isSubmitting ? (
+              <motion.span
+                key="loading"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={spring}
+                className="inline-flex"
+              >
+                <Loader2 className="animate-spin" size={20} />
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
           {holdProgress > 0 && !isSubmitting
             ? "Hold to Confirm…"
             : isAuthorized
@@ -1251,6 +1320,7 @@ export default function ProductionForm({
                 ? "Press account required"
                 : "Login to submit cycle"}
         </Button>
+        </motion.div>
         <p className="text-center text-[10px] text-muted-foreground pt-0.5 ipad:col-span-2">
           Press and hold to confirm submission
         </p>

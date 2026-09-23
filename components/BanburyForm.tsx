@@ -20,6 +20,10 @@ import {
 } from "@/lib/banbury-check-timing";
 import { LINE_ACCOUNTS } from "@/lib/line-accounts";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useThemeSpring, collapseHeight } from "@/lib/motion";
+import { AnimatedChevron } from "@/components/motion/AnimatedChevron";
+import { PulseDot } from "@/components/motion/PulseDot";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -45,8 +49,7 @@ import {
   FlaskConical,
   ListChecks,
   AlertTriangle,
-  ChevronDown,
-  ChevronUp,
+  CheckCircle2,
   Settings2,
   Loader2,
   RotateCcw,
@@ -129,7 +132,9 @@ export default function BanburyForm({
   onNavigateToTable?: () => void;
 }) {
   const isAuthorized = session?.user?.email === LINE_ACCOUNTS.banbury;
+  const spring = useThemeSpring();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [justSucceeded, setJustSucceeded] = useState(false);
   const [staleClearConfirm, setStaleClearConfirm] = useState<{
     count: number;
   } | null>(null);
@@ -783,6 +788,8 @@ export default function BanburyForm({
       setIsManualStart(false);
 
       setIsSubmitting(false);
+      setJustSucceeded(true);
+      setTimeout(() => setJustSucceeded(false), 1100);
       const overrunMinutes = checkDowntimeMinutes(durationMinutes);
       toast.success(
         `Check #${nextCheckNumber} logged (${durationMinutes} min${
@@ -978,14 +985,23 @@ export default function BanburyForm({
                   )}
                 </div>
               </div>
-              {isShiftOpen ? (
-                <ChevronUp className="w-5 h-5 text-muted-foreground shrink-0" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
-              )}
+              <AnimatedChevron
+                open={isShiftOpen}
+                className="text-muted-foreground"
+              />
             </button>
 
-            {isShiftOpen && (
+            <AnimatePresence initial={false}>
+              {isShiftOpen && (
+                <motion.div
+                  key="banbury-shift-info-content"
+                  variants={collapseHeight}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={spring}
+                  className="overflow-hidden"
+                >
               <CardContent className="p-4 pt-2 border-t border-border space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -1098,7 +1114,9 @@ export default function BanburyForm({
                   </div>
                 </div>
               </CardContent>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Card>
 
           {/* Check Cycle Card */}
@@ -1155,15 +1173,15 @@ export default function BanburyForm({
                   <div className="space-y-1 pt-1">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full animate-pulse ${
-                            downtimeSeconds > 0 ? "bg-destructive" : "bg-success"
-                          }`}
-                        />
+                        {downtimeSeconds > 0 ? (
+                          <span className="w-1.5 h-1.5 rounded-full motion-safe:animate-pulse bg-destructive" />
+                        ) : (
+                          <PulseDot color="success" />
+                        )}
                         {recentChecks.length > 0 ? "Since Last Check" : "Elapsed"}
                       </span>
                       <span
-                        className={`font-mono font-bold text-lg tabular-nums ${
+                        className={`font-mono font-bold text-lg tabular-nums transition-colors duration-300 ${
                           downtimeSeconds > 0 ? "text-destructive" : "text-success"
                         }`}
                       >
@@ -1209,11 +1227,13 @@ export default function BanburyForm({
                 {TICK_FIELDS.map((field) => {
                   const checked = ticks[field.key];
                   return (
-                    <button
+                    <motion.button
                       key={field.key}
                       type="button"
                       aria-pressed={checked}
                       onClick={() => toggleTick(field.key)}
+                      whileTap={{ scale: 0.94 }}
+                      transition={spring}
                       className={`h-11 rounded-[var(--radius-card)] border-[length:var(--border-width-card)] text-[11px] font-bold uppercase tracking-wide transition-colors px-1 flex items-center justify-center text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                         checked
                           ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-card)] hover:bg-primary/80"
@@ -1221,7 +1241,7 @@ export default function BanburyForm({
                       }`}
                     >
                       <span className="leading-tight">{field.label}</span>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -1309,7 +1329,31 @@ export default function BanburyForm({
                 onClick={handleLogCheck}
                 className="w-full h-12 font-bold tracking-wide uppercase text-sm shadow-md transition-colors disabled:opacity-100 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
-                {isSubmitting && <Loader2 className="animate-spin" size={20} />}
+                <AnimatePresence mode="wait" initial={false}>
+                  {justSucceeded ? (
+                    <motion.span
+                      key="success"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      transition={spring}
+                      className="relative inline-flex motion-pulse-ring rounded-full"
+                    >
+                      <CheckCircle2 className="text-success" size={20} />
+                    </motion.span>
+                  ) : isSubmitting ? (
+                    <motion.span
+                      key="loading"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      transition={spring}
+                      className="inline-flex"
+                    >
+                      <Loader2 className="animate-spin" size={20} />
+                    </motion.span>
+                  ) : null}
+                </AnimatePresence>
                 {!isAuthorized
                   ? session
                     ? "Banbury account required"

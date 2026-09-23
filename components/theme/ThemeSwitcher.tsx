@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, type KeyboardEvent } from "react";
+import { motion } from "framer-motion";
 import { THEMES } from "./theme-config";
 import { useThemeContext } from "./ThemeProvider";
+import { useThemeSpring } from "@/lib/motion";
 
 /**
  * Global theme picker: a WAI-ARIA radio group so arrow keys move focus/
@@ -16,6 +18,7 @@ import { useThemeContext } from "./ThemeProvider";
 export function ThemeSwitcher() {
   const { theme, setTheme } = useThemeContext();
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const spring = useThemeSpring();
 
   function focusIndex(index: number) {
     const len = THEMES.length;
@@ -55,7 +58,7 @@ export function ThemeSwitcher() {
       {THEMES.map((t, index) => {
         const checked = theme === t.id;
         return (
-          <button
+          <motion.button
             key={t.id}
             ref={(el) => {
               buttonRefs.current[index] = el;
@@ -68,12 +71,21 @@ export function ThemeSwitcher() {
             onClick={() => setTheme(t.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             title={t.label}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--chrome-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--drawer-bg)] ${
+            whileTap={{ scale: 0.9 }}
+            transition={spring}
+            className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border outline-none focus-visible:ring-2 focus-visible:ring-[var(--chrome-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--drawer-bg)] ${
               checked
-                ? "border-[var(--chrome-accent)] bg-[var(--drawer-hover-bg)]"
+                ? "border-[var(--chrome-accent)]"
                 : "border-transparent hover:bg-[var(--drawer-hover-bg)]"
             }`}
           >
+            {checked && (
+              <motion.span
+                layoutId="theme-swatch-ring"
+                transition={spring}
+                className="absolute inset-0 rounded-lg bg-[var(--drawer-hover-bg)] -z-10"
+              />
+            )}
             <span
               data-theme={t.id}
               aria-hidden="true"
@@ -94,7 +106,7 @@ export function ThemeSwitcher() {
             <span className="text-[9px] font-semibold text-[var(--drawer-text-muted)] text-center leading-tight">
               {t.label}
             </span>
-          </button>
+          </motion.button>
         );
       })}
     </div>

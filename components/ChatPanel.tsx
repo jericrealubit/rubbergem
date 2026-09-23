@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { describeError } from "@/lib/shift-log";
+import { useThemeSpring, fadeSlideIn } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,7 +37,10 @@ export default function ChatPanel({ session }: { session: any }) {
   });
   const [body, setBody] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [wiggle, setWiggle] = useState(false);
+  const prevUnreadRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const spring = useThemeSpring();
 
   const fetchMessages = async () => {
     const { data } = await supabase
@@ -83,6 +88,18 @@ export default function ChatPanel({ session }: { session: any }) {
       setUnreadCount(unread);
     }
   }, [messages, open]);
+
+  // Wiggle the trigger icon when a new message arrives while the dialog is
+  // closed, so an operator away from the panel notices it without a sound.
+  useEffect(() => {
+    if (!open && unreadCount > prevUnreadRef.current) {
+      setWiggle(true);
+      const t = setTimeout(() => setWiggle(false), 600);
+      prevUnreadRef.current = unreadCount;
+      return () => clearTimeout(t);
+    }
+    prevUnreadRef.current = unreadCount;
+  }, [unreadCount, open]);
 
   useEffect(() => {
     if (open) {
@@ -139,19 +156,30 @@ export default function ChatPanel({ session }: { session: any }) {
 
   return (
     <>
-      <button
+      <motion.button
         type="button"
         onClick={() => setOpen(true)}
         className="relative p-1.5 rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
         aria-label="Open chat"
+        animate={wiggle ? { rotate: [0, -15, 15, -10, 10, 0] } : { rotate: 0 }}
+        transition={{ duration: 0.5 }}
       >
         <MessageCircle className="w-5 h-5" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center leading-none">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </button>
+        <AnimatePresence>
+          {unreadCount > 0 && (
+            <motion.span
+              key={unreadCount}
+              initial={{ opacity: 0, scale: 0.4 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.4 }}
+              transition={spring}
+              className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center leading-none"
+            >
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[400px] flex flex-col max-h-[80vh]">
@@ -165,27 +193,34 @@ export default function ChatPanel({ session }: { session: any }) {
                 No messages yet.
               </p>
             )}
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex flex-col max-w-[85%] ${
-                  m.is_operator ? "ml-auto items-end" : "items-start"
-                }`}
-              >
-                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide px-1">
-                  {m.sender_name}
-                </span>
-                <div
-                  className={`rounded-xl px-3 py-1.5 text-sm break-words ${
-                    m.is_operator
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground"
+            <AnimatePresence initial={false}>
+              {messages.map((m) => (
+                <motion.div
+                  key={m.id}
+                  variants={fadeSlideIn}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={spring}
+                  className={`flex flex-col max-w-[85%] ${
+                    m.is_operator ? "ml-auto items-end" : "items-start"
                   }`}
                 >
-                  {m.body}
-                </div>
-              </div>
-            ))}
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide px-1">
+                    {m.sender_name}
+                  </span>
+                  <div
+                    className={`rounded-xl px-3 py-1.5 text-sm break-words ${
+                      m.is_operator
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    }`}
+                  >
+                    {m.body}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
 
@@ -202,14 +237,16 @@ export default function ChatPanel({ session }: { session: any }) {
                 onChange={(e) => setBody(e.target.value)}
                 className="min-h-10"
               />
-              <Button
-                type="button"
-                size="icon"
-                onClick={handleSend}
-                disabled={!canSend || isSending}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+              <motion.div whileTap={{ scale: 0.85 }} transition={spring}>
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={handleSend}
+                  disabled={!canSend || isSending}
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </motion.div>
             </div>
           </div>
         </DialogContent>
