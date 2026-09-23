@@ -269,7 +269,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
       {/* Global Top Header with Persistent Countdown Timer */}
-      <header className="bg-[var(--chrome-bg)] text-[var(--chrome-text)] h-14 px-4 flex items-center justify-between shadow-md z-40 sticky top-0">
+      <header
+        className="bg-[var(--chrome-bg)] text-[var(--chrome-text)] h-14 px-4 flex items-center justify-between shadow-md z-40 sticky top-0"
+        style={
+          { "--ambient-duration": `${motionPreset.idle.duration}s` } as React.CSSProperties
+        }
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -350,6 +355,12 @@ export default function Home() {
             )}
           </AnimatePresence>
         </div>
+
+        <span
+          aria-hidden="true"
+          data-ambient-treatment={motionPreset.idle.chromeTreatment}
+          className="chrome-ambient-line absolute inset-x-0 bottom-0 pointer-events-none"
+        />
       </header>
 
       {/* Slide-out Burger Menu Navigation Drawer */}

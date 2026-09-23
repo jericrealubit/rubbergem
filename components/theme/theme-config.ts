@@ -62,25 +62,52 @@ export type MotionPreset = {
     duration: number;
     /** Easing curve for the loop. */
     ease: NonNullable<import("framer-motion").Transition["ease"]>;
+    /**
+     * Visual treatment for the header's ambient "heartbeat" accent line
+     * (app/globals.css's .chrome-ambient-line, wired from app/page.tsx's
+     * <header>). "flat" = solid hairline, opacity-only pulse, no
+     * gradient/blur — for themes whose brief wants hard edges / thin rules,
+     * never soft glows. "glow" = soft gradient sweep + faint blur — for the
+     * glass/neon/waveform dark themes and the soft/organic/rounded themes.
+     */
+    chromeTreatment: "flat" | "glow";
   };
 };
 
 const snappy: MotionPreset = {
   spring: { stiffness: 500, damping: 40 },
   duration: { fast: 0.12, base: 0.2, slow: 0.32 },
-  idle: { activeScale: 1.09, inactiveScale: 1.03, duration: 1.8, ease: "easeInOut" },
+  idle: {
+    activeScale: 1.09,
+    inactiveScale: 1.03,
+    duration: 1.8,
+    ease: "easeInOut",
+    chromeTreatment: "flat",
+  },
 };
 
 const bouncy: MotionPreset = {
   spring: { stiffness: 320, damping: 18 },
   duration: { fast: 0.18, base: 0.32, slow: 0.5 },
-  idle: { activeScale: 1.18, inactiveScale: 1.06, duration: 2.6, ease: "easeInOut" },
+  idle: {
+    activeScale: 1.18,
+    inactiveScale: 1.06,
+    duration: 2.6,
+    ease: "easeInOut",
+    chromeTreatment: "glow",
+  },
 };
 
 const smoothGlide: MotionPreset = {
   spring: { stiffness: 260, damping: 28 },
   duration: { fast: 0.16, base: 0.28, slow: 0.46 },
-  idle: { activeScale: 1.12, inactiveScale: 1.04, duration: 3.4, ease: "easeInOut" },
+  idle: {
+    activeScale: 1.12,
+    inactiveScale: 1.04,
+    duration: 3.4,
+    ease: "easeInOut",
+    chromeTreatment: "glow",
+  },
 };
 
 // Mirrors each theme's existing "surface personality" (radius/shadow/border)
