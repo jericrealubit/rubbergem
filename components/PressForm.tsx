@@ -92,6 +92,17 @@ const positionSquareClass = (selected: boolean) =>
     selected ? SHORT_MOLD_SELECTED : "border-border hover:bg-accent",
   ].join(" ");
 
+/**
+ * localStorage key marking a shift whose cycle reached live_log but whose
+ * production_logs mirror failed. Holds `${shiftDate}|${shiftGroup}`.
+ *
+ * Without it the next submit mistakes that shift's own cycles for another
+ * shift's leftovers: live_log has rows, history has no row for the shift yet
+ * (the write that would have created it is the one that failed), so the
+ * stale-clear dialog fires -- and "Clear" would wipe the running shift.
+ */
+const PENDING_HISTORY_SYNC_KEY = "press_pending_history_sync";
+
 /** The production_logs columns read back when resolving a shift's archive row. */
 interface ShiftLogRowRef {
   id: number;
@@ -485,182 +496,220 @@ export default function ProductionForm({
         updated_at: new Date().toISOString(),
       };
 
+      // The live_log insert is the commit point. If it fails nothing was
+      // saved, so the throw below leaves the form untouched for a retry.
       const { error } = await supabase.from("live_log").insert([payload]);
       if (error) throw error;
 
-      // Mirror the whole shift into production_logs so History reflects it live.
-      // Re-aggregate from live_log (good/reject already baked into short_mold_json).
-      const { data: shiftRows } = await supabase
-        .from("live_log")
-        .select("*")
-        .eq("shift_id", 1)
-        .order("cycle_number", { ascending: true });
-
-      const shiftLogRows = shiftRows || [];
-
-      const fmtPerth = (iso: string | null) =>
-        iso
-          ? new Intl.DateTimeFormat("en-GB", {
-              timeZone: "Australia/Perth",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            }).format(new Date(iso))
-          : null;
-
-      const aggregatedCycles: ArchivedCycle[] = shiftLogRows.map((r: any) => ({
-        cycle_number: r.cycle_number,
-        start_time: fmtPerth(r.start_time),
-        end_time: fmtPerth(r.end_time),
-        run_duration_seconds:
-          r.start_time && r.end_time
-            ? Math.floor(
-                (new Date(r.end_time).getTime() -
-                  new Date(r.start_time).getTime()) /
-                  1000,
-              )
-            : null,
-        load_duration_seconds: r.load_duration_seconds,
-        run_time_minutes: r.run_time_minutes,
-        short_mold_json: r.short_mold_json,
-        bubble_json: r.bubble_json,
-        notes: r.notes,
-      }));
-
-      const operatorShift = `${operator} (${shift})`;
-
-      // Union the row's stored cycles with the live_log re-aggregation rather
-      // than overwriting: after a "Reset Shift Log" the live_log no longer
-      // holds the earlier cycles, and they must survive in history.
-      const buildLogRow = (existingCycles: unknown) => {
-        const mergedCycles = mergeCycles(
-          existingCycles,
-          aggregatedCycles,
-          shiftGroupOf(operatorShift),
-        );
-        const tableYields = tableYieldsFromCycles(mergedCycles);
-
-        return {
-          date: currentDate, // Perth YYYY-MM-DD computed on mount
-          machine_press: `Press #${pressNumber}`,
-          operator_shift: operatorShift,
-          table_line_output_yields: tableYields,
-          cycles: mergedCycles,
-          total_mats_produced: Object.values(tableYields).reduce(
-            (s, t) => s + t.good,
-            0,
-          ),
-          faulty_mats_produced: Object.values(tableYields).reduce(
-            (s, t) => s + t.reject,
-            0,
-          ),
-        };
-      };
-
-      let targetRow: ShiftLogRowRef | null = await findShiftLogRow();
-      let savedLogId: string | null = targetRow ? String(targetRow.id) : null;
-
-      if (targetRow) {
-        const { data: updated, error: updateError } = await supabase
-          .from("production_logs")
-          .update(buildLogRow(targetRow.cycles))
-          .eq("id", targetRow.id)
-          .select("id");
-        if (updateError) throw updateError;
-
-        // Row was deleted out from under us — fall through to an insert
-        // instead of silently matching zero rows.
-        if (!updated || updated.length === 0) {
-          targetRow = null;
-          savedLogId = null;
-        }
+      // From here the cycle *is* saved, so a failure mirroring it into
+      // production_logs must not be reported as a failed submit: the form
+      // would keep the cycle for a retry that inserts it a second time, and
+      // that retry would find live_log rows with no history row and offer to
+      // wipe them as stale. Every submit re-aggregates the whole shift from
+      // live_log, so the next successful one fills history in.
+      const pendingSyncKey = `${currentDate}|${shiftGroupOf(`${operator} (${shift})`)}`;
+      let historyError: unknown = null;
+      try {
+        await syncProductionLog();
+        localStorage.removeItem(PENDING_HISTORY_SYNC_KEY);
+      } catch (err) {
+        historyError = err;
+        console.error("Cycle saved, but production_logs sync failed:", err);
+        localStorage.setItem(PENDING_HISTORY_SYNC_KEY, pendingSyncKey);
       }
 
-      if (!targetRow) {
-        const { data: inserted, error: insertError } = await supabase
-          .from("production_logs")
-          .insert([buildLogRow(null)])
-          .select("id")
-          .single();
-
-        if (insertError) {
-          // 23505 = unique violation: another terminal created this shift's
-          // row between our lookup and this insert, and the
-          // one-row-per-shift-per-day index from production_logs_dedupe.sql
-          // caught it. Re-resolve and update that row instead of duplicating.
-          if (insertError.code !== "23505") throw insertError;
-
-          const racedRow = await findShiftLogRow();
-          if (!racedRow) throw insertError;
-
-          const { error: retryError } = await supabase
-            .from("production_logs")
-            .update(buildLogRow(racedRow.cycles))
-            .eq("id", racedRow.id);
-          if (retryError) throw retryError;
-
-          savedLogId = String(racedRow.id);
-        } else if (inserted?.id) {
-          savedLogId = String(inserted.id);
-        }
-      }
-
-      if (savedLogId) {
-        localStorage.setItem("production_log_id", savedLogId);
-      }
-
-      const newCycleEntry = {
-        id: Math.random().toString(36).substring(2, 9),
-        pressNumber,
-        date: currentDate,
-        operator,
-        shift,
-        startTime,
-        endTime: endTimeHHMM,
-        runTime,
-        loadTime: durationMinutes,
-        tableMatTypes,
-        selectedTableSquares,
-        notes,
-        timestamp: Date.now(),
-      };
-
-      const existingRecords = JSON.parse(
-        localStorage.getItem("production_cycles") || "[]",
-      );
-      existingRecords.unshift(newCycleEntry);
-      localStorage.setItem(
-        "production_cycles",
-        JSON.stringify(existingRecords),
-      );
-
-      setStartTime(endTimeHHMM);
-      setIsManualStart(false);
-      setSelectedTableSquares({});
-      setNotes("");
-
-      localStorage.removeItem("ws_selected_squares");
-      localStorage.removeItem("ws_notes");
-
-      localStorage.setItem("shift_panel_open", "false");
-      setIsShiftOpen(false);
-      setIsSubmitting(false);
-      setJustSucceeded(true);
-      setTimeout(() => setJustSucceeded(false), 1100);
-
-      toast.success(
-        `Cycle saved! Load time: ${formatSigned(durationMinutes * 60)} — next cycle started.`,
-      );
-      const minutes = parseInt(String(runTime), 10);
-      if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
-        onStartTimer(minutes);
-      }
+      finishCycle(endTimeHHMM, durationMinutes, historyError);
     } catch (err) {
       console.error("Error submitting:", err);
       alert(
         `Failed to submit entry: ${describeError(err)}`,
       );
       setIsSubmitting(false);
+    }
+  };
+
+  // Mirror the whole shift into production_logs so History reflects it live.
+  // Re-aggregates from live_log (good/reject already baked into
+  // short_mold_json). Throws on failure -- submitCycle decides what that means.
+  const syncProductionLog = async () => {
+    const { data: shiftRows, error: shiftRowsError } = await supabase
+      .from("live_log")
+      .select("*")
+      .eq("shift_id", 1)
+      .order("cycle_number", { ascending: true });
+    if (shiftRowsError) throw shiftRowsError;
+
+    const shiftLogRows = shiftRows || [];
+
+    const fmtPerth = (iso: string | null) =>
+      iso
+        ? new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Australia/Perth",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }).format(new Date(iso))
+        : null;
+
+    const aggregatedCycles: ArchivedCycle[] = shiftLogRows.map((r: any) => ({
+      cycle_number: r.cycle_number,
+      start_time: fmtPerth(r.start_time),
+      end_time: fmtPerth(r.end_time),
+      run_duration_seconds:
+        r.start_time && r.end_time
+          ? Math.floor(
+              (new Date(r.end_time).getTime() -
+                new Date(r.start_time).getTime()) /
+                1000,
+            )
+          : null,
+      load_duration_seconds: r.load_duration_seconds,
+      run_time_minutes: r.run_time_minutes,
+      short_mold_json: r.short_mold_json,
+      bubble_json: r.bubble_json,
+      notes: r.notes,
+    }));
+
+    const operatorShift = `${operator} (${shift})`;
+
+    // Union the row's stored cycles with the live_log re-aggregation rather
+    // than overwriting: after a "Reset Shift Log" the live_log no longer
+    // holds the earlier cycles, and they must survive in history.
+    const buildLogRow = (existingCycles: unknown) => {
+      const mergedCycles = mergeCycles(
+        existingCycles,
+        aggregatedCycles,
+        shiftGroupOf(operatorShift),
+      );
+      const tableYields = tableYieldsFromCycles(mergedCycles);
+
+      return {
+        date: currentDate, // Perth YYYY-MM-DD computed on mount
+        machine_press: `Press #${pressNumber}`,
+        operator_shift: operatorShift,
+        table_line_output_yields: tableYields,
+        cycles: mergedCycles,
+        total_mats_produced: Object.values(tableYields).reduce(
+          (s, t) => s + t.good,
+          0,
+        ),
+        faulty_mats_produced: Object.values(tableYields).reduce(
+          (s, t) => s + t.reject,
+          0,
+        ),
+      };
+    };
+
+    let targetRow: ShiftLogRowRef | null = await findShiftLogRow();
+    let savedLogId: string | null = targetRow ? String(targetRow.id) : null;
+
+    if (targetRow) {
+      const { data: updated, error: updateError } = await supabase
+        .from("production_logs")
+        .update(buildLogRow(targetRow.cycles))
+        .eq("id", targetRow.id)
+        .select("id");
+      if (updateError) throw updateError;
+
+      // Row was deleted out from under us — fall through to an insert
+      // instead of silently matching zero rows.
+      if (!updated || updated.length === 0) {
+        targetRow = null;
+        savedLogId = null;
+      }
+    }
+
+    if (!targetRow) {
+      const { data: inserted, error: insertError } = await supabase
+        .from("production_logs")
+        .insert([buildLogRow(null)])
+        .select("id")
+        .single();
+
+      if (insertError) {
+        // 23505 = unique violation: another terminal created this shift's
+        // row between our lookup and this insert, and the
+        // one-row-per-shift-per-day index from production_logs_dedupe.sql
+        // caught it. Re-resolve and update that row instead of duplicating.
+        if (insertError.code !== "23505") throw insertError;
+
+        const racedRow = await findShiftLogRow();
+        if (!racedRow) throw insertError;
+
+        const { error: retryError } = await supabase
+          .from("production_logs")
+          .update(buildLogRow(racedRow.cycles))
+          .eq("id", racedRow.id);
+        if (retryError) throw retryError;
+
+        savedLogId = String(racedRow.id);
+      } else if (inserted?.id) {
+        savedLogId = String(inserted.id);
+      }
+    }
+
+    if (savedLogId) {
+      localStorage.setItem("production_log_id", savedLogId);
+    }
+  };
+
+  // Advance the form past a cycle that is saved in live_log.
+  const finishCycle = (
+    endTimeHHMM: string,
+    durationMinutes: number,
+    historyError: unknown,
+  ) => {
+    const newCycleEntry = {
+      id: Math.random().toString(36).substring(2, 9),
+      pressNumber,
+      date: currentDate,
+      operator,
+      shift,
+      startTime,
+      endTime: endTimeHHMM,
+      runTime,
+      loadTime: durationMinutes,
+      tableMatTypes,
+      selectedTableSquares,
+      notes,
+      timestamp: Date.now(),
+    };
+
+    const existingRecords = JSON.parse(
+      localStorage.getItem("production_cycles") || "[]",
+    );
+    existingRecords.unshift(newCycleEntry);
+    localStorage.setItem(
+      "production_cycles",
+      JSON.stringify(existingRecords),
+    );
+
+    setStartTime(endTimeHHMM);
+    setIsManualStart(false);
+    setSelectedTableSquares({});
+    setNotes("");
+
+    localStorage.removeItem("ws_selected_squares");
+    localStorage.removeItem("ws_notes");
+
+    localStorage.setItem("shift_panel_open", "false");
+    setIsShiftOpen(false);
+    setIsSubmitting(false);
+    setJustSucceeded(true);
+    setTimeout(() => setJustSucceeded(false), 1100);
+
+    if (historyError) {
+      toast.warning(
+        `Cycle saved, but History didn't update (${describeError(historyError)}). It will catch up on the next submit.`,
+      );
+    } else {
+      toast.success(
+        `Cycle saved! Load time: ${formatSigned(durationMinutes * 60)} — next cycle started.`,
+      );
+    }
+    const minutes = parseInt(String(runTime), 10);
+    if (!isNaN(minutes) && minutes > 0 && onStartTimer) {
+      onStartTimer(minutes);
     }
   };
 
@@ -707,9 +756,16 @@ export default function ProductionForm({
         // *different* shift's row — after switching Shift Group day→night, or
         // once the Perth date has rolled over — where the leftover cycles
         // really are stale and used to be swept in silently.
+        //
+        // A pending history sync for this very shift answers it too: those
+        // rows are this shift's own cycles, saved before its history row
+        // could be created.
         const openShiftRow = await findShiftLogRow();
+        const pendingSync =
+          localStorage.getItem(PENDING_HISTORY_SYNC_KEY) ===
+          `${currentDate}|${shiftGroupOf(`${operator} (${shift})`)}`;
 
-        if (!openShiftRow) {
+        if (!openShiftRow && !pendingSync) {
           setStaleClearConfirm({ count });
           setPendingProceed(
             () => () => submitCycle(endTimeHHMM, durationMinutes),
