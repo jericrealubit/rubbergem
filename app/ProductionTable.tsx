@@ -252,6 +252,7 @@ export default function ProductionTablePage({
       localStorage.removeItem("shift_group");
       localStorage.removeItem("shift_run_time");
       localStorage.removeItem("production_log_id"); // next shift starts a fresh production_logs row
+      localStorage.removeItem("press_pending_history_sync"); // live_log is empty now; nothing left to sync
 
       alert("Live log cleared. A new shift will start a fresh history entry.");
     } catch (err: any) {
