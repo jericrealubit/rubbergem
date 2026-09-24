@@ -71,9 +71,25 @@ const gradeToggleClass = (selected: boolean) =>
     "h-full w-7 border-2 rounded flex items-center justify-center",
     "cursor-pointer transition-all",
     "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-1",
-    selected
-      ? "border-primary bg-accent-chip text-accent-ink shadow-sm"
-      : "border-border bg-card hover:bg-accent text-foreground",
+    selected ? SHORT_MOLD_SELECTED : "border-border bg-card hover:bg-accent text-foreground",
+  ].join(" ");
+
+/**
+ * Selected state shared by every short-molding control (the 5 position squares
+ * and the B-grade / Bubble pair). Inverted -- a solid primary fill with the
+ * primary-foreground glyph -- rather than a tinted chip, so a flagged table
+ * stands out at a glance across the press floor. primary / primary-foreground
+ * is the pair each theme already contrast-checks for filled buttons.
+ */
+const SHORT_MOLD_SELECTED =
+  "border-primary bg-primary text-primary-foreground shadow-sm";
+
+/** Styling for one of the 5 short-mold position squares in a table's grid. */
+const positionSquareClass = (selected: boolean) =>
+  [
+    "w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded",
+    "flex items-center justify-center cursor-pointer transition-all",
+    selected ? SHORT_MOLD_SELECTED : "border-border hover:bg-accent",
   ].join(" ");
 
 /** The production_logs columns read back when resolving a shift's archive row. */
@@ -1091,7 +1107,9 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tl`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-left" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
+                        className={positionSquareClass(
+                          selectedTableSquares[tableNum] === "top-left",
+                        )}
                       >
                         <motion.div
                           animate={{
@@ -1111,7 +1129,9 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-tr`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "top-right" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
+                        className={positionSquareClass(
+                          selectedTableSquares[tableNum] === "top-right",
+                        )}
                       >
                         <motion.div
                           animate={{
@@ -1131,7 +1151,9 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-cc`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "center" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
+                        className={positionSquareClass(
+                          selectedTableSquares[tableNum] === "center",
+                        )}
                       >
                         <motion.div
                           animate={{
@@ -1151,7 +1173,9 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-bl`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-left" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
+                        className={positionSquareClass(
+                          selectedTableSquares[tableNum] === "bottom-left",
+                        )}
                       >
                         <motion.div
                           animate={{
@@ -1171,7 +1195,9 @@ export default function ProductionForm({
                       />
                       <Label
                         htmlFor={`t${tableNum}-br`}
-                        className={`w-[28px] h-[28px] ipad:w-[32px] ipad:h-[32px] border-2 rounded flex items-center justify-center cursor-pointer transition-all ${selectedTableSquares[tableNum] === "bottom-right" ? "border-primary bg-accent-chip text-accent-ink shadow-sm" : "border-border hover:bg-accent"}`}
+                        className={positionSquareClass(
+                          selectedTableSquares[tableNum] === "bottom-right",
+                        )}
                       >
                         <motion.div
                           animate={{
